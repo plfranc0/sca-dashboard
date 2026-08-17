@@ -1,1058 +1,739 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>She Creates Academy — HQ Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCA Growth Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>📊</text></svg>">
 <style>
 :root{
-  --bg:#FBF7F0;--card:#FFFFFF;--card2:#FDF9F4;--border:#EBE2D4;
-  --text:#1a1a1a;--muted:#6E655E;
-  --wine:#7A1420;--wine2:#5E0F18;--wine3:#8A1826;
-  --blush:#F4C9CE;--blushD:#D9A0A8;--sand:#E0A96D;--taupe:#A89E94;
-  --teal:#129293;--gold:#B07D2B;--red:#B3261E;
-  --r:14px;--ri:8px;
-  --serif:'Fraunces',Georgia,serif;--sans:'DM Sans',sans-serif;
+  --ground:#FDF9F4; --surface:#FFFFFF; --surface-2:#FBF4EF; --surface-3:#F6EBE5;
+  --ink:#221418; --ink-2:#4C3A3D; --ink-3:#8A7477;
+  --accent:#7A1420; --hair:#E8DCD6; --hair-2:#F1E5DF;
+  --c1:#A32235; --c2:#0077A8; --c3:#B57614; --c4:#6B4A8F;
+  --good:#2F6B4F; --warn:#9A6B12; --crit:#B3261E;
+  --good-bg:#E6F0EA; --warn-bg:#F6EEDD; --crit-bg:#F8E6E4;
+  --shadow:0 1px 2px rgba(34,20,24,.05), 0 8px 24px -14px rgba(34,20,24,.16);
+  --display:Georgia,'Iowan Old Style','Times New Roman',serif;
+  --ui:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --mono:'SF Mono','Cascadia Mono',Menlo,Consolas,monospace;
 }
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh}
-::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:#D9CDB9;border-radius:4px}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#17110F; --surface:#221A19; --surface-2:#2B2120; --surface-3:#332726;
+    --ink:#F4EBE6; --ink-2:#C4B0AC; --ink-3:#8E7B78;
+    --accent:#DC6076; --hair:#38292A; --hair-2:#2E2222;
+    --c1:#DC6076; --c2:#2E93CC; --c3:#C2871A; --c4:#9070C6;
+    --good:#5FAF87; --warn:#D2A03F; --crit:#E0706A;
+    --good-bg:#1D2A24; --warn-bg:#2C2418; --crit-bg:#2E1E1D;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#17110F; --surface:#221A19; --surface-2:#2B2120; --surface-3:#332726;
+  --ink:#F4EBE6; --ink-2:#C4B0AC; --ink-3:#8E7B78;
+  --accent:#DC6076; --hair:#38292A; --hair-2:#2E2222;
+  --c1:#DC6076; --c2:#2E93CC; --c3:#C2871A; --c4:#9070C6;
+  --good:#5FAF87; --warn:#D2A03F; --crit:#E0706A;
+  --good-bg:#1D2A24; --warn-bg:#2C2418; --crit-bg:#2E1E1D;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--ground); color:var(--ink-2);
+  font-family:var(--ui); font-size:15px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px; margin:0 auto; padding:0 22px 88px}
 
-.header{background:rgba(251,247,240,0.95);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;position:sticky;top:0;z-index:100;backdrop-filter:blur(14px);min-height:74px}
-.logo-wrap{display:flex;align-items:center;gap:14px}
-.logo-mark{width:44px;height:44px;background:var(--wine);color:#FBF7F0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:17px;font-weight:600}
-.logo-text h1{font-family:var(--serif);font-size:21px;font-weight:600;letter-spacing:-0.2px;color:var(--wine2)}
-.logo-text h1 em{font-style:italic;font-weight:500}
-.logo-text p{font-size:10px;color:var(--muted);letter-spacing:1.8px;text-transform:uppercase;margin-top:2px;font-weight:600}
-.stamp{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:7px}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex:none}
-.dot.stale{background:var(--gold)}
+/* ---------- header ---------- */
+header.top{
+  border-bottom:1px solid var(--hair); background:var(--surface);
+  position:sticky; top:0; z-index:20;
+}
+.top-in{
+  max-width:1240px; margin:0 auto; padding:14px 22px;
+  display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+}
+.brand{display:flex; flex-direction:column; gap:1px; margin-right:auto}
+.brand h1{
+  font-family:var(--display); font-size:20px; font-weight:600; color:var(--ink);
+  margin:0; letter-spacing:-.01em;
+}
+.brand .sub{font-size:11.5px; color:var(--ink-3)}
+.status{display:inline-flex; align-items:center; gap:7px; font-size:11.5px; color:var(--ink-3)}
+.dot{width:7px; height:7px; border-radius:50%; background:var(--good); flex:none}
+.dot.warn{background:var(--warn)} .dot.bad{background:var(--crit)}
+.range{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink-3)}
+select{
+  font-family:var(--mono); font-size:12px; color:var(--ink);
+  background:var(--surface); border:1px solid var(--hair);
+  border-radius:5px; padding:5px 8px; cursor:pointer;
+}
+select:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+.ghost{
+  font-family:var(--ui); font-size:12px; font-weight:600; color:var(--ink-2);
+  background:none; border:1px solid var(--hair); border-radius:5px;
+  padding:6px 11px; cursor:pointer; text-decoration:none; display:inline-block;
+}
+.ghost:hover{border-color:var(--accent); color:var(--accent)}
 
-.nav{display:flex;gap:4px;padding:14px 32px 0;border-bottom:1px solid var(--border);background:var(--bg);position:relative;z-index:5;flex-wrap:wrap}
-.nav button{background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:13px;font-weight:600;padding:10px 18px;cursor:pointer;border-radius:var(--ri) var(--ri) 0 0;border-bottom:2px solid transparent}
-.nav button.active{color:var(--wine2);border-bottom-color:var(--wine);background:var(--card)}
+/* ---------- tabs ---------- */
+.tabs{display:flex; gap:2px; max-width:1240px; margin:0 auto; padding:0 22px; flex-wrap:wrap}
+.tab{
+  appearance:none; background:none; border:none; cursor:pointer;
+  font-family:var(--ui); font-size:13px; font-weight:600; color:var(--ink-3);
+  padding:13px 2px; margin-right:22px; border-bottom:2px solid transparent;
+}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent)}
+.tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.tabbar{border-bottom:1px solid var(--hair); background:var(--surface)}
 
-/* ---- filter toolbar ---- */
-.toolbar{background:var(--card);border-bottom:1px solid var(--border);padding:11px 32px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px}
-.toolbar label{color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.4px}
-.toolbar input[type=date],.toolbar select{font-family:var(--sans);font-size:12.5px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--ri);background:var(--bg);color:var(--text)}
-.btn{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 15px;border-radius:var(--ri);border:1px solid var(--wine);background:var(--wine);color:#fff;cursor:pointer}
-.btn:hover{background:var(--wine2)}
-.btn.ghost{background:transparent;color:var(--wine);border-color:var(--border)}
-.btn.ghost:hover{background:#F7EFEA}
-.btn.ghost.on{background:var(--wine);color:#fff;border-color:var(--wine)}
-.presets{display:flex;gap:5px}
-.presets .btn{padding:6px 11px;font-size:11.5px}
-.tb-sep{width:1px;height:22px;background:var(--border)}
-.tb-right{margin-left:auto;display:flex;align-items:center;gap:9px;color:var(--muted);font-size:11px}
+/* ---------- layout ---------- */
+.page{padding-top:26px; display:flex; flex-direction:column; gap:14px}
+.page[hidden]{display:none}
+.grid{display:grid; gap:12px}
+.k4{grid-template-columns:repeat(4,1fr)}
+.k5{grid-template-columns:repeat(5,1fr)}
+.c2{grid-template-columns:1fr 1fr}
+@media(max-width:900px){.k4,.k5,.c2{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:540px){.k4,.k5,.c2{grid-template-columns:1fr}}
+.card{
+  background:var(--surface); border:1px solid var(--hair);
+  border-radius:8px; padding:16px 18px; box-shadow:var(--shadow);
+}
+.sect{
+  font-family:var(--ui); font-size:10.5px; font-weight:700; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink-3); margin:12px 0 -2px;
+}
 
-.wrap{max-width:1240px;margin:0 auto;padding:26px 32px 60px}
-.page{display:none}.page.active{display:block}
-.range-note{font-size:11.5px;color:var(--muted);margin-bottom:16px}
-.range-note b{color:var(--wine)}
+/* ---------- kpi ---------- */
+.kpi{display:flex; flex-direction:column; gap:4px}
+.kpi-label{
+  font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-3);
+}
+.kpi-val{
+  font-family:var(--mono); font-variant-numeric:tabular-nums;
+  font-size:26px; font-weight:600; color:var(--ink); line-height:1.08; letter-spacing:-.02em;
+}
+.kpi-sub{font-size:11.5px; color:var(--ink-3)}
+.kpi.flag{border-left:3px solid var(--warn); padding-left:14px; margin-left:-1px}
+.kpi.ok .kpi-val{color:var(--good)}
+.delta{font-family:var(--mono); font-size:11.5px; font-weight:600}
+.delta.up{color:var(--good)} .delta.down{color:var(--crit)} .delta.flat{color:var(--ink-3)}
 
-/* ---- command center: main + quiet right rail ---- */
-.cc-grid{display:grid;grid-template-columns:1fr 264px;gap:18px;align-items:start}
-@media(max-width:1000px){.cc-grid{grid-template-columns:1fr}}
-.rail{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:15px 16px;position:sticky;top:96px}
-.rail h4{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
-.rail-count{background:#F0EAE0;color:var(--muted);border-radius:20px;padding:1px 8px;font-size:10px}
-.rail-count.has{background:#F7EDD9;color:var(--gold)}
-.watch{display:flex;gap:8px;padding:8px 0;border-top:1px solid #F2EBDF;font-size:11.5px;line-height:1.45;color:var(--muted)}
-.watch:first-of-type{border-top:none}
-.watch .wd{width:6px;height:6px;border-radius:50%;margin-top:5px;flex:none}
-.wd.bad{background:var(--red)}.wd.warn{background:var(--gold)}.wd.ok{background:var(--teal)}
-.watch b{color:var(--text);font-weight:600}
+/* ---------- charts ---------- */
+.chart-head{display:flex; flex-direction:column; gap:2px; margin-bottom:14px}
+.chart-title{font-size:13.5px; font-weight:700; color:var(--ink)}
+.chart-note{font-size:11.5px; color:var(--ink-3)}
+svg{display:block; width:100%; height:auto; overflow:visible}
+.gridline{stroke:var(--hair-2); stroke-width:1}
+.axis-txt{font-family:var(--mono); font-size:9.5px; fill:var(--ink-3)}
+.dlabel{font-family:var(--mono); font-size:9.5px; font-weight:600; fill:var(--ink-2)}
+.bar{transition:opacity .12s} .bar:hover{opacity:.72}
+.legend{display:flex; gap:14px; flex-wrap:wrap; margin-top:11px}
+.lg{display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--ink-2)}
+.sw{width:10px; height:10px; border-radius:2px; flex:none}
+.sw.line{height:3px; width:14px; border-radius:2px}
 
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(146px,1fr));gap:12px;margin-bottom:18px}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:15px 17px;box-shadow:0 1px 2px rgba(122,20,32,0.04)}
-.kpi .lbl{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700}
-.kpi .val{font-family:var(--serif);font-size:27px;font-weight:600;margin:6px 0 2px;letter-spacing:-0.5px}
-.kpi .sub{font-size:11px;color:var(--muted)}
-.kpi .sub.good{color:var(--teal);font-weight:600}.kpi .sub.bad{color:var(--red);font-weight:600}
+/* ---------- tables ---------- */
+.tw{overflow-x:auto; border:1px solid var(--hair); border-radius:8px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:12.5px; min-width:660px}
+th,td{padding:9px 13px; text-align:right; border-bottom:1px solid var(--hair-2); white-space:nowrap}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+th{
+  font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink-3); background:var(--surface-2);
+}
+td{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--ink-2)}
+td:first-child{font-family:var(--ui); color:var(--ink); font-weight:600}
+td.l{font-family:var(--ui); white-space:normal; min-width:260px}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--surface-2)}
+.pill{display:inline-block; font-family:var(--ui); font-size:10px; font-weight:700; letter-spacing:.04em; padding:2px 8px; border-radius:20px}
+.pill.ok{background:var(--good-bg); color:var(--good)}
+.pill.chk{background:var(--warn-bg); color:var(--warn)}
+.pill.bad{background:var(--crit-bg); color:var(--crit)}
 
-/* ---- command center v2: Thu-to-Thu week view ---- */
-.cc-banner{background:#FBEAE9;border:1px solid #EFC4C1;border-radius:var(--r);padding:12px 16px;color:var(--red);font-size:12.5px;margin-bottom:14px}
-.cc-banner b{font-weight:700}
-.cc-week{display:flex;align-items:center;gap:12px;margin-bottom:18px}
-.wk-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--wine);font-size:12px;cursor:pointer;flex:none}
-.wk-btn:hover{background:#F7EFEA}
-.wk-btn:disabled{opacity:.3;cursor:default}
-.wk-main{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--wine2);letter-spacing:-0.2px}
-.wk-sub{font-size:11px;color:var(--muted);margin-top:2px}
-.wk-chip{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;padding:5px 13px;border-radius:20px;flex:none}
-.wk-chip.final{background:#E4F1F0;color:#0E6B6C}
-.wk-chip.open{background:#F7EDD9;color:var(--gold)}
-.band{display:flex;align-items:baseline;justify-content:space-between;margin:20px 0 10px;border-bottom:1px solid var(--border);padding-bottom:6px}
-.band .bt{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--wine2);font-weight:800}
-.band .owner{font-size:10.5px;color:var(--muted)}
-.t-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.t-row.big3{grid-template-columns:repeat(3,1fr)}
-@media(max-width:880px){.t-row{grid-template-columns:repeat(2,1fr)}}
-.t{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;box-shadow:0 1px 2px rgba(122,20,32,0.04);border-left:3px solid transparent;min-width:0}
-.t.good{border-left-color:var(--teal)}
-.t.warn{border-left-color:var(--gold)}
-.t.bad{border-left-color:var(--red)}
-.t-top{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:18px}
-.t .lbl{font-size:9.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);font-weight:700}
-.t .val{font-family:var(--serif);font-size:25px;font-weight:600;margin:5px 0 2px;letter-spacing:-0.5px}
-.big3 .t .val{font-size:31px}
-.t .sub{font-size:10.5px;color:var(--muted);line-height:1.5;white-space:normal}
-.t .sub .up{color:var(--teal);font-weight:700}
-.t .sub .dn{color:var(--red);font-weight:700}
-.spk{flex:none;opacity:.85}
-
-.sec-label{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--wine2);margin:26px 0 12px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-@media(max-width:880px){.grid2{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:0 1px 2px rgba(122,20,32,0.04)}
-.card+.card{margin-top:16px}
-.card h3{font-family:var(--serif);font-size:15px;font-weight:600;margin-bottom:4px;color:var(--wine2)}
-.card .hint{font-size:11px;color:var(--muted);margin-bottom:14px}
-.chart-box{position:relative;height:250px}
-.chart-box.tall{height:310px}
-
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th{text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:700}
-td{padding:9px 10px;border-bottom:1px solid #F2EBDF;white-space:nowrap}
-tr:hover td{background:#FBF4EE}
-.num{text-align:right;font-variant-numeric:tabular-nums}
-th.num{text-align:right}
-td.name{font-weight:600}
-.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
-.pill.good{background:#E4F1F0;color:#0E6B6C}
-.pill.mid{background:#F7EDD9;color:var(--gold)}
-.pill.bad{background:#FBEAE9;color:var(--red)}
-.pill.dim{background:#F0EAE0;color:var(--muted)}
-.pill.wine{background:#F5E7E4;color:var(--wine)}
-.note-icon{cursor:help;color:var(--taupe);font-size:11px}
-.legend{font-size:11px;color:var(--muted);margin-top:10px}
-.small{font-size:11px;color:var(--muted)}
-.empty{padding:26px;text-align:center;color:var(--muted);font-size:12.5px}
-
-/* ---- settings ---- */
-.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:16px}
-.field label{display:block;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:5px}
-.field input{width:100%;font-family:var(--sans);font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--ri);background:var(--bg);color:var(--text)}
-.field .fh{font-size:10.5px;color:var(--muted);margin-top:4px}
-.saved{display:inline-block;margin-left:10px;font-size:11.5px;color:var(--teal);font-weight:600;opacity:0;transition:opacity .2s}
-.saved.show{opacity:1}
-
-.footer{margin-top:36px;font-size:11px;color:var(--muted);text-align:center;line-height:1.9}
-.footer a{color:var(--wine);text-decoration:none;font-weight:600}
-.loading{text-align:center;padding:80px 0;color:var(--muted);font-size:13px}
-.err{background:#FBEAE9;border:1px solid #EFC4C1;border-radius:var(--r);padding:20px;color:var(--red);font-size:13px;margin-bottom:20px}
+/* ---------- notes / states ---------- */
+.note{
+  border:1px solid var(--hair); border-left:3px solid var(--accent);
+  background:var(--surface); border-radius:6px; padding:14px 17px;
+  font-size:13px; display:flex; flex-direction:column; gap:6px;
+}
+.note strong{color:var(--ink)}
+.note.warn{border-left-color:var(--warn)}
+.banner{
+  border-radius:8px; padding:16px 18px; font-size:13.5px;
+  background:var(--crit-bg); border:1px solid var(--crit); color:var(--crit);
+}
+.banner strong{display:block; font-size:15px; margin-bottom:4px}
+.loading{padding:80px 0; text-align:center; color:var(--ink-3); font-size:14px}
+.skel{
+  display:inline-block; width:180px; height:10px; border-radius:5px;
+  background:var(--hair); animation:pulse 1.3s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:.45}50%{opacity:.9}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}}
+footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--hair); font-size:11.5px; color:var(--ink-3); display:flex; gap:16px; flex-wrap:wrap}
+footer a{color:var(--ink-3)}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="logo-wrap">
-    <div class="logo-mark">sc</div>
-    <div class="logo-text">
-      <h1>She Creates <em>HQ</em></h1>
-      <p>Marketing &middot; Sales &middot; Cash</p>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <h1>She Creates Academy</h1>
+      <span class="sub">Growth dashboard &middot; live from the SCA Master Tracker</span>
     </div>
+    <span class="status" id="status"><span class="dot" id="dot"></span><span id="status-txt">Loading&hellip;</span></span>
+    <span class="range">
+      <label for="from">Weeks</label>
+      <select id="from" aria-label="From week"></select>
+      <span aria-hidden="true">&rarr;</span>
+      <select id="to" aria-label="To week"></select>
+    </span>
+    <a class="ghost" id="sheet-link" href="#" target="_blank" rel="noopener">Open sheet</a>
   </div>
-  <div class="stamp"><span class="dot" id="dot"></span><span id="stamp">loading…</span></div>
-</div>
+</header>
 
-<div class="nav">
-  <button class="active" data-page="cc">Command Center</button>
-  <button data-page="mkt">Marketing</button>
-  <button data-page="sales">Sales</button>
-  <button data-page="health">Data Health</button>
-  <button data-page="settings">Settings</button>
-</div>
-
-<div class="toolbar" id="toolbar" style="display:none">
-  <label>From</label><input type="date" id="f-from">
-  <label>To</label><input type="date" id="f-to">
-  <div class="presets">
-    <button class="btn ghost" data-preset="wk">This week</button>
-    <button class="btn ghost" data-preset="30">Last 30d</button>
-    <button class="btn ghost" data-preset="mo">This month</button>
-    <button class="btn ghost on" data-preset="all">All time</button>
+<div class="tabbar">
+  <div class="tabs" role="tablist" aria-label="Dashboard pages">
+    <button class="tab" role="tab" id="tab-funnel"  aria-controls="page-funnel"  aria-selected="true">Funnel</button>
+    <button class="tab" role="tab" id="tab-sales"   aria-controls="page-sales"   aria-selected="false">Sales</button>
+    <button class="tab" role="tab" id="tab-health"  aria-controls="page-health"  aria-selected="false">Data Health</button>
   </div>
-  <div class="tb-sep"></div>
-  <label>Rep</label><select id="f-rep"><option value="">All reps</option></select>
-  <button class="btn" id="btn-refresh">Refresh</button>
-  <div class="tb-right"><span id="feed-note"></span></div>
 </div>
 
 <div class="wrap">
-  <div id="load" class="loading">Loading live data from both sheets…</div>
-  <div id="fail" style="display:none" class="err"></div>
+  <div id="boot" class="loading"><div class="skel"></div><div style="margin-top:14px">Reading the Master Tracker&hellip;</div></div>
+  <div id="fail" hidden></div>
 
-  <!-- ============ COMMAND CENTER ============ -->
-  <div class="page active" id="page-cc" style="display:none">
-    <div class="cc-banner" id="cc-stale" style="display:none"></div>
-    <div class="cc-week">
-      <button class="wk-btn" id="cc-prev" title="Earlier week">&#9664;</button>
-      <div>
-        <div class="wk-main" id="cc-wk-main">&mdash;</div>
-        <div class="wk-sub" id="cc-wk-sub"></div>
-      </div>
-      <button class="wk-btn" id="cc-next" title="Later week">&#9654;</button>
-      <div class="wk-chip final" id="cc-wk-chip"></div>
-    </div>
-    <div class="cc-grid">
-      <div>
-        <div class="t-row big3" id="cc-verdict"></div>
-        <div class="band"><span class="bt">Webinar</span><span class="owner">funnel scoreboard</span></div>
-        <div class="t-row" id="cc-webinar"></div>
-        <div class="band"><span class="bt">Sales Calls</span><span class="owner">closer EOC reports</span></div>
-        <div class="t-row" id="cc-sales"></div>
-        <div class="band"><span class="bt">Setters</span><span class="owner">SDR EOD + Speed to Dial</span></div>
-        <div class="t-row" id="cc-setters"></div>
-        <div class="card" style="margin-top:20px">
-          <h3>Full Funnel</h3>
-          <div class="hint" id="funnel-hint"></div>
-          <div class="chart-box tall"><canvas id="ch-funnel"></canvas></div>
-          <div class="legend">Registered through Booked from the Funnel Scoreboard. Call Shows and Closes from the closer EOC reports for this Thursday-to-Thursday week.</div>
-        </div>
-      </div>
-      <div class="rail">
-        <h4>Monday Agenda <span class="rail-count" id="rail-count">0</span></h4>
-        <div id="rail-body"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ MARKETING ============ -->
-  <div class="page" id="page-mkt">
-    <div class="range-note" id="mkt-range"></div>
-    <div class="card">
-      <h3>Weekly Cohorts</h3>
-      <div class="hint">One row per webinar. Show %: teal at or above goal &middot; gold within 3 points &middot; red below. Hover ⓘ for the source note on that week.</div>
-      <div style="overflow-x:auto"><table id="tbl-cohorts"></table></div>
-    </div>
-    <div class="grid2" style="margin-top:16px">
-      <div class="card">
-        <h3>Volume by Week</h3>
-        <div class="hint">Registered vs applications vs calls booked</div>
-        <div class="chart-box"><canvas id="ch-volume"></canvas></div>
-      </div>
-      <div class="card">
-        <h3>Cash &amp; RPR</h3>
-        <div class="hint">RPR = cash per registrant &middot; goal <span id="g-rpr"></span></div>
-        <div class="chart-box"><canvas id="ch-cash"></canvas></div>
-      </div>
-    </div>
-    <div class="sec-label">Daily Trend</div>
-    <div class="grid2">
-      <div class="card">
-        <h3>Current Cohort Size by Day</h3>
-        <div class="hint">Signups accumulate toward each webinar, then reset</div>
-        <div class="chart-box"><canvas id="ch-cohortsize"></canvas></div>
-      </div>
-      <div class="card">
-        <h3>Applications &amp; Bookings per Day</h3>
-        <div class="hint">Daily deltas</div>
-        <div class="chart-box"><canvas id="ch-deltas"></canvas></div>
-      </div>
-    </div>
-    <div class="sec-label">Email</div>
-    <div class="card">
-      <h3>Sends — opens &amp; clicks</h3>
-      <div class="hint">Entered by hand from the GHL UI (opens and clicks are not readable via the API)</div>
-      <div style="overflow-x:auto"><table id="tbl-email"></table></div>
-    </div>
-  </div>
-
-  <!-- ============ SALES ============ -->
-  <div class="page" id="page-sales">
-    <div class="range-note" id="sales-range"></div>
-    <div class="kpis" id="s-kpis"></div>
-    <div class="grid2">
-      <div class="card">
-        <h3>Closer Board</h3>
-        <div class="hint">From closer EOC reports &middot; close rate goal <span id="g-close"></span></div>
-        <div style="overflow-x:auto"><table id="tbl-closers"></table></div>
-      </div>
-      <div class="card">
-        <h3>Setter Board</h3>
-        <div class="hint">Sets = EOC calls credited to that setter &middot; call show goal <span id="g-showcall"></span></div>
-        <div style="overflow-x:auto"><table id="tbl-setters"></table></div>
-      </div>
-    </div>
-    <div class="grid2">
-      <div class="card">
-        <h3>Closer Commissions <span class="small" id="cc-pct"></span></h3>
-        <div style="overflow-x:auto"><table id="tbl-comm-c"></table></div>
-      </div>
-      <div class="card">
-        <h3>Setter Commissions <span class="small" id="sc-pct"></span></h3>
-        <div style="overflow-x:auto"><table id="tbl-comm-s"></table></div>
-      </div>
-    </div>
-    <div class="card">
-      <h3>Setter Activity — dials &amp; convos</h3>
-      <div class="hint">From SDR end-of-day reports &middot; dial goal <span id="g-dials"></span>/day. Blank = nothing reported that day.</div>
-      <div style="overflow-x:auto"><table id="tbl-sdr"></table></div>
-    </div>
-    <div class="card">
-      <h3>Calls</h3>
-      <div class="hint" id="calls-hint"></div>
-      <div style="overflow-x:auto"><table id="tbl-calls"></table></div>
-    </div>
-  </div>
-
-  <!-- ============ DATA HEALTH ============ -->
-  <div class="page" id="page-health">
-    <div class="card">
-      <h3>Data Health</h3>
-      <div class="hint">Values the dashboard could not read cleanly, or that contradict each other. Fix these at the source — in the Google Form or the sheet — not here.</div>
-      <div id="health-list"></div>
-    </div>
-  </div>
-
-  <!-- ============ SETTINGS ============ -->
-  <div class="page" id="page-settings">
-    <div class="card">
-      <h3>Goals &amp; Commission <span class="saved" id="saved1">saved</span></h3>
-      <div class="hint">Stored in this browser only. Changing a goal re-colours the whole dashboard; it never changes the underlying data.</div>
-      <div class="fields">
-        <div class="field"><label>Webinar show goal %</label><input type="number" id="s-showWeb"><div class="fh">Registered who watch live</div></div>
-        <div class="field"><label>Call show goal %</label><input type="number" id="s-showCall"><div class="fh">Booked calls that show</div></div>
-        <div class="field"><label>Close rate goal %</label><input type="number" id="s-close"><div class="fh">Closes over shows</div></div>
-        <div class="field"><label>Dial goal / day</label><input type="number" id="s-dials"></div>
-        <div class="field"><label>Speed-to-dial target (min)</label><input type="number" id="s-stdMin"><div class="fh">Booking to first human dial</div></div>
-        <div class="field"><label>Weekly cash goal $</label><input type="number" id="s-cashWk"></div>
-        <div class="field"><label>RPR goal $</label><input type="number" id="s-rpr"><div class="fh">Cash per registrant</div></div>
-        <div class="field"><label>Closer commission %</label><input type="number" id="s-ccPct"></div>
-        <div class="field"><label>Setter commission %</label><input type="number" id="s-scPct"></div>
-      </div>
-      <button class="btn" id="btn-save1">Save</button>
-      <button class="btn ghost" id="btn-reset">Reset to defaults</button>
-    </div>
-    <div class="card">
-      <h3>Sheet Connections <span class="saved" id="saved2">saved</span></h3>
-      <div class="hint">The long id between /d/ and /edit in each sheet URL. Both sheets must be shared as "anyone with the link can view".</div>
-      <div class="fields">
-        <div class="field"><label>Funnel Scoreboard ID</label><input type="text" id="s-sidFunnel"><div class="fh">Cohorts, Daily, Email Stats</div></div>
-        <div class="field"><label>Gigi Master Doc ID</label><input type="text" id="s-sidSales"><div class="fh">eoc, SDR EOD FORM</div></div>
-      </div>
-      <button class="btn" id="btn-save2">Save &amp; reload data</button>
-    </div>
-    <div class="card">
-      <h3>Where each number comes from</h3>
-      <div style="overflow-x:auto"><table>
-        <tr><th>Metric</th><th>Source</th><th>Filled by</th></tr>
-        <tr><td class="name">Registered, Attended, Replay, Applications, Calls Booked</td><td>Funnel Scoreboard &rarr; Cohorts</td><td>Apps Script, Thu 2pm / Thu 8pm / Mon 10am</td></tr>
-        <tr><td class="name">Show %, No-Show, Reached %, App Rate</td><td>Funnel Scoreboard &rarr; Cohorts</td><td>Sheet formulas (cannot drift)</td></tr>
-        <tr><td class="name">Cash, Call Shows, Closes, Close Rate, AOV</td><td>Gigi Master Doc &rarr; eoc</td><td>Closers, after every call</td></tr>
-        <tr><td class="name">Dials, Quality Convos, Sets</td><td>Gigi Master Doc &rarr; SDR EOD FORM</td><td>Setters, end of day</td></tr>
-        <tr><td class="name">Speed to Lead (mins to first human dial)</td><td>Funnel Scoreboard &rarr; Speed to Dial</td><td>Apps Script, daily 7am (GHL Conversations API)</td></tr>
-        <tr><td class="name">Open %, Click %</td><td>Funnel Scoreboard &rarr; Email Stats</td><td>By hand from the GHL UI</td></tr>
-      </table></div>
-    </div>
-  </div>
-
-  <div class="footer">
-    Data: <a id="lnk-funnel" href="#" target="_blank">SCA Funnel Scoreboard</a> &nbsp;+&nbsp; <a id="lnk-sales" href="#" target="_blank">Gigi Master Doc</a>.<br>
-    Built by Focal Point.
-  </div>
+  <main id="app" hidden>
+    <section class="page" id="page-funnel" role="tabpanel" aria-labelledby="tab-funnel"></section>
+    <section class="page" id="page-sales" role="tabpanel" aria-labelledby="tab-sales" hidden></section>
+    <section class="page" id="page-health" role="tabpanel" aria-labelledby="tab-health" hidden></section>
+    <footer>
+      <span id="foot-fetch"></span>
+      <span>Weeks run Thursday to Wednesday.</span>
+      <a href="#" id="foot-sheet" target="_blank" rel="noopener">SCA Master Tracker</a>
+    </footer>
+  </main>
 </div>
 
 <script>
-// ---------- settings ----------
-const DEF = {showWeb:33, showCall:85, close:30, dials:200, cashWk:30000, rpr:83, ccPct:10, scPct:5, stdMin:20,
-  sidFunnel:"1_UWmgZb_Cr3ST2WKizkaIh8zQrvFSjvevIaESeiMKKI", sidSales:"1slHyhPeWvGge876w9xC1oQ8Ml1ZO2FD1vlxVJcrx47s"};
-const SKEY = "sca_hq_settings_v1";
-let S = (()=>{ try{ return Object.assign({}, DEF, JSON.parse(localStorage.getItem(SKEY)||"{}")); }catch(e){ return Object.assign({},DEF); } })();
-function saveSettings(){ localStorage.setItem(SKEY, JSON.stringify(S)); }
+"use strict";
 
-const C = {wine:"#7A1420",wine3:"#8A1826",blush:"#EBC9CD",blushD:"#D9A0A8",sand:"#E0A96D",taupe:"#A89E94",teal:"#129293",gold:"#B07D2B",red:"#B3261E",muted:"#6E655E",grid:"rgba(110,101,94,0.12)"};
-Chart.defaults.font.family = "'DM Sans',sans-serif";
-Chart.defaults.color = C.muted;
-Chart.defaults.borderColor = C.grid;
-// Charts get built for every tab at once, including the hidden ones. A canvas on a display:none
-// page has zero size, and an animated build there finishes with zero-height bars that never redraw
-// when the tab is opened - the axes appear but the data does not. Animation off plus an explicit
-// resize on tab switch keeps every tab correct.
-Chart.defaults.animation = false;
-let charts = [];
-function mkChart(id, cfg){ const el = document.getElementById(id); if(!el) return; charts.push(new Chart(el, cfg)); }
-function killCharts(){ charts.forEach(c=>{try{c.destroy()}catch(e){}}); charts = []; }
+const SID = "1AaqCLsqpdhzktzE002UvN1aBGsMXajksak_w8qL_tos";
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/" + SID + "/edit";
 
-// ---------- gviz ----------
-async function gviz(sid, sheet){
-  const url = `https://docs.google.com/spreadsheets/d/${sid}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheet)}&t=${Date.now()}`;
-  const r = await fetch(url);
-  const t = await r.text();
-  const json = JSON.parse(t.substring(t.indexOf("(")+1, t.lastIndexOf(")")));
-  if(json.status !== "ok") throw new Error("Could not read the '"+sheet+"' tab");
-  return json.table;
-}
-function val(row,i){ const c = (row.c && row.c[i]) ? row.c[i] : null; return c ? c.v : null; }
-function fmt(row,i){ const c = (row.c && row.c[i]) ? row.c[i] : null; return c ? (c.f !== undefined ? c.f : (c.v === null ? "" : String(c.v))) : ""; }
-function asDate(v){
-  if(v === null || v === undefined) return null;
-  if(v instanceof Date) return v;
-  if(typeof v === "string"){
-    const m = v.match(/Date\((\d+),(\d+),(\d+)/);
-    if(m) return new Date(+m[1], +m[2], +m[3]);
-    const d = new Date(v); return isNaN(d) ? null : d;
-  }
-  return null;
-}
-const dLabel = d => (d instanceof Date) ? d.toLocaleDateString("en-US",{month:"short",day:"numeric"}) : String(d??"");
-const money = n => (n===null||n===undefined||isNaN(n)) ? "—" : "$"+Number(n).toLocaleString("en-US",{maximumFractionDigits:0});
-const pctS = n => (n===null||n===undefined||n===""||isNaN(n)) ? "—" : (Number(n)*100).toFixed(1).replace(/\.0$/,"")+"%";
-const dayKey = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const S = { ws:[], cs:[], ss:[], dh:[], weeks:[], from:null, to:null, fetched:null };
 
-// ---------- forgiving parsers ----------
-let health = [];
-function flag(where, what){ health.push({where, what}); }
-function parseMoney(v, ctx){
-  if(v===null||v===undefined||v==="") return null;
-  if(typeof v === "number") return v;
-  let s = String(v).trim();
-  if(/^(n\/?a|na|-|—|\?)$/i.test(s)) return null;
-  if(/^0$/.test(s)) return 0;
-  const k = s.match(/^\$?\s*([\d.,]+)\s*k$/i);
-  if(k) return parseFloat(k[1].replace(/,/g,""))*1000;
-  const m = s.replace(/[$,\s]/g,"");
-  if(/^\d+(\.\d+)?$/.test(m)) return parseFloat(m);
-  if(ctx) flag(ctx, `Cash reads "${s}", which is not a number — counted as zero`);
-  return null;
+/* ---------------- data ---------------- */
+async function gviz(tab){
+  const url = "https://docs.google.com/spreadsheets/d/" + SID +
+              "/gviz/tq?tqx=out:json&sheet=" + encodeURIComponent(tab) + "&t=" + Date.now();
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("Tab “" + tab + "”: HTTP " + res.status + ". The sheet may no longer be shared with anyone-with-the-link.");
+  const text = await res.text();
+  const open = text.indexOf("setResponse(");
+  const close = text.lastIndexOf(")");
+  if(open === -1 || close === -1) throw new Error("Tab “" + tab + "” returned an unexpected response. Check the tab still exists and is named exactly “" + tab + "”.");
+  const d = JSON.parse(text.slice(open + 12, close));
+  if(d.status !== "ok") throw new Error("Tab “" + tab + "”: " + JSON.stringify(d.errors || d.status));
+  const cols = d.table.cols.map(c => (c.label || c.id || "").trim());
+  return d.table.rows.map(r => {
+    const o = {};
+    cols.forEach((name, i) => { const cell = r.c[i]; o[name] = cell ? cell.v : null; });
+    return o;
+  });
 }
-function parseNum(v, ctx, label){
-  if(v===null||v===undefined||v==="") return null;
-  if(typeof v === "number") return v;
-  const s = String(v).trim();
-  if(/^(n\/?a|na|-|—|\?|idek.*)$/i.test(s)) return null;
-  const m = s.match(/\d+(\.\d+)?/);
-  if(m){ if(!/^\d+(\.\d+)?$/.test(s) && ctx) flag(ctx, `Read "${s}" as ${m[0]} for ${label}`); return parseFloat(m[0]); }
-  if(ctx) flag(ctx, `No number found in "${s}" for ${label}`);
-  return null;
-}
-function parseYes(v){
-  if(v===null||v===undefined||v==="") return false;
-  if(typeof v === "number") return v >= 1;
-  const s = String(v).trim().toLowerCase();
-  if(/^y/.test(s)) return true;
-  const n = s.match(/^\d+/); if(n) return parseInt(n[0]) >= 1;
-  return false;
-}
-function parsePct(v){
-  if(v===null||v===undefined||v==="") return null;
-  let n = (typeof v === "number") ? v : parseFloat(String(v).replace(/%/g,""));
-  if(isNaN(n)) return null;
-  return n > 1.5 ? n/100 : n;
-}
-const titleCase = s => String(s||"").trim().toLowerCase().replace(/\b\w/g, c=>c.toUpperCase());
 
-// ---------- models ----------
-// Cohorts schema (restructured 2026-07-28):
-// A date · B registered · C attended · D show% · E no-show · F replay · G reached%
-// H apps · I appRate% · J booked · K cash-Whop override · L attendance source · M verified · N notes
-function parseCohorts(table){
-  const byKey = {};
-  for(const row of table.rows){
-    const d = asDate(val(row,0));
-    if(!(d instanceof Date)) continue;
-    const key = dayKey(d);
-    if(!byKey[key]){ byKey[key] = {date:d, notes:[]}; }
-    const o = byKey[key];
-    const put = (k,v) => { if(v!==null && v!=="" && v!==undefined && (o[k]===undefined||o[k]===null||o[k]==="")) o[k]=v; };
-    put("reg", val(row,1)); put("att", val(row,2)); put("show", parsePct(val(row,3)));
-    put("noshow", val(row,4)); put("replay", val(row,5)); put("reached", parsePct(val(row,6)));
-    put("apps", val(row,7)); put("appRate", parsePct(val(row,8))); put("booked", val(row,9));
-    put("cashWhop", parseMoney(val(row,10), "Cohorts "+key));
-    put("src", val(row,11)); put("verified", val(row,12));
-    const n = val(row,13); if(n) o.notes.push(String(n));
-  }
-  const keys = Object.keys(byKey);
-  const dupes = keys.filter(k=>byKey[k].notes.length > 1);
-  const out = keys.map(k=>({...byKey[k], notes:byKey[k].notes.join(" · ")}));
-  out.sort((a,b)=>a.date-b.date);
-  // internal consistency check — the funnel must add up
-  for(const c of out){
-    if(c.reg && c.att && c.noshow){
-      const gap = Number(c.reg) - (Number(c.att) + Number(c.noshow));
-      if(Math.abs(gap) > 1) flag("Cohorts "+dayKey(c.date),
-        `Attended (${c.att}) + No-Show (${c.noshow}) = ${Number(c.att)+Number(c.noshow)}, but Registered reads ${c.reg}`);
-    }
-    if(String(c.verified||"").toUpperCase()==="PROXY")
-      flag("Cohorts "+dayKey(c.date), `Attendance is an estimate from ${c.src||"a click proxy"}, not a verified live count`);
-  }
-  return out;
+const n = v => (typeof v === "number" && isFinite(v)) ? v : 0;
+const has = v => v !== null && v !== undefined && v !== "";
+
+/* ---------------- format ---------------- */
+const money = v => (v === null || !isFinite(v)) ? "—" : "$" + Math.round(v).toLocaleString("en-US");
+const money2 = v => (v === null || !isFinite(v)) ? "—" : "$" + v.toLocaleString("en-US",{minimumFractionDigits:0, maximumFractionDigits:0});
+const num = v => (v === null || !isFinite(v)) ? "—" : Math.round(v).toLocaleString("en-US");
+const pct = v => (v === null || !isFinite(v)) ? "—" : (v*100).toFixed(1) + "%";
+const wkShort = w => { const p = String(w).split("-"); if(p.length !== 3) return w;
+  return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+p[1]-1] + " " + (+p[2]); };
+const esc = s => String(s === null || s === undefined ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+/* ---------------- math ---------------- */
+const sum = (rows, f) => rows.reduce((s,r) => s + n(f(r)), 0);
+const div = (a,b) => (b > 0 ? a/b : null);
+
+/* The Speed to Dial tab is a ROLLING 28-DAY WINDOW (STD_WINDOW_DAYS in the Apps
+   Script). Appointments older than that drop off the tab entirely, so every
+   appointment-derived metric decays for older weeks. A week whose last day is
+   already outside the window has no appointment data left at all, and printing
+   0% there would read as "nobody dialed fast" rather than "the data aged out". */
+const STD_WINDOW_DAYS = 28;
+function stdCutoff(){
+  const d = new Date(Date.now() - STD_WINDOW_DAYS*86400000);
+  return d.getUTCFullYear() + "-" + String(d.getUTCMonth()+1).padStart(2,"0") + "-" + String(d.getUTCDate()).padStart(2,"0");
 }
-// The Daily tab is append-only, so a day gets more than one row whenever the snapshot is run by
-// hand on top of its 8am trigger. Roll those into one point per day: running totals come from the
-// last snapshot of the day, deltas are summed so a manual re-run cannot hide the day's movement.
-function parseDaily(table){
-  const byDay = {};
-  for(const row of table.rows){
-    const d = asDate(val(row,0));
-    if(!(d instanceof Date)) continue;
-    const key = dayKey(d);
-    const appsD = Number(val(row,3)) || 0, bookedD = Number(val(row,5)) || 0;
-    const prior = byDay[key];
-    byDay[key] = {date:d, size:val(row,1), apps:val(row,2), booked:val(row,4),
-      appsD:   (prior ? prior.appsD   : 0) + appsD,
-      bookedD: (prior ? prior.bookedD : 0) + bookedD,
-      stages:[val(row,6),val(row,7),val(row,8),val(row,9),val(row,10),val(row,11),val(row,12)],
-      snapshots:(prior ? prior.snapshots : 0) + 1};
-  }
-  const out = Object.values(byDay);
-  out.sort((a,b)=>a.date-b.date);
-  return out;
+function weekEnd(w){
+  const p = String(w).split("-"); if(p.length !== 3) return w;
+  const d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2] + 6));
+  return d.getUTCFullYear() + "-" + String(d.getUTCMonth()+1).padStart(2,"0") + "-" + String(d.getUTCDate()).padStart(2,"0");
 }
-function parseEmail(table){
+const agedOut = w => weekEnd(w) < stdCutoff();
+
+function inRange(w){ return w >= S.from && w <= S.to; }
+const wsRows = () => S.ws.filter(r => inRange(r["Week (Thu)"]));
+const csRows = () => S.cs.filter(r => inRange(r["Week (Thu)"]));
+const ssRows = () => S.ss.filter(r => inRange(r["Week (Thu)"]));
+
+/* ---------------- svg helpers ---------------- */
+const PLOT = { x0:52, x1:552, y0:14, y1:170, w:500, h:156 };
+
+function yTicks(max, count){
   const out = [];
-  for(const row of table.rows){
-    const d = asDate(val(row,0));
-    if(!val(row,1)) continue;
-    out.push({date:d, name:val(row,1), sent:val(row,2), deliv:parsePct(val(row,3)), openR:parsePct(val(row,5)), clickR:parsePct(val(row,7))});
-  }
+  for(let i=0;i<=count;i++) out.push(max*i/count);
   return out;
 }
-function parseEOC(table){
-  const out = [];
-  for(const row of table.rows){
-    const ts = asDate(val(row,0));
-    const prospect = val(row,4);
-    if(!ts && !prospect) continue;
-    if(!val(row,2) && !prospect) continue;
-    const dateClosed = asDate(val(row,1));
-    const ctx = "EOC · "+(prospect||"(no name)")+" "+dLabel(dateClosed||ts);
-    const cash = parseMoney(val(row,8), ctx);
-    const rev  = parseMoney(val(row,9), ctx);
-    const closedN = parseNum(val(row,6));
-    const r = {
-      ts, date: dateClosed || ts,
-      closer: titleCase(val(row,2)) || null,
-      setter: titleCase(val(row,3)) || null,
-      prospect: prospect || "",
-      closed: (closedN!==null ? closedN>=1 : false) || (cash!==null && cash>0),
-      show: parseYes(val(row,7)),
-      cash: cash||0, rev: rev||0,
-      offer: parseYes(val(row,13)),
-      resch: parseYes(val(row,12)) || parseYes(val(row,16)),
-      cxlUs: parseYes(val(row,14)), cxlLead: parseYes(val(row,15)),
-      notes: val(row,11) || ""
-    };
-    if(!r.closer) flag(ctx, "No closer name on this call");
-    if(!r.setter) flag(ctx, "No setter name — this call is missing from the setter board");
-    if(r.closed && !r.cash) flag(ctx, "Marked closed but cash reads zero — close rate counts it, cash does not");
-    out.push(r);
-  }
-  out.sort((a,b)=>a.date-b.date);
-  return out;
+function gridSvg(max, fmt, count){
+  count = count || 4;
+  let g = '<g class="gridline">', t = '<g class="axis-txt" text-anchor="end">';
+  yTicks(max,count).forEach(v => {
+    const y = PLOT.y1 - (max ? v/max : 0)*PLOT.h;
+    g += '<line x1="'+PLOT.x0+'" y1="'+y.toFixed(1)+'" x2="'+PLOT.x1+'" y2="'+y.toFixed(1)+'"/>';
+    t += '<text x="'+(PLOT.x0-7)+'" y="'+(y+3.4).toFixed(1)+'">'+fmt(v)+'</text>';
+  });
+  return g + "</g>" + t + "</g>";
 }
-// Speed to Dial tab: rows 1-7 summary block, row 8 headers, data from row 9.
-// Cols: 0 apptId · 1 calendar · 2 lead · 3 booked · 4 call time · 5 first dial · 6 setter · 7 mins to dial · 8 lead-time hrs · 9 status
-// Summary/header rows have no date in col 3, so they fall out of the date guard on their own.
-function parseSTD(table){
-  const out = [];
-  if(!table) return out;
-  for(const row of table.rows){
-    const booked = asDate(val(row,3));
-    if(!(booked instanceof Date)) continue;
-    const mins = parseNum(val(row,7));
-    out.push({booked, mins, setter:titleCase(val(row,6)), status:String(val(row,9)||"").toLowerCase()});
-  }
-  out.sort((a,b)=>a.booked-b.booked);
-  return out;
+function xLabels(cats){
+  const band = PLOT.w / cats.length;
+  let t = '<g class="axis-txt" text-anchor="middle">';
+  cats.forEach((c,i) => {
+    t += '<text x="'+(PLOT.x0 + band*(i+0.5)).toFixed(1)+'" y="'+(PLOT.y1+18)+'">'+esc(wkShort(c))+'</text>';
+  });
+  return t + "</g>";
 }
-function parseSDR(table){
-  const out = [];
-  for(const row of table.rows){
-    const ts = asDate(val(row,0));
-    const name = titleCase(val(row,2));
-    if(!ts && !name) continue;
-    let d = asDate(val(row,1));
-    if(d && ts && Math.abs(d - ts) > 1000*3600*24*30){ flag("SDR EOD · "+name, `Date reads "${fmt(row,1)}" — used the submission date instead`); d = null; }
-    const ctx = "SDR EOD · "+name+" "+dLabel(d||ts);
-    out.push({
-      date: d || ts, name,
-      convosQ: parseNum(val(row,4), ctx, "quality convos"),
-      dials: parseNum(val(row,5), ctx, "dials"),
-      sets: parseNum(val(row,6), null),
-      onCal: parseNum(val(row,7), null),
-      bottleneck: val(row,11) || ""
+function niceMax(v){
+  if(!(v > 0)) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  return Math.ceil(v/mag*2)/2*mag;
+}
+
+function barChart(cats, vals, opt){
+  opt = opt || {};
+  const max = niceMax(Math.max.apply(null, vals.concat([0])));
+  const band = PLOT.w / cats.length;
+  const bw = Math.min(46, band*0.62);
+  let bars = '<g clip-path="url(#'+opt.clip+')" fill="var(--c1)">';
+  vals.forEach((v,i) => {
+    const h = max ? n(v)/max*PLOT.h : 0;
+    const x = PLOT.x0 + band*(i+0.5) - bw/2;
+    bars += '<rect class="bar" x="'+x.toFixed(1)+'" y="'+(PLOT.y1-h).toFixed(1)+'" width="'+bw.toFixed(1)+
+            '" height="'+Math.max(h,0.8).toFixed(1)+'" rx="4"><title>'+esc(wkShort(cats[i]))+' — '+
+            esc(opt.fmt ? opt.fmt(v) : v)+'</title></rect>';
+  });
+  bars += "</g>";
+  return '<svg viewBox="0 0 570 196" role="img" aria-label="'+esc(opt.alt||"")+'">'
+    + '<defs><clipPath id="'+opt.clip+'"><rect x="'+(PLOT.x0-2)+'" y="0" width="'+(PLOT.w+4)+'" height="'+PLOT.y1+'"/></clipPath></defs>'
+    + gridSvg(max, opt.fmt || num) + bars + xLabels(cats) + '</svg>';
+}
+
+function groupedBar(cats, seriesA, seriesB, opt){
+  const max = niceMax(Math.max.apply(null, seriesA.vals.concat(seriesB.vals, [0])));
+  const band = PLOT.w / cats.length;
+  const bw = Math.min(19, band*0.27);
+  let g = '<g clip-path="url(#'+opt.clip+')">';
+  [seriesA, seriesB].forEach((s, si) => {
+    g += '<g fill="'+s.color+'">';
+    s.vals.forEach((v,i) => {
+      const h = max ? n(v)/max*PLOT.h : 0;
+      const cx = PLOT.x0 + band*(i+0.5);
+      const x = cx + (si === 0 ? -bw-1 : 1);
+      g += '<rect class="bar" x="'+x.toFixed(1)+'" y="'+(PLOT.y1-h).toFixed(1)+'" width="'+bw.toFixed(1)+
+           '" height="'+Math.max(h,0.8).toFixed(1)+'" rx="3"><title>'+esc(wkShort(cats[i]))+' — '+
+           esc(s.name)+' '+num(v)+'</title></rect>';
     });
-  }
-  out.sort((a,b)=>a.date-b.date);
-  return out;
-}
-
-// ---------- filter state ----------
-let RAW = null;
-const F = {from:null, to:null, rep:""};
-function inRange(d){
-  if(!(d instanceof Date)) return false;
-  if(F.from && d < F.from) return false;
-  if(F.to && d > F.to) return false;
-  return true;
-}
-function rangeLabel(){
-  if(!F.from && !F.to) return "All time";
-  const a = F.from ? F.from.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "the beginning";
-  const b = F.to ? F.to.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "today";
-  return a+" to "+b;
-}
-
-// ---------- helpers ----------
-function kpi(lbl,v,sub,subClass){
-  return `<div class="kpi"><div class="lbl">${lbl}</div><div class="val">${v}</div><div class="sub ${subClass||""}">${sub||""}</div></div>`;
-}
-function pill(p, hi, mid){
-  if(p===null||p===undefined||isNaN(p)) return `<span class="pill dim">—</span>`;
-  const cls = p>=hi ? "good" : (p>=mid ? "mid" : "bad");
-  return `<span class="pill ${cls}">${pctS(p)}</span>`;
-}
-function sum(arr, f){ return arr.reduce((a,x)=>a+(f(x)||0),0); }
-function esc(s){ return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-
-// ---------- command center (Thu-to-Thu week view) ----------
-// The CC ignores the toolbar filters entirely. Its only time control is the week
-// stepper: one webinar cohort at a time, defaulting to the most recent.
-let ccIdx = null;
-
-function tile(lbl, v, sub, cls, spk){
-  return `<div class="t ${cls||""}"><div class="t-top"><span class="lbl">${lbl}</span>${spk||""}</div><div class="val">${v}</div><div class="sub">${sub||""}</div></div>`;
-}
-// 4-6 point inline trend. Deliberately unlabeled — direction at a glance, charts live on the other tabs.
-function spark(vals){
-  const v = vals.filter(x=>x!==null&&x!==undefined&&x!==""&&!isNaN(x)).map(Number);
-  if(v.length<2) return "";
-  const w=54,h=18,min=Math.min(...v),max=Math.max(...v),rng=(max-min)||1;
-  const y=x=>(h-2-((x-min)/rng)*(h-4)).toFixed(1);
-  const pts=v.map((x,i)=>((i/(v.length-1))*(w-4)).toFixed(1)+","+y(x)).join(" ");
-  return `<svg class="spk" width="${w}" height="${h}"><polyline points="${pts}" fill="none" stroke="#C7BBAC" stroke-width="1.5"/><circle cx="${w-4}" cy="${y(v[v.length-1])}" r="2.2" fill="#7A1420"/></svg>`;
-}
-function dTxt(cur, pr, f){
-  if(cur===null||cur===undefined||pr===null||pr===undefined||cur===""||pr==="") return "";
-  cur=Number(cur); pr=Number(pr);
-  if(isNaN(cur)||isNaN(pr)) return "";
-  const d=cur-pr, up=d>=0, ff=f||(n=>Math.abs(n).toLocaleString());
-  return `<span class="${up?"up":"dn"}">${up?"&#9650;":"&#9660;"} ${ff(d)}</span> vs prior wk`;
-}
-const st3 = (v, good, warn) => (v===null||v===undefined||isNaN(v)) ? "" : (v>=good ? "good" : (v>=warn ? "warn" : "bad"));
-
-function renderCC(cohorts, eocAll, sdrAll, stdAll){
-  const el = id => document.getElementById(id);
-  const agenda = [];
-
-  if(!cohorts.length){
-    el("cc-wk-main").textContent = "No webinar weeks yet";
-    ["cc-verdict","cc-webinar","cc-sales","cc-setters"].forEach(id=>el(id).innerHTML="");
-    el("rail-body").innerHTML = `<div class="watch"><span class="wd warn"></span><span>The Cohorts tab is empty — nothing to recap.</span></div>`;
-    return;
-  }
-  if(ccIdx===null || ccIdx>cohorts.length-1 || ccIdx<0) ccIdx = cohorts.length-1;
-  const c = cohorts[ccIdx], prevC = ccIdx>0 ? cohorts[ccIdx-1] : null;
-  const wkStart = c.date, wkEnd = new Date(c.date.getTime()+7*86400000);
-  const open = Date.now() < wkEnd.getTime();
-
-  // ---- header + stepper ----
-  el("cc-wk-main").innerHTML = "Thu "+dLabel(wkStart)+" &rarr; Thu "+dLabel(wkEnd);
-  el("cc-wk-sub").textContent = "Masterclass "+wkStart.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})
-    + (prevC ? " · compared to the "+dLabel(prevC.date)+" week" : "");
-  const chip = el("cc-wk-chip");
-  chip.className = "wk-chip "+(open?"open":"final");
-  chip.textContent = open ? "in progress — calls run thru Wed "+dLabel(new Date(wkEnd.getTime()-86400000)) : "final";
-  el("cc-prev").disabled = ccIdx<=0;
-  el("cc-next").disabled = ccIdx>=cohorts.length-1;
-
-  // ---- staleness alarm: a scoreboard that silently stops updating is worse than none ----
-  const latest = cohorts[cohorts.length-1];
-  const ageD = Math.floor((Date.now()-latest.date.getTime())/86400000);
-  const ban = el("cc-stale");
-  if(ageD > 8){
-    ban.style.display = "block";
-    ban.innerHTML = `<b>No webinar row since ${dLabel(latest.date)}</b> (${ageD} days). The Thursday sheet feed is likely broken — everything below may be stale. Fix the Apps Script triggers before trusting this page.`;
-    agenda.push(["bad",`Sheet feed is stale — no webinar row in <b>${ageD} days</b>. Fix the triggers first.`]);
-  } else ban.style.display = "none";
-
-  // ---- week slices (unfiltered sources — the CC has its own clock) ----
-  const inWk = (rows, key) => rows.filter(r => r[key] >= wkStart && r[key] < wkEnd);
-  const eoc = inWk(eocAll, "date"), sdr = inWk(sdrAll, "date"), std = inWk(stdAll, "booked");
-  const stat = rows => ({ n:rows.length, shows:rows.filter(r=>r.show).length, closes:rows.filter(r=>r.closed).length,
-    cash:sum(rows,r=>r.cash), rev:sum(rows,r=>r.rev), cxlUs:rows.filter(r=>r.cxlUs).length, cxlLead:rows.filter(r=>r.cxlLead).length });
-  const s = stat(eoc);
-  const wkCashOf = co => { // cash for any cohort, for deltas and sparklines
-    if(co.cashWhop!=null) return co.cashWhop;
-    const end = new Date(co.date.getTime()+7*86400000);
-    return sum(eocAll.filter(r=>r.date>=co.date && r.date<end), r=>r.cash);
-  };
-  const hist = f => cohorts.slice(Math.max(0,ccIdx-5), ccIdx+1).map(f); // up to 6 weeks incl. selected
-
-  // ---- verdict row ----
-  const cash = wkCashOf(c);
-  const cashSrc = c.cashWhop!=null ? "Whop override" : "EOC reports";
-  const prevCash = prevC ? wkCashOf(prevC) : null;
-  const cashPct = cash!=null ? cash/S.cashWk : null;
-  let v = "";
-  v += tile("Cash Collected", money(cash), cashSrc+" · goal "+money(S.cashWk)+"<br>"+dTxt(cash, prevCash, n=>money(Math.abs(n))),
-    st3(cashPct, 1, 0.8), spark(hist(wkCashOf)));
-  v += tile("Revenue Generated", money(s.rev), "contracted value · "+s.closes+" close"+(s.closes===1?"":"s"), "");
-  const cc = s.rev ? cash/s.rev : null;
-  v += tile("Cash / Contracted", cc!=null?pctS(cc):"&mdash;", "collected up front · healthy &ge;60%", cc!=null?st3(cc,0.6,0.45):"");
-  el("cc-verdict").innerHTML = v;
-  if(cashPct!=null && cashPct<1) agenda.push([cashPct<0.8?"bad":"warn",`Cash <b>${money(cash)}</b> vs the ${money(S.cashWk)} weekly goal.`]);
-  if(cc!=null && cc<0.45) agenda.push(["warn",`Only <b>${pctS(cc)}</b> of contracted revenue collected — payment plans piling up.`]);
-
-  // ---- webinar ----
-  const bookRate = (c.booked!=null && Number(c.apps)) ? Number(c.booked)/Number(c.apps) : null;
-  const prevBookRate = (prevC && prevC.booked!=null && Number(prevC.apps)) ? Number(prevC.booked)/Number(prevC.apps) : null;
-  let w = "";
-  w += tile("Registrants", c.reg??"&mdash;", dTxt(c.reg, prevC?prevC.reg:null), Number(c.reg)<300?"warn":"", spark(hist(x=>x.reg)));
-  w += tile("Show Rate", pctS(c.show), (c.att??"?")+" live · goal "+S.showWeb+"%<br>"+dTxt(c.show, prevC?prevC.show:null, n=>Math.abs(n*100).toFixed(1)+" pts"),
-    st3(c.show, S.showWeb/100, (S.showWeb-3)/100), spark(hist(x=>x.show!=null?x.show*100:null)));
-  w += tile("Applications", c.apps??"&mdash;", (c.appRate!=null?pctS(c.appRate)+" of attendees · ":"")+dTxt(c.apps, prevC?prevC.apps:null), "", spark(hist(x=>x.apps)));
-  w += tile("Calls Booked", c.booked??"&mdash;", (bookRate!=null?pctS(bookRate)+" of apps · ":"")+dTxt(c.booked, prevC?prevC.booked:null), "", spark(hist(x=>x.booked)));
-  el("cc-webinar").innerHTML = w;
-  if(Number(c.reg)<300) agenda.push(["warn",`Registrations <b>${c.reg}</b> — under the 300 floor.`]);
-  if(c.show!=null && c.show < (S.showWeb-3)/100) agenda.push(["bad",`Webinar show rate <b>${pctS(c.show)}</b>, goal ${S.showWeb}%.`]);
-  if(String(c.verified||"").toUpperCase()==="PROXY") agenda.push(["warn",`Attendance for ${dLabel(c.date)} is still the click <b>proxy</b> — enter the YouTube Studio count.`]);
-
-  // ---- sales calls ----
-  const showR = s.n ? s.shows/s.n : null;
-  const closeR = s.shows ? s.closes/s.shows : null;
-  const cxl = s.cxlUs + s.cxlLead;
-  const cxlR = s.n ? cxl/s.n : null;
-  let sc = "";
-  if(s.n){
-    sc += tile("Call Show Rate", pctS(showR), s.shows+" of "+s.n+" · goal "+S.showCall+"%", st3(showR, S.showCall/100, S.showCall/100*0.85));
-    sc += tile("Cancel Rate", pctS(cxlR), cxl+" cancel"+(cxl===1?"":"s")+" · "+s.cxlUs+" us / "+s.cxlLead+" lead", cxlR>0.25?"bad":(cxlR>0.15?"warn":""));
-    sc += tile("Close Rate", closeR!=null?pctS(closeR):"&mdash;", s.closes+" close"+(s.closes===1?"":"s")+" of "+s.shows+" shows · goal "+S.close+"%", st3(closeR, S.close/100, S.close/100*0.66));
-    sc += tile("AOV", s.closes?money(s.rev/s.closes):"&mdash;", "revenue / close", "");
-    if(showR!=null && s.n>=5 && showR < S.showCall/100*0.85) agenda.push(["bad",`Call show rate <b>${pctS(showR)}</b>, goal ${S.showCall}%.`]);
-    if(closeR!=null && s.shows>=5 && closeR < S.close/100*0.66) agenda.push(["bad",`Close rate <b>${pctS(closeR)}</b>, goal ${S.close}%.`]);
-    if(cxlR!=null && cxlR>0.25) agenda.push(["warn",`Cancel rate <b>${pctS(cxlR)}</b> — dig into why on the call list.`]);
-    const noSet = eoc.filter(r=>!r.setter).length;
-    if(noSet>2) agenda.push(["warn",`<b>${noSet}</b> calls this week have no setter named — setter board is undercounting.`]);
-  } else {
-    sc = tile("No calls "+(open?"yet":"")+" this week","&mdash;", open?"EOC reports land as calls happen":"no EOC rows in this window","");
-  }
-  el("cc-sales").innerHTML = sc;
-
-  // ---- setters ----
-  const fMin = m => m==null ? "&mdash;" : (m>=120 ? (m/60).toFixed(m>=600?0:1).replace(/\.0$/,"")+"h" : Math.round(m)+"m");
-  const dialed = std.filter(r=>r.mins!=null);
-  const hitTgt = dialed.filter(r=>r.mins<=S.stdMin).length;
-  const stdPct = std.length ? hitTgt/std.length : null;
-  const avgMin = dialed.length ? Math.round(sum(dialed,r=>r.mins)/dialed.length) : null;
-  const never = std.length - dialed.length;
-  const dials = sum(sdr, r=>r.dials), convos = sum(sdr, r=>r.convosQ), sets = sum(sdr, r=>r.sets);
-  const days = new Set(sdr.map(r=>dayKey(r.date))).size;
-  let st = "";
-  if(stdAll.length){
-    st += tile("Speed to Lead", std.length?pctS(stdPct):"&mdash;",
-      std.length ? `dialed &le;${S.stdMin}m of booking · avg <b>${fMin(avgMin)}</b>`+(never?` · ${never} never dialed`:"") : "no bookings this week",
-      std.length?st3(stdPct,0.8,0.6):"");
-    if(std.length && stdPct<0.6) agenda.push(["bad",`Only <b>${pctS(stdPct)}</b> of bookings dialed within ${S.stdMin} min (avg ${fMin(avgMin)}).`]);
-    if(never>3) agenda.push(["warn",`<b>${never}</b> bookings this week were never dialed by a human.`]);
-  } else {
-    st += tile("Speed to Lead","&mdash;","Speed to Dial tab not readable yet","");
-  }
-  st += tile("Pick-Up Rate", dials?pctS(convos/dials):"&mdash;", dials?convos+" convos / "+dials+" dials (proxy)":"no dials reported", "");
-  st += tile("Dials per Set", (sets&&dials)?(dials/sets).toFixed(0):"&mdash;", (sets||dials)?dials+" dials · "+sets+" sets":"", (sets&&dials&&dials/sets>40)?"warn":"");
-  st += tile("Dials", dials||"&mdash;", days?("avg "+Math.round(dials/days)+"/day over "+days+" reported day"+(days===1?"":"s")+" · goal "+S.dials+"/day"):"", days?st3(dials/days, S.dials, S.dials*0.5):"");
-  el("cc-setters").innerHTML = st;
-  if(days && dials/days < S.dials*0.5) agenda.push(["warn",`Dial pace <b>${Math.round(dials/days)}/day</b>, goal ${S.dials}.`]);
-
-  // ---- funnel chart ----
-  el("funnel-hint").textContent = "Webinar "+dLabel(c.date)+(open?" · sales week still in progress":"");
-  const reached = (Number(c.att)||0)+(Number(c.replay)||0);
-  mkChart("ch-funnel",{
-    type:"bar",
-    data:{labels:["Registered","Reached (live+replay)","Applied","Booked","Call Showed","Closed"],
-      datasets:[{data:[c.reg, reached, c.apps, c.booked, s.shows, s.closes].map(x=>Number(x)||0),
-        backgroundColor:[C.wine,C.blushD,C.sand,C.taupe,C.teal,C.gold],borderRadius:6}]},
-    options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{grid:{color:C.grid}},y:{grid:{display:false}}},maintainAspectRatio:false}
+    g += "</g>";
   });
-
-  // ---- Monday agenda rail ----
-  if(health.length) agenda.push(["warn",`<b>${health.length}</b> data issues — see the Data Health tab.`]);
-  if(open) agenda.push(["ok",`This week is still open — final call numbers land Wed ${dLabel(new Date(wkEnd.getTime()-86400000))}.`]);
-  if(!agenda.filter(a=>a[0]!=="ok").length) agenda.unshift(["ok","Everything tracked is inside its goal. Review wins, then plan the week."]);
-  const order = {bad:0, warn:1, ok:2};
-  agenda.sort((a,b)=>order[a[0]]-order[b[0]]);
-  el("rail-body").innerHTML = agenda.map(a=>`<div class="watch"><span class="wd ${a[0]}"></span><span>${a[1]}</span></div>`).join("");
-  const issues = agenda.filter(a=>a[0]!=="ok").length;
-  const rc = el("rail-count");
-  rc.textContent = issues; rc.className = "rail-count"+(issues?" has":"");
+  g += "</g>";
+  return '<svg viewBox="0 0 570 196" role="img" aria-label="'+esc(opt.alt||"")+'">'
+    + '<defs><clipPath id="'+opt.clip+'"><rect x="'+(PLOT.x0-2)+'" y="0" width="'+(PLOT.w+4)+'" height="'+PLOT.y1+'"/></clipPath></defs>'
+    + gridSvg(max, num) + g + xLabels(cats) + '</svg>';
 }
 
-// ---------- render ----------
-function render(){
-  killCharts();
-  health = [];
-  const cohortsAll = parseCohorts(RAW.coh);
-  const dailyAll   = parseDaily(RAW.day);
-  const emailAll   = parseEmail(RAW.em);
-  const eocAll     = parseEOC(RAW.eoc);
-  const sdrAll     = parseSDR(RAW.sdr);
+function lineChart(cats, series, opt){
+  opt = opt || {};
+  let all = [];
+  series.forEach(s => s.vals.forEach(v => { if(v !== null && isFinite(v)) all.push(v); }));
+  const max = opt.max || niceMax(Math.max.apply(null, all.concat([0]))) || 1;
+  const band = PLOT.w / cats.length;
+  let out = "";
+  series.forEach(s => {
+    const pts = [];
+    s.vals.forEach((v,i) => {
+      if(v === null || !isFinite(v)) return;
+      const x = PLOT.x0 + band*(i+0.5);
+      const y = PLOT.y1 - (v/max)*PLOT.h;
+      pts.push(x.toFixed(1)+","+y.toFixed(1));
+    });
+    if(pts.length) out += '<polyline fill="none" stroke="'+s.color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="'+pts.join(" ")+'"/>';
+    s.vals.forEach((v,i) => {
+      if(v === null || !isFinite(v)) return;
+      const x = PLOT.x0 + band*(i+0.5);
+      const y = PLOT.y1 - (v/max)*PLOT.h;
+      out += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4.2" fill="'+s.color+'"><title>'+
+             esc(wkShort(cats[i]))+' — '+esc(s.name)+' '+(opt.fmt?opt.fmt(v):v)+'</title></circle>';
+    });
+  });
+  return '<svg viewBox="0 0 570 196" role="img" aria-label="'+esc(opt.alt||"")+'">'
+    + gridSvg(max, opt.fmt || pct) + out + xLabels(cats) + '</svg>';
+}
 
-  // populate rep dropdown once
-  const sel = document.getElementById("f-rep");
-  if(sel.options.length <= 1){
-    const names = new Set();
-    eocAll.forEach(r=>{ if(r.closer) names.add(r.closer); if(r.setter) names.add(r.setter); });
-    sdrAll.forEach(r=>{ if(r.name) names.add(r.name); });
-    [...names].sort().forEach(n=>{ const o=document.createElement("option"); o.value=n; o.textContent=n; sel.appendChild(o); });
-    sel.value = F.rep;
+function legend(items){
+  return '<div class="legend">' + items.map(i =>
+    '<span class="lg"><span class="sw'+(i.line?" line":"")+'" style="background:'+i.color+'"></span>'+esc(i.name)+'</span>'
+  ).join("") + '</div>';
+}
+function kpi(label, val, sub, cls){
+  return '<div class="card kpi'+(cls?" "+cls:"")+'"><span class="kpi-label">'+esc(label)+'</span>'
+    + '<span class="kpi-val">'+esc(val)+'</span>'
+    + (sub ? '<span class="kpi-sub">'+sub+'</span>' : "") + '</div>';
+}
+function table(headers, rows, opts){
+  opts = opts || {};
+  const th = headers.map((h,i) => '<th'+(opts.left && opts.left.indexOf(i)>-1 ? ' class="l"' : "")+'>'+esc(h)+'</th>').join("");
+  const tb = rows.map(r => '<tr>' + r.map((c,i) =>
+    '<td'+(opts.left && opts.left.indexOf(i)>-1 ? ' class="l"' : "")+'>'+(c === null || c === undefined ? "—" : c)+'</td>'
+  ).join("") + '</tr>').join("");
+  return '<div class="tw"><table><thead><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody></table></div>';
+}
+
+/* ---------------- pages ---------------- */
+function renderFunnel(){
+  const R = wsRows(), cats = R.map(r => r["Week (Thu)"]);
+  const cash = sum(R,r=>r["Cash Collected"]), rev = sum(R,r=>r["Revenue Contracted"]);
+  const closes = sum(R,r=>r["Closes"]), held = sum(R,r=>r["Calls Held"]);
+  const reg = sum(R,r=>r["Registered"]), att = sum(R,r=>r["Attended Live"]);
+  const apps = sum(R,r=>r["Applications"]), booked = sum(R,r=>r["Calls Booked (stream day)"]);
+  const c3k = sum(R,r=>r["$3K Closes"]), c497 = sum(R,r=>r["$497 Closes"]);
+
+  const methods = Array.from(new Set(R.filter(r=>has(r["Attended Live"])).map(r=>sourceMethod(r["Attendance Source"])).filter(has)));
+  const unverified = R.filter(r => String(r["Verified"]).toUpperCase() === "NO").length;
+  const dealMix = c3k + c497;
+
+  let h = "";
+  h += '<div class="grid k4">'
+    + kpi("Cash collected", money(cash), esc(R.length + " webinar week" + (R.length===1?"":"s")))
+    + kpi("Revenue contracted", money(rev), (rev-cash) > 0 ? money(rev-cash) + " not yet collected" : "fully collected")
+    + kpi("Closes", num(closes), dealMix ? "offer mix " + pct(div(c3k,dealMix)) + " $3K / " + pct(div(c497,dealMix)) + " $497" : "")
+    + kpi("Cash AOV", money(div(cash,closes)), money(div(cash,held)) + " per live call")
+    + '</div>';
+
+  h += '<div class="grid k5">'
+    + kpi("Registered", num(reg))
+    + kpi("Attended live", num(att))
+    + kpi("Show rate", pct(div(att,reg)), methods.length > 1 ? "mixed measurement" : esc(methods[0]||""), methods.length > 1 ? "flag" : "")
+    + kpi("Applications", num(apps), pct(div(apps,att)) + " of attendees")
+    + kpi("Calls booked", num(booked), pct(div(booked,apps)) + " of applications")
+    + '</div>';
+
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">Cash collected by week</span>'
+    + '<span class="chart-note">Dated on the call, from the closer EOC report</span></div>'
+    + barChart(cats, R.map(r=>n(r["Cash Collected"])), {clip:"cf1", fmt:money, alt:"Cash collected by week"})
+    + '</div>';
+
+  h += '<div class="grid c2">';
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">Registered vs attended live</span>'
+    + '<span class="chart-note">Same unit, one axis</span></div>'
+    + groupedBar(cats,
+        {name:"Registered", color:"var(--c1)", vals:R.map(r=>n(r["Registered"]))},
+        {name:"Attended live", color:"var(--c2)", vals:R.map(r=>n(r["Attended Live"]))},
+        {clip:"cf2", alt:"Registered versus attended live by week"})
+    + legend([{name:"Registered",color:"var(--c1)"},{name:"Attended live",color:"var(--c2)"}])
+    + '</div>';
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">Conversion rates by week</span>'
+    + '<span class="chart-note">All three share a percentage axis</span></div>'
+    + lineChart(cats, [
+        {name:"Show %", color:"var(--c1)", vals:R.map(r=>has(r["Show %"])?r["Show %"]:null)},
+        {name:"App rate %", color:"var(--c2)", vals:R.map(r=>has(r["App Rate % (of attendees)"])?r["App Rate % (of attendees)"]:null)},
+        {name:"Close rate %", color:"var(--c3)", vals:R.map(r=>has(r["Close Rate %"])?r["Close Rate %"]:null)}
+      ], {max:1, fmt:pct, alt:"Show rate, application rate and close rate by week"})
+    + legend([{name:"Show %",color:"var(--c1)",line:1},{name:"App rate %",color:"var(--c2)",line:1},{name:"Close rate %",color:"var(--c3)",line:1}])
+    + '</div>';
+  h += '</div>';
+
+  h += table(
+    ["Week","Reg.","Attended","Show %","Apps","App %","Booked","Held","Closes","Close %","Cash","Source"],
+    R.map(r => [
+      esc(wkShort(r["Week (Thu)"])), num(r["Registered"]), num(r["Attended Live"]),
+      has(r["Show %"])?pct(r["Show %"]):null, num(r["Applications"]),
+      has(r["App Rate % (of attendees)"])?pct(r["App Rate % (of attendees)"]):null,
+      num(r["Calls Booked (stream day)"]), num(r["Calls Held"]), num(r["Closes"]),
+      has(r["Close Rate %"])?pct(r["Close Rate %"]):null, money(r["Cash Collected"]),
+      sourcePill(r)
+    ]), {left:[11]});
+
+  if(methods.length > 1 || unverified){
+    h += '<div class="note warn"><p><strong>Show rate is only comparable within one measurement method.</strong> '
+      + 'This range mixes ' + methods.length + ' ways of counting attendance (' + esc(methods.join(", ")) + ')'
+      + (unverified ? ', and ' + unverified + ' week' + (unverified===1?" is":"s are") + ' still on the GHL click proxy, which ran 22% low against the Zoom report' : '')
+      + '. The YouTube weeks counted channel traffic that never registered, so their show rate is a ceiling, not a floor.</p></div>';
+  }
+  document.getElementById("page-funnel").innerHTML = h;
+}
+
+function sourceMethod(s){
+  s = String(s || "");
+  if(!s) return "";
+  if(/proxy/i.test(s)) return "click proxy";
+  if(/zoom/i.test(s)) return "Zoom";
+  if(/youtube/i.test(s)) return "YouTube";
+  if(/pre-?tracking/i.test(s)) return "pre-tracking";
+  return s;
+}
+function sourcePill(r){
+  const s = String(r["Attendance Source"] || "");
+  if(!s) return "—";
+  const m = sourceMethod(s);
+  const v = String(r["Verified"] || "").toUpperCase();
+  let cls = m === "Zoom" ? "ok" : (m === "click proxy" ? "bad" : "chk");
+  if(v === "NO") cls = "bad";
+  return '<span class="pill '+cls+'" title="'+esc(s)+'">'+esc(m)+'</span>';
+}
+
+function renderSales(){
+  const R = wsRows(), C = csRows(), T = ssRows(), cats = R.map(r=>r["Week (Thu)"]);
+  const held = sum(R,r=>r["Calls Held"]), due = sum(R,r=>r["Calls Due"]);
+  const closes = sum(R,r=>r["Closes"]), cash = sum(R,r=>r["Cash Collected"]);
+  /* appointment metrics only exist inside the rolling 28-day window */
+  const Rlive = R.filter(r => !agedOut(r["Week (Thu)"]));
+  const agedWeeks = R.filter(r => agedOut(r["Week (Thu)"])).map(r => wkShort(r["Week (Thu)"]));
+  const appts = sum(Rlive,r=>r["Appts Booked (system)"]);
+  const never = sum(Rlive,r=>r["Never Dialed"]);
+  const dialedWeightedLive = div(sum(Rlive,r=>n(r["Dialed <=20m %"])*n(r["Appts Booked (system)"])), appts);
+
+  /* per-closer totals across the range */
+  const byCloser = {};
+  C.forEach(r => {
+    const k = r["Closer"]; if(!k) return;
+    byCloser[k] = byCloser[k] || {cash:0, held:0, closes:0, due:0};
+    byCloser[k].cash += n(r["Cash Collected"]); byCloser[k].held += n(r["Calls Held"]);
+    byCloser[k].closes += n(r["Closes"]); byCloser[k].due += n(r["Calls Due"]);
+  });
+  const closers = Object.keys(byCloser).sort((a,b)=>byCloser[b].cash-byCloser[a].cash);
+
+  let h = "";
+  h += '<div class="grid k4">'
+    + kpi("Close rate", pct(div(closes,held)), num(closes) + " of " + num(held) + " calls held")
+    + kpi("Call show rate", pct(div(held,due)), num(held) + " of " + num(due) + " due &middot; target 70%")
+    + kpi("Cash per live call", money(div(cash,held)), "benchmark $800&ndash;$2,000")
+    + kpi("Never dialed", num(never), num(appts) ? pct(div(never,appts)) + " of " + num(appts) + " appts &middot; last 28 days" : "no appointment data in window", never > 0 ? "flag" : "ok")
+    + '</div>';
+
+  h += '<div class="grid c2">';
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">Cash collected by closer</span>'
+    + '<span class="chart-note">Whole selected range</span></div>' + closerBars(closers, byCloser) + '</div>';
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">Speed to lead</span>'
+    + '<span class="chart-note">Share of bookings dialed within 20 minutes</span></div>'
+    + lineChart(cats, [{name:"Dialed ≤20m", color:"var(--c2)",
+        vals:R.map(r => (!agedOut(r["Week (Thu)"]) && n(r["Appts Booked (system)"]) > 0) ? n(r["Dialed <=20m %"]) : null)}],
+        {fmt:pct, alt:"Share of bookings dialed within twenty minutes, by week"})
+    + '<p class="chart-note" style="margin:10px 0 0">Only dials placed through the GHL dialer are visible. Average across weeks still in the window '
+    + pct(dialedWeightedLive) + '.</p></div>';
+  h += '</div>';
+
+  h += '<div class="sect">Closers</div>';
+  h += table(["Week","Closer","Due","Held","Show %","Closes","Close %","Cash","AOV"],
+    C.map(r => [
+      esc(wkShort(r["Week (Thu)"])), esc(title(r["Closer"])), num(r["Calls Due"]), num(r["Calls Held"]),
+      has(r["Call Show %"])?pct(r["Call Show %"]):null, num(r["Closes"]),
+      has(r["Close Rate %"])?pct(r["Close Rate %"]):null, money(r["Cash Collected"]),
+      has(r["Cash AOV"])?money(r["Cash AOV"]):null
+    ]), {left:[1]});
+
+  h += '<div class="sect">Setters</div>';
+  h += table(["Week","Setter","Appts booked","Dialed ≤20m","Avg mins to dial","Held","Cash","EOD filed"],
+    T.map(r => [
+      esc(wkShort(r["Week (Thu)"])), esc(title(r["Setter"])), num(r["Appts Booked (system)"]),
+      has(r["Dialed <=20m %"])?pct(r["Dialed <=20m %"]):null,
+      has(r["Avg Mins to Dial"])?num(r["Avg Mins to Dial"]):null,
+      num(r["Calls Held"]), money(r["Cash Collected"]), num(r["EOD Forms Filed"])
+    ]), {left:[1]});
+
+  if(agedWeeks.length){
+    h += '<div class="note warn"><p><strong>Appointment data only covers the last 28 days.</strong> '
+      + 'Speed to lead, never-dialed and dial times come from a rolling window that drops older bookings, so '
+      + esc(agedWeeks.join(", ")) + ' no longer have any. Those weeks are left off the speed-to-lead line rather than '
+      + 'drawn at zero, and the tiles above count only weeks still inside the window. '
+      + 'Cash, closes and show rates are unaffected and go back to the beginning.</p></div>';
   }
 
-  const repOK = r => !F.rep || r.closer===F.rep || r.setter===F.rep;
-  const cohorts = cohortsAll.filter(c=>inRange(c.date));
-  const daily   = dailyAll.filter(d=>inRange(d.date));
-  const email   = emailAll.filter(e=>inRange(e.date));
-  const eoc     = eocAll.filter(r=>inRange(r.date) && repOK(r));
-  const sdr     = sdrAll.filter(r=>inRange(r.date) && (!F.rep || r.name===F.rep));
+  h += '<div class="note"><p><strong>Read &ldquo;EOD filed&rdquo; before trusting any self-reported number.</strong> '
+    + 'It counts the days that setter actually filed a form that week, out of seven. Appointment counts and dial times '
+    + 'come from the system and do not depend on anyone filing anything.</p>'
+    + '<p style="color:var(--ink-3)">Per-setter appointment counts also run about 12% below the team total, because this table is '
+    + 'generated from the closer call log rather than the appointment log. Team totals above are correct.</p></div>';
 
-  const lbl = rangeLabel() + (F.rep ? " · "+F.rep : "");
-  ["mkt-range","sales-range"].forEach(id=>{
-    document.getElementById(id).innerHTML = `Showing <b>${esc(lbl)}</b> — ${cohorts.length} webinar week${cohorts.length===1?"":"s"}, ${eoc.length} call${eoc.length===1?"":"s"}.`;
-  });
-  document.getElementById("g-showcall").textContent = S.showCall+"%";
-  document.getElementById("g-close").textContent = S.close+"%";
-  document.getElementById("g-dials").textContent = S.dials;
-  document.getElementById("g-rpr").textContent = "$"+S.rpr;
-
-  const eocWk = c => {
-    const end = new Date(c.date.getTime() + 7*24*3600*1000);
-    return eocAll.filter(r => repOK(r) && r.date >= c.date && r.date < end);
-  };
-  const wkStats = rows => ({ n:rows.length, shows:rows.filter(r=>r.show).length, closes:rows.filter(r=>r.closed).length,
-    cash:sum(rows,r=>r.cash), rev:sum(rows,r=>r.rev) });
-  const wkRows = cohorts.map(c=>({c, s:wkStats(eocWk(c))}));
-
-  // Command Center runs off the UNFILTERED data — its own week stepper is the only time control there.
-  renderCC(cohortsAll, eocAll, sdrAll, parseSTD(RAW.std));
-
-  const labelsW = cohorts.map(c=>dLabel(c.date));
-
-  // ===== marketing =====
-  const cohHead = "<tr><th>Webinar</th><th class='num'>Registered</th><th class='num'>Attended</th><th>Show %</th><th class='num'>No-Show</th><th class='num'>Replay</th><th>Reached</th><th class='num'>Apps</th><th>App Rate</th><th class='num'>Booked</th><th class='num'>Call Shows</th><th class='num'>Closes</th><th class='num'>Cash</th><th class='num'>RPR</th><th>Attendance</th><th></th></tr>";
-  const cohRows = wkRows.slice().reverse().map(({c,s})=>{
-    const noteIcon = c.notes ? `<span class="note-icon" title="${esc(c.notes).replace(/"/g,"&quot;")}">ⓘ</span>` : "";
-    const cash = (c.cashWhop!=null) ? c.cashWhop : (s.cash||null);
-    const rpr = (cash!=null && c.reg) ? cash/Number(c.reg) : null;
-    const vpill = String(c.verified||"").toUpperCase()==="PROXY" ? `<span class="pill mid">proxy</span>`
-      : (String(c.verified||"").toUpperCase()==="YES" ? `<span class="pill good">verified</span>` : `<span class="pill dim">—</span>`);
-    return `<tr><td>${dLabel(c.date)}</td><td class="num">${c.reg??""}</td><td class="num">${c.att??""}</td><td>${pill(c.show,S.showWeb/100,(S.showWeb-3)/100)}</td><td class="num">${c.noshow??""}</td><td class="num">${c.replay??""}</td><td>${c.reached!=null?pctS(c.reached):""}</td><td class="num">${c.apps??""}</td><td>${c.appRate!=null?pctS(c.appRate):""}</td><td class="num">${c.booked??""}</td><td class="num">${s.n?s.shows:""}</td><td class="num">${s.n?s.closes:""}</td><td class="num">${cash!=null?money(cash):""}</td><td class="num">${rpr!=null?"$"+rpr.toFixed(0):""}</td><td>${vpill}</td><td>${noteIcon}</td></tr>`;
-  }).join("");
-  document.getElementById("tbl-cohorts").innerHTML = cohorts.length
-    ? cohHead + cohRows + `<tr><td colspan="16" class="small" style="white-space:normal">Call Shows, Closes and Cash come from the closer EOC reports for the Thursday-to-Wednesday week after each webinar. Cash shows the Whop override when one is entered, otherwise the EOC total.</td></tr>`
-    : `<tr><td class="empty">No webinar weeks in this date range.</td></tr>`;
-
-  mkChart("ch-volume",{
-    type:"bar",
-    data:{labels:labelsW,datasets:[
-      {label:"Registered",data:cohorts.map(c=>c.reg),backgroundColor:C.wine,borderRadius:5,maxBarThickness:34},
-      {label:"Applied",data:cohorts.map(c=>c.apps),backgroundColor:C.sand,borderRadius:5,maxBarThickness:34},
-      {label:"Booked",data:cohorts.map(c=>c.booked),backgroundColor:C.blushD,borderRadius:5,maxBarThickness:34}]},
-    options:{plugins:{legend:{position:"bottom",labels:{boxWidth:10,boxHeight:10}}},scales:{y:{grid:{color:C.grid}},x:{grid:{display:false}}},maintainAspectRatio:false}
-  });
-  mkChart("ch-cash",{
-    data:{labels:labelsW,datasets:[
-      {type:"bar",label:"Cash",data:wkRows.map(w=>w.c.cashWhop!=null?w.c.cashWhop:(w.s.cash||null)),backgroundColor:C.teal,borderRadius:6,maxBarThickness:44,yAxisID:"y"},
-      {type:"line",label:"RPR",data:wkRows.map(w=>{const cash=w.c.cashWhop!=null?w.c.cashWhop:w.s.cash; return (cash&&w.c.reg)?cash/Number(w.c.reg):null;}),borderColor:C.gold,backgroundColor:C.gold,tension:0.3,yAxisID:"y1",pointRadius:4}]},
-    options:{plugins:{legend:{position:"bottom",labels:{boxWidth:10,boxHeight:10}}},
-      scales:{y:{grid:{color:C.grid},ticks:{callback:v=>"$"+(v/1000)+"k"}},y1:{position:"right",grid:{display:false},ticks:{callback:v=>"$"+v}},x:{grid:{display:false}}},maintainAspectRatio:false}
-  });
-
-  const dl = daily.map(d=>dLabel(d.date));
-  mkChart("ch-cohortsize",{
-    type:"line",
-    data:{labels:dl,datasets:[{label:"Cohort size",data:daily.map(d=>d.size),borderColor:C.wine,backgroundColor:"rgba(122,20,32,0.08)",fill:true,tension:0.3,pointRadius:3}]},
-    options:{plugins:{legend:{display:false}},scales:{y:{grid:{color:C.grid}},x:{grid:{display:false}}},maintainAspectRatio:false}
-  });
-  mkChart("ch-deltas",{
-    type:"bar",
-    data:{labels:dl,datasets:[
-      {label:"New apps",data:daily.map(d=>d.appsD),backgroundColor:C.sand,borderRadius:5,maxBarThickness:26},
-      {label:"New bookings",data:daily.map(d=>d.bookedD),backgroundColor:C.blushD,borderRadius:5,maxBarThickness:26}]},
-    options:{plugins:{legend:{position:"bottom",labels:{boxWidth:10,boxHeight:10}}},scales:{y:{grid:{color:C.grid}},x:{grid:{display:false}}},maintainAspectRatio:false}
-  });
-
-  const eHead = "<tr><th>Date</th><th>Send</th><th class='num'>Sent</th><th class='num'>Delivered %</th><th class='num'>Open %</th><th class='num'>Click %</th></tr>";
-  const eRows = email.slice().reverse().map(e=>
-    `<tr><td>${dLabel(e.date)}</td><td>${esc(e.name)}</td><td class="num">${e.sent??""}</td><td class="num">${e.deliv!=null?pctS(e.deliv):""}</td><td class="num">${e.openR!=null?pctS(e.openR):""}</td><td class="num">${e.clickR!=null?pctS(e.clickR):""}</td></tr>`).join("");
-  document.getElementById("tbl-email").innerHTML = email.length ? eHead+eRows : `<tr><td class="empty">No sends logged in this date range.</td></tr>`;
-
-  // ===== sales =====
-  const all = wkStats(eoc);
-  const offers = eoc.filter(r=>r.offer);
-  const cxl = eoc.filter(r=>r.cxlUs||r.cxlLead);
-  let sk = "";
-  sk += kpi("Cash Collected", money(all.cash), all.n+" calls in range","");
-  sk += kpi("Revenue", money(all.rev), "contracted value","");
-  sk += kpi("Call Show Rate", all.n?pctS(all.shows/all.n):"—", all.shows+" of "+all.n+" · goal "+S.showCall+"%", (all.n&&all.shows/all.n>=S.showCall/100)?"good":"bad");
-  sk += kpi("Close Rate", all.shows?pctS(all.closes/all.shows):"—", all.closes+" of "+all.shows+" shows · goal "+S.close+"%", (all.shows&&all.closes/all.shows>=S.close/100)?"good":"bad");
-  sk += kpi("AOV", all.closes?money(all.rev/all.closes):"—", "revenue / close","");
-  sk += kpi("Offer Rate", all.n?pctS(offers.length/all.n):"—", offers.length+" offers pitched","");
-  sk += kpi("Cancels", String(cxl.length), eoc.filter(r=>r.cxlUs).length+" us · "+eoc.filter(r=>r.cxlLead).length+" lead","");
-  document.getElementById("s-kpis").innerHTML = sk;
-
-  const group = (rows, key) => {
-    const by = {};
-    for(const r of rows){ const n = r[key]; if(!n) continue; (by[n] = by[n] || []).push(r); }
-    return Object.entries(by).map(([n,m])=>({n, m, shows:m.filter(x=>x.show).length, closes:m.filter(x=>x.closed).length,
-      cash:sum(m,x=>x.cash), rev:sum(m,x=>x.rev)})).sort((a,b)=>b.cash-a.cash);
-  };
-  const closers = group(eoc,"closer"), setters = group(eoc,"setter");
-  const emptyRow = (cols,msg)=>`<tr><td colspan="${cols}" class="empty">${msg}</td></tr>`;
-
-  document.getElementById("tbl-closers").innerHTML =
-    "<tr><th>Closer</th><th class='num'>Calls</th><th class='num'>Shows</th><th>Show %</th><th class='num'>Closes</th><th>Close %</th><th class='num'>Cash</th><th class='num'>Revenue</th></tr>" +
-    (closers.length ? closers.map(r=>`<tr><td class="name">${esc(r.n)}</td><td class="num">${r.m.length}</td><td class="num">${r.shows}</td><td>${pill(r.shows/r.m.length,S.showCall/100,S.showCall/100*0.82)}</td><td class="num">${r.closes}</td><td>${pill(r.shows?r.closes/r.shows:null,S.close/100,S.close/100*0.66)}</td><td class="num">${money(r.cash)}</td><td class="num">${money(r.rev)}</td></tr>`).join("") : emptyRow(8,"No calls in this range."));
-
-  document.getElementById("tbl-setters").innerHTML =
-    "<tr><th>Setter</th><th class='num'>Sets</th><th class='num'>Shows</th><th>Show %</th><th class='num'>Closes</th><th>Set→Close</th><th class='num'>Cash on Sets</th></tr>" +
-    (setters.length ? setters.map(r=>`<tr><td class="name">${esc(r.n)}</td><td class="num">${r.m.length}</td><td class="num">${r.shows}</td><td>${pill(r.shows/r.m.length,S.showCall/100,S.showCall/100*0.82)}</td><td class="num">${r.closes}</td><td>${pill(r.m.length?r.closes/r.m.length:null,0.20,0.10)}</td><td class="num">${money(r.cash)}</td></tr>`).join("") : emptyRow(7,"No sets in this range."));
-
-  document.getElementById("cc-pct").textContent = "· "+S.ccPct+"% of cash";
-  document.getElementById("sc-pct").textContent = "· "+S.scPct+"% of cash on sets";
-  document.getElementById("tbl-comm-c").innerHTML =
-    "<tr><th>Closer</th><th class='num'>Cash</th><th class='num'>Commission</th></tr>" +
-    (closers.length ? closers.map(r=>`<tr><td class="name">${esc(r.n)}</td><td class="num">${money(r.cash)}</td><td class="num">${money(r.cash*S.ccPct/100)}</td></tr>`).join("") : emptyRow(3,"—"));
-  document.getElementById("tbl-comm-s").innerHTML =
-    "<tr><th>Setter</th><th class='num'>Cash on Sets</th><th class='num'>Commission</th></tr>" +
-    (setters.length ? setters.map(r=>`<tr><td class="name">${esc(r.n)}</td><td class="num">${money(r.cash)}</td><td class="num">${money(r.cash*S.scPct/100)}</td></tr>`).join("") : emptyRow(3,"—"));
-
-  document.getElementById("tbl-sdr").innerHTML =
-    "<tr><th>Date</th><th>Setter</th><th class='num'>Dials</th><th class='num'>Quality Convos</th><th class='num'>Sets</th><th class='num'>On Calendar</th><th>Bottleneck</th></tr>" +
-    (sdr.length ? sdr.slice().reverse().map(r=>{
-      const dp = r.dials===null ? "—" : (r.dials>=S.dials?`<span class="pill good">${r.dials}</span>`:(r.dials>=S.dials*0.5?`<span class="pill mid">${r.dials}</span>`:`<span class="pill bad">${r.dials}</span>`));
-      return `<tr><td>${dLabel(r.date)}</td><td class="name">${esc(r.name)}</td><td class="num">${dp}</td><td class="num">${r.convosQ??""}</td><td class="num">${r.sets??""}</td><td class="num">${r.onCal??""}</td><td class="small" style="white-space:normal;max-width:340px">${esc(r.bottleneck)}</td></tr>`;
-    }).join("") : emptyRow(7,"No end-of-day reports in this range."));
-
-  const callsShown = eoc.slice().reverse();
-  document.getElementById("calls-hint").textContent = callsShown.length
-    ? `${callsShown.length} call${callsShown.length===1?"":"s"} in range, newest first`+(F.rep?" · "+F.rep:"") : "";
-  document.getElementById("tbl-calls").innerHTML =
-    "<tr><th>Date</th><th>Prospect</th><th>Closer</th><th>Setter</th><th>Showed</th><th>Result</th><th class='num'>Cash</th><th>Notes</th></tr>" +
-    (callsShown.length ? callsShown.map(r=>{
-      const res = r.closed ? `<span class="pill good">Closed</span>` :
-        (r.cxlLead||r.cxlUs) ? `<span class="pill bad">Cancelled</span>` :
-        r.resch ? `<span class="pill wine">Rebooked</span>` :
-        r.show ? `<span class="pill mid">No close</span>` : `<span class="pill dim">No show</span>`;
-      const note = String(r.notes).length>90 ? String(r.notes).slice(0,90)+"…" : r.notes;
-      return `<tr><td>${dLabel(r.date)}</td><td class="name">${esc(r.prospect)}</td><td>${esc(r.closer)||"—"}</td><td>${esc(r.setter)||"—"}</td><td>${r.show?"✓":"—"}</td><td>${res}</td><td class="num">${r.cash?money(r.cash):""}</td><td class="small" style="white-space:normal;max-width:320px">${esc(note)}</td></tr>`;
-    }).join("") : emptyRow(8,"No calls in this range."));
-
-  // ===== data health =====
-  const hl = document.getElementById("health-list");
-  if(!health.length){
-    hl.innerHTML = `<div class="watch"><span class="wd ok"></span><span>Nothing to fix. Every value in range read cleanly and the funnel adds up.</span></div>`;
-  } else {
-    hl.innerHTML = "<table><tr><th>Where</th><th>Issue</th></tr>" +
-      health.map(h=>`<tr><td style="white-space:normal">${esc(h.where)}</td><td style="white-space:normal">${esc(h.what)}</td></tr>`).join("") + "</table>" +
-      `<div class="legend">Fix these at the source. Making the form fields numbers-only and requiring a setter name clears most of them. The dashboard flags what it cannot read rather than guessing.</div>`;
-  }
+  document.getElementById("page-sales").innerHTML = h;
 }
 
-// ---------- boot / refresh ----------
-async function loadAll(){
-  document.getElementById("fail").style.display="none";
-  document.getElementById("load").style.display="block";
+function title(s){ s = String(s||""); return s.charAt(0) + s.slice(1).toLowerCase(); }
+
+function closerBars(closers, by){
+  if(!closers.length) return '<p class="chart-note">No closer rows in this range.</p>';
+  const max = Math.max.apply(null, closers.map(k => by[k].cash).concat([1]));
+  const rowH = 44, H = closers.length*rowH + 8;
+  let out = '<svg viewBox="0 0 570 '+H+'" role="img" aria-label="Cash collected by closer">';
+  closers.forEach((k,i) => {
+    const y = i*rowH + 6, w = Math.max(by[k].cash/max*330, 2);
+    out += '<text x="82" y="'+(y+22)+'" text-anchor="end" font-family="var(--ui)" font-size="12.5" font-weight="600" fill="var(--ink)">'+esc(title(k))+'</text>';
+    out += '<rect class="bar" x="92" y="'+y+'" width="'+w.toFixed(1)+'" height="30" rx="4" fill="var(--c1)"'
+        + (i ? ' opacity="'+Math.max(0.45, 1-i*0.28).toFixed(2)+'"' : "") + '><title>'+esc(title(k))+' — '+money(by[k].cash)+'</title></rect>';
+    out += '<text class="dlabel" x="'+(92+w+9).toFixed(1)+'" y="'+(y+20)+'" font-size="11">'+esc(money(by[k].cash))+'</text>';
+    out += '<text class="axis-txt" x="'+(92+w+9).toFixed(1)+'" y="'+(y+31)+'" font-size="9">'
+        + esc(num(by[k].held)) + ' held &middot; ' + esc(pct(div(by[k].closes, by[k].held))) + ' close</text>';
+  });
+  return out + "</svg>";
+}
+
+/* The four headline tiles, matched explicitly. Anything not claimed by a tile
+   falls through to the issues table, so a newly added check can never vanish. */
+const HEALTH_TILES = [
+  {re:/cash in source/i,            label:"Cash reconciliation", sub:"source vs scorecard", money:true},
+  {re:/eoc rows in/i,               label:"Rows dropped",        sub:"cleaning layer"},
+  {re:/appointments in/i,           label:"Appointments lost",   sub:"cleaning layer"},
+  {re:/days since last webinar/i,   label:"Days since webinar",  sub:"alerts past 8", invert:true}
+];
+
+function renderHealth(){
+  const rows = S.dh.filter(r => has(r["Check"]) && has(r["Status"]));
+  const claimed = [];
+  let h = '<div class="grid k4">';
+
+  HEALTH_TILES.forEach(t => {
+    const r = rows.filter(x => t.re.test(String(x["Check"])))[0];
+    if(!r){ h += kpi(t.label, "—", "check not found in sheet", "flag"); return; }
+    claimed.push(r);
+    const ok = String(r["Status"]).toUpperCase() === "OK";
+    const v = typeof r["Count"] === "number" ? (t.money ? money(r["Count"]) : num(r["Count"])) : esc(r["Count"]);
+    h += kpi(t.label, v, t.sub, ok ? "ok" : "flag");
+  });
+  h += '</div>';
+
+  const issues = rows.filter(r => claimed.indexOf(r) === -1);
+  const bad = issues.filter(r => String(r["Status"]).toUpperCase() !== "OK").length;
+
+  h += table(["Check","Count","Status","What it means"],
+    issues.map(r => [
+      esc(r["Check"]), num(r["Count"]),
+      '<span class="pill '+(String(r["Status"]).toUpperCase()==="OK"?"ok":"chk")+'">'+esc(String(r["Status"]).toLowerCase())+'</span>',
+      esc(r["What it means / what to do"])
+    ]), {left:[3]});
+
+  h += '<div class="note"><p><strong>Why this page exists.</strong> Every number on the other two pages inherits whatever is wrong here. '
+    + 'The reconciliation tiles must never move off zero — if one does, a call or a payment stopped flowing through the pipeline and the cash figure is wrong.</p>'
+    + (bad ? '<p style="color:var(--ink-3)">'+bad+' check'+(bad===1?"":"s")+' currently need attention. None of them affect the cash total.</p>' : "")
+    + '</div>';
+
+  document.getElementById("page-health").innerHTML = h;
+}
+
+function daysSince(wk){
+  const p = String(wk).split("-"); if(p.length !== 3) return null;
+  const d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2]));
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+
+/* ---------------- chrome ---------------- */
+function renderAll(){ renderFunnel(); renderSales(); renderHealth(); }
+
+function buildRange(){
+  const from = document.getElementById("from"), to = document.getElementById("to");
+  from.innerHTML = S.weeks.map(w => '<option value="'+w+'">'+wkShort(w)+'</option>').join("");
+  to.innerHTML   = S.weeks.map(w => '<option value="'+w+'">'+wkShort(w)+'</option>').join("");
+  from.value = S.from; to.value = S.to;
+  from.onchange = () => { S.from = from.value; if(S.from > S.to){ S.to = S.from; to.value = S.to; } renderAll(); };
+  to.onchange   = () => { S.to = to.value;     if(S.to < S.from){ S.from = S.to; from.value = S.from; } renderAll(); };
+}
+
+function wireTabs(){
+  const tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+  function sel(t, push){
+    tabs.forEach(x => {
+      const on = x === t;
+      x.setAttribute("aria-selected", on ? "true" : "false");
+      document.getElementById(x.getAttribute("aria-controls")).hidden = !on;
+    });
+    if(push !== false) location.hash = t.id.replace("tab-","");
+  }
+  const wanted = tabs.filter(t => t.id === "tab-" + location.hash.replace("#",""))[0];
+  if(wanted) sel(wanted, false);
+  tabs.forEach(t => {
+    t.addEventListener("click", () => sel(t));
+    t.addEventListener("keydown", e => {
+      const i = tabs.indexOf(t); let x = null;
+      if(e.key === "ArrowRight") x = tabs[(i+1) % tabs.length];
+      if(e.key === "ArrowLeft")  x = tabs[(i-1+tabs.length) % tabs.length];
+      if(x){ e.preventDefault(); x.focus(); sel(x); }
+    });
+  });
+}
+
+function fail(err){
+  document.getElementById("boot").hidden = true;
+  const el = document.getElementById("fail");
+  el.hidden = false;
+  el.innerHTML = '<div class="banner"><strong>The dashboard could not read the Master Tracker.</strong>'
+    + esc(err && err.message ? err.message : String(err))
+    + '<div style="margin-top:12px"><a class="ghost" href="'+SHEET_URL+'" target="_blank" rel="noopener">Open the sheet</a></div></div>';
+  const d = document.getElementById("dot"); d.className = "dot bad";
+  document.getElementById("status-txt").textContent = "Failed to load";
+  throw err;
+}
+
+async function boot(){
+  document.getElementById("sheet-link").href = SHEET_URL;
+  document.getElementById("foot-sheet").href = SHEET_URL;
+  wireTabs();
+  let ws, cs, ss, dh;
   try{
-    const [coh, day, em, eoc, sdr, std] = await Promise.all([
-      gviz(S.sidFunnel,"Cohorts"), gviz(S.sidFunnel,"Daily"), gviz(S.sidFunnel,"Email Stats (manual)"),
-      gviz(S.sidSales,"eoc"), gviz(S.sidSales,"SDR EOD FORM"),
-      gviz(S.sidFunnel,"Speed to Dial").catch(e=>null) // tab appears once the 8/3 script runs; degrade quietly, never block the page
+    const out = await Promise.all([
+      gviz("Weekly Scorecard"), gviz("Closer Stats"), gviz("Setter Stats"), gviz("Data Health")
     ]);
-    RAW = {coh, day, em, eoc, sdr, std};
-    ccIdx = null; // fresh data always lands on the latest webinar week
-    document.getElementById("load").style.display="none";
-    document.querySelector(".page.active").style.display="block";
-    render();
+    ws = out[0]; cs = out[1]; ss = out[2]; dh = out[3];
+  }catch(e){ fail(e); return; }
 
-    const nEoc = RAW.eoc.rows.length;
-    document.getElementById("stamp").textContent =
-      "Updated "+new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",second:"2-digit"})+" · "+nEoc+" EOC rows";
-    const dailyRows = parseDaily(RAW.day);
-    const lastFeed = dailyRows.length ? dailyRows[dailyRows.length-1].date : null;
-    const ageDays = lastFeed ? Math.floor((Date.now()-lastFeed.getTime())/86400000) : null;
-    document.getElementById("feed-note").textContent = lastFeed ? "Auto-feed last ran "+dLabel(lastFeed) : "";
-    document.getElementById("dot").className = "dot"+(ageDays!==null && ageDays>2 ? " stale" : "");
-  }catch(e){
-    document.getElementById("load").style.display="none";
-    const f = document.getElementById("fail");
-    f.style.display="block";
-    f.textContent = "Could not load data: "+e.message+". Check that both sheets are still shared as 'anyone with the link can view', and that the sheet IDs on the Settings tab are right.";
-  }
+  S.ws = ws.filter(r => has(r["Week (Thu)"]));
+  S.cs = cs.filter(r => has(r["Week (Thu)"]));
+  S.ss = ss.filter(r => has(r["Week (Thu)"]));
+  S.dh = dh;
+  if(!S.ws.length) fail(new Error("The Weekly Scorecard tab returned no populated weeks. Check the Apps Script is still writing to this sheet."));
+
+  S.weeks = S.ws.map(r => r["Week (Thu)"]).sort();
+  S.from = S.weeks[0]; S.to = S.weeks[S.weeks.length-1];
+  S.fetched = new Date();
+
+  buildRange();
+  renderAll();
+
+  const stale = daysSince(S.weeks[S.weeks.length-1]);
+  const dot = document.getElementById("dot");
+  dot.className = "dot" + (stale > 8 ? " warn" : "");
+  document.getElementById("status-txt").textContent =
+    "Live · " + S.fetched.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) +
+    (stale > 8 ? " · no webinar row in " + stale + " days" : "");
+  document.getElementById("foot-fetch").textContent =
+    "Fetched " + S.fetched.toLocaleString() + " · " + S.ws.length + " weeks";
+
+  document.getElementById("boot").hidden = true;
+  document.getElementById("app").hidden = false;
 }
-
-// nav
-document.querySelectorAll(".nav button").forEach(b=>{
-  b.addEventListener("click",()=>{
-    document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));
-    b.classList.add("active");
-    document.querySelectorAll(".page").forEach(p=>{p.classList.remove("active");p.style.display="none";});
-    const pg = document.getElementById("page-"+b.dataset.page);
-    pg.classList.add("active"); pg.style.display="block";
-    // CC has its own week stepper; Settings needs no filters. The From/To toolbar belongs to Marketing/Sales/Health only.
-    document.getElementById("toolbar").style.display = (b.dataset.page==="settings"||b.dataset.page==="cc") ? "none" : "flex";
-    charts.forEach(c=>{ try{ c.resize(); }catch(e){} }); // canvases sized while hidden need this
-  });
-});
-
-// filters
-function setPresetActive(p){ document.querySelectorAll(".presets .btn").forEach(x=>x.classList.toggle("on", x.dataset.preset===p)); }
-function applyFilters(){
-  const a = document.getElementById("f-from").value, b = document.getElementById("f-to").value;
-  F.from = a ? new Date(a+"T00:00:00") : null;
-  F.to   = b ? new Date(b+"T23:59:59") : null;
-  F.rep  = document.getElementById("f-rep").value;
-  if(RAW) render();
-}
-document.getElementById("f-from").addEventListener("change",()=>{setPresetActive(null);applyFilters();});
-document.getElementById("f-to").addEventListener("change",()=>{setPresetActive(null);applyFilters();});
-document.getElementById("f-rep").addEventListener("change",applyFilters);
-document.getElementById("btn-refresh").addEventListener("click",loadAll);
-document.getElementById("cc-prev").addEventListener("click",()=>{ if(ccIdx!==null && ccIdx>0){ ccIdx--; if(RAW) render(); } });
-document.getElementById("cc-next").addEventListener("click",()=>{ if(ccIdx!==null){ ccIdx++; if(RAW) render(); } });
-document.querySelectorAll(".presets .btn").forEach(b=>{
-  b.addEventListener("click",()=>{
-    const p = b.dataset.preset, now = new Date();
-    let from=null, to=null;
-    if(p==="wk"){ const d=new Date(now); const back=(d.getDay()>=4)?(d.getDay()-4):(d.getDay()+3); d.setDate(d.getDate()-back); from=d; to=now; }
-    else if(p==="30"){ from=new Date(now.getTime()-30*86400000); to=now; }
-    else if(p==="mo"){ from=new Date(now.getFullYear(),now.getMonth(),1); to=now; }
-    document.getElementById("f-from").value = from ? dayKey(from) : "";
-    document.getElementById("f-to").value   = to ? dayKey(to) : "";
-    setPresetActive(p);
-    applyFilters();
-  });
-});
-
-// settings
-const SF = [["s-showWeb","showWeb"],["s-showCall","showCall"],["s-close","close"],["s-dials","dials"],
-            ["s-stdMin","stdMin"],["s-cashWk","cashWk"],["s-rpr","rpr"],["s-ccPct","ccPct"],["s-scPct","scPct"]];
-function fillSettings(){
-  SF.forEach(([id,k])=>{ document.getElementById(id).value = S[k]; });
-  document.getElementById("s-sidFunnel").value = S.sidFunnel;
-  document.getElementById("s-sidSales").value  = S.sidSales;
-  document.getElementById("lnk-funnel").href = "https://docs.google.com/spreadsheets/d/"+S.sidFunnel+"/edit";
-  document.getElementById("lnk-sales").href  = "https://docs.google.com/spreadsheets/d/"+S.sidSales+"/edit";
-}
-function flashSaved(id){ const e=document.getElementById(id); e.classList.add("show"); setTimeout(()=>e.classList.remove("show"),1400); }
-document.getElementById("btn-save1").addEventListener("click",()=>{
-  SF.forEach(([id,k])=>{ const v = parseFloat(document.getElementById(id).value); if(!isNaN(v)) S[k]=v; });
-  saveSettings(); fillSettings(); flashSaved("saved1"); if(RAW) render();
-});
-document.getElementById("btn-reset").addEventListener("click",()=>{
-  S = Object.assign({}, DEF); saveSettings(); fillSettings(); flashSaved("saved1"); if(RAW) render();
-});
-document.getElementById("btn-save2").addEventListener("click",()=>{
-  S.sidFunnel = document.getElementById("s-sidFunnel").value.trim() || DEF.sidFunnel;
-  S.sidSales  = document.getElementById("s-sidSales").value.trim()  || DEF.sidSales;
-  saveSettings(); fillSettings(); flashSaved("saved2"); loadAll();
-});
-
-fillSettings();
-loadAll();
+boot();
 </script>
 </body>
 </html>
