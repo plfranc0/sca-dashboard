@@ -7,9 +7,10 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>📊</text></svg>">
 <style>
 :root{
-  --ground:#FDF9F4; --surface:#FFFFFF; --surface-2:#FBF4EF; --surface-3:#F6EBE5;
+  --ground:#FDF9F4; --surface:#FFFFFF; --surface-2:#F7EFEA; --surface-3:#F1E4DD;
   --ink:#221418; --ink-2:#4C3A3D; --ink-3:#8A7477;
-  --accent:#7A1420; --hair:#E8DCD6; --hair-2:#F1E5DF;
+  --accent:#7A1420; --head-bg:#7A1420; --head-ink:#FFFFFF;
+  --hair:#E4D6CF; --hair-2:#F0E4DE;
   --c1:#A32235; --c2:#0077A8; --c3:#B57614; --c4:#6B4A8F;
   --good:#2F6B4F; --warn:#9A6B12; --crit:#B3261E;
   --good-bg:#E6F0EA; --warn-bg:#F6EEDD; --crit-bg:#F8E6E4;
@@ -20,9 +21,10 @@
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --ground:#17110F; --surface:#221A19; --surface-2:#2B2120; --surface-3:#332726;
+    --ground:#17110F; --surface:#221A19; --surface-2:#2C2221; --surface-3:#352827;
     --ink:#F4EBE6; --ink-2:#C4B0AC; --ink-3:#8E7B78;
-    --accent:#DC6076; --hair:#38292A; --hair-2:#2E2222;
+    --accent:#DC6076; --head-bg:#4A1F27; --head-ink:#F7E4E6;
+    --hair:#3A2B2B; --hair-2:#2E2323;
     --c1:#DC6076; --c2:#2E93CC; --c3:#C2871A; --c4:#9070C6;
     --good:#5FAF87; --warn:#D2A03F; --crit:#E0706A;
     --good-bg:#1D2A24; --warn-bg:#2C2418; --crit-bg:#2E1E1D;
@@ -30,9 +32,10 @@
   }
 }
 :root[data-theme="dark"]{
-  --ground:#17110F; --surface:#221A19; --surface-2:#2B2120; --surface-3:#332726;
+  --ground:#17110F; --surface:#221A19; --surface-2:#2C2221; --surface-3:#352827;
   --ink:#F4EBE6; --ink-2:#C4B0AC; --ink-3:#8E7B78;
-  --accent:#DC6076; --hair:#38292A; --hair-2:#2E2222;
+  --accent:#DC6076; --head-bg:#4A1F27; --head-ink:#F7E4E6;
+  --hair:#3A2B2B; --hair-2:#2E2323;
   --c1:#DC6076; --c2:#2E93CC; --c3:#C2871A; --c4:#9070C6;
   --good:#5FAF87; --warn:#D2A03F; --crit:#E0706A;
   --good-bg:#1D2A24; --warn-bg:#2C2418; --crit-bg:#2E1E1D;
@@ -40,92 +43,66 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{
-  background:var(--ground); color:var(--ink-2);
-  font-family:var(--ui); font-size:15px; line-height:1.55;
-  -webkit-font-smoothing:antialiased;
-}
-.wrap{max-width:1240px; margin:0 auto; padding:0 22px 88px}
+body{background:var(--ground); color:var(--ink-2); font-family:var(--ui); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased}
+.wrap{max-width:1320px; margin:0 auto; padding:0 20px 80px}
 
-/* ---------- header ---------- */
-header.top{
-  border-bottom:1px solid var(--hair); background:var(--surface);
-  position:sticky; top:0; z-index:20;
-}
-.top-in{
-  max-width:1240px; margin:0 auto; padding:14px 22px;
-  display:flex; align-items:center; gap:20px; flex-wrap:wrap;
-}
+header.top{border-bottom:1px solid var(--hair); background:var(--surface); position:sticky; top:0; z-index:20}
+.top-in{max-width:1320px; margin:0 auto; padding:13px 20px; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
 .brand{display:flex; flex-direction:column; gap:1px; margin-right:auto}
-.brand h1{
-  font-family:var(--display); font-size:20px; font-weight:600; color:var(--ink);
-  margin:0; letter-spacing:-.01em;
-}
+.brand h1{font-family:var(--display); font-size:20px; font-weight:600; color:var(--ink); margin:0; letter-spacing:-.01em}
 .brand .sub{font-size:11.5px; color:var(--ink-3)}
 .status{display:inline-flex; align-items:center; gap:7px; font-size:11.5px; color:var(--ink-3)}
 .dot{width:7px; height:7px; border-radius:50%; background:var(--good); flex:none}
 .dot.warn{background:var(--warn)} .dot.bad{background:var(--crit)}
 .range{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink-3)}
-select{
-  font-family:var(--mono); font-size:12px; color:var(--ink);
-  background:var(--surface); border:1px solid var(--hair);
-  border-radius:5px; padding:5px 8px; cursor:pointer;
-}
+select{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--hair); border-radius:5px; padding:5px 8px; cursor:pointer}
 select:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
-.ghost{
-  font-family:var(--ui); font-size:12px; font-weight:600; color:var(--ink-2);
-  background:none; border:1px solid var(--hair); border-radius:5px;
-  padding:6px 11px; cursor:pointer; text-decoration:none; display:inline-block;
-}
+.ghost{font-family:var(--ui); font-size:12px; font-weight:600; color:var(--ink-2); background:none; border:1px solid var(--hair); border-radius:5px; padding:6px 11px; cursor:pointer; text-decoration:none; display:inline-block}
 .ghost:hover{border-color:var(--accent); color:var(--accent)}
 
-/* ---------- tabs ---------- */
-.tabs{display:flex; gap:2px; max-width:1240px; margin:0 auto; padding:0 22px; flex-wrap:wrap}
-.tab{
-  appearance:none; background:none; border:none; cursor:pointer;
-  font-family:var(--ui); font-size:13px; font-weight:600; color:var(--ink-3);
-  padding:13px 2px; margin-right:22px; border-bottom:2px solid transparent;
-}
+.tabbar{border-bottom:1px solid var(--hair); background:var(--surface)}
+.tabs{display:flex; max-width:1320px; margin:0 auto; padding:0 20px; flex-wrap:wrap}
+.tab{appearance:none; background:none; border:none; cursor:pointer; font-family:var(--ui); font-size:13px; font-weight:600; color:var(--ink-3); padding:13px 2px; margin-right:24px; border-bottom:2px solid transparent}
 .tab:hover{color:var(--ink)}
 .tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent)}
 .tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
-.tabbar{border-bottom:1px solid var(--hair); background:var(--surface)}
 
-/* ---------- layout ---------- */
-.page{padding-top:26px; display:flex; flex-direction:column; gap:14px}
+.page{padding-top:22px; display:flex; flex-direction:column; gap:14px}
 .page[hidden]{display:none}
-.grid{display:grid; gap:12px}
-.k4{grid-template-columns:repeat(4,1fr)}
-.k5{grid-template-columns:repeat(5,1fr)}
-.c2{grid-template-columns:1fr 1fr}
-@media(max-width:900px){.k4,.k5,.c2{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:540px){.k4,.k5,.c2{grid-template-columns:1fr}}
-.card{
-  background:var(--surface); border:1px solid var(--hair);
-  border-radius:8px; padding:16px 18px; box-shadow:var(--shadow);
-}
-.sect{
-  font-family:var(--ui); font-size:10.5px; font-weight:700; letter-spacing:.12em;
-  text-transform:uppercase; color:var(--ink-3); margin:12px 0 -2px;
-}
+.row{display:grid; gap:14px}
+.r3{grid-template-columns:repeat(3,1fr)}
+.r2{grid-template-columns:1fr 1fr}
+.r21{grid-template-columns:2fr 1fr}
+@media(max-width:1080px){.r3{grid-template-columns:1fr 1fr}}
+@media(max-width:820px){.r3,.r2,.r21{grid-template-columns:1fr}}
 
-/* ---------- kpi ---------- */
-.kpi{display:flex; flex-direction:column; gap:4px}
-.kpi-label{
-  font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
-  color:var(--ink-3);
-}
-.kpi-val{
-  font-family:var(--mono); font-variant-numeric:tabular-nums;
-  font-size:26px; font-weight:600; color:var(--ink); line-height:1.08; letter-spacing:-.02em;
-}
-.kpi-sub{font-size:11.5px; color:var(--ink-3)}
-.kpi.flag{border-left:3px solid var(--warn); padding-left:14px; margin-left:-1px}
-.kpi.ok .kpi-val{color:var(--good)}
-.delta{font-family:var(--mono); font-size:11.5px; font-weight:600}
+/* ---- panel: title bar + grid of labelled metric cells ---- */
+.panel{background:var(--surface); border:1px solid var(--hair); border-radius:8px; overflow:hidden; box-shadow:var(--shadow); display:flex; flex-direction:column}
+.panel-head{background:var(--head-bg); color:var(--head-ink); font-family:var(--display); font-size:15.5px; font-weight:600; text-align:center; padding:11px 14px; letter-spacing:.01em}
+.panel-body{display:grid; gap:1px; background:var(--hair); flex:1}
+.pb1{grid-template-columns:1fr}
+.pb2{grid-template-columns:1fr 1fr}
+.pb3{grid-template-columns:repeat(3,1fr)}
+.pb4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.pb4{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.pb3{grid-template-columns:1fr 1fr}}
+.cell{background:var(--surface); display:flex; flex-direction:column; min-width:0}
+.cell-label{background:var(--surface-2); padding:7px 12px; font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.cell-body{padding:11px 12px 12px; display:flex; flex-direction:column; gap:2px; flex:1}
+.cell-val{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:23px; font-weight:600; color:var(--ink); line-height:1.1; letter-spacing:-.02em}
+.cell-val.sm{font-size:18px}
+.cell-sub{font-size:11px; color:var(--ink-3); line-height:1.35}
+.cell.na .cell-val{color:var(--ink-3); font-size:15px; font-weight:500}
+.cell.good .cell-val{color:var(--good)}
+.cell.bad .cell-val{color:var(--crit)}
+.delta{font-family:var(--mono); font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:3px}
 .delta.up{color:var(--good)} .delta.down{color:var(--crit)} .delta.flat{color:var(--ink-3)}
 
-/* ---------- charts ---------- */
+/* progress meter for target */
+.meter{height:6px; border-radius:3px; background:var(--surface-3); overflow:hidden; margin-top:6px}
+.meter span{display:block; height:100%; border-radius:3px; background:var(--accent)}
+
+.card{background:var(--surface); border:1px solid var(--hair); border-radius:8px; padding:16px 18px; box-shadow:var(--shadow)}
 .chart-head{display:flex; flex-direction:column; gap:2px; margin-bottom:14px}
 .chart-title{font-size:13.5px; font-weight:700; color:var(--ink)}
 .chart-note{font-size:11.5px; color:var(--ink-3)}
@@ -139,18 +116,14 @@ svg{display:block; width:100%; height:auto; overflow:visible}
 .sw{width:10px; height:10px; border-radius:2px; flex:none}
 .sw.line{height:3px; width:14px; border-radius:2px}
 
-/* ---------- tables ---------- */
-.tw{overflow-x:auto; border:1px solid var(--hair); border-radius:8px; background:var(--surface); box-shadow:var(--shadow)}
-table{border-collapse:collapse; width:100%; font-size:12.5px; min-width:660px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:12.5px; min-width:640px}
 th,td{padding:9px 13px; text-align:right; border-bottom:1px solid var(--hair-2); white-space:nowrap}
 th:first-child,td:first-child,th.l,td.l{text-align:left}
-th{
-  font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
-  color:var(--ink-3); background:var(--surface-2);
-}
+th{font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); background:var(--surface-2)}
 td{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--ink-2)}
 td:first-child{font-family:var(--ui); color:var(--ink); font-weight:600}
-td.l{font-family:var(--ui); white-space:normal; min-width:260px}
+td.l{font-family:var(--ui); white-space:normal; min-width:250px}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:var(--surface-2)}
 .pill{display:inline-block; font-family:var(--ui); font-size:10px; font-weight:700; letter-spacing:.04em; padding:2px 8px; border-radius:20px}
@@ -158,27 +131,16 @@ tbody tr:hover td{background:var(--surface-2)}
 .pill.chk{background:var(--warn-bg); color:var(--warn)}
 .pill.bad{background:var(--crit-bg); color:var(--crit)}
 
-/* ---------- notes / states ---------- */
-.note{
-  border:1px solid var(--hair); border-left:3px solid var(--accent);
-  background:var(--surface); border-radius:6px; padding:14px 17px;
-  font-size:13px; display:flex; flex-direction:column; gap:6px;
-}
+.note{border:1px solid var(--hair); border-left:3px solid var(--accent); background:var(--surface); border-radius:6px; padding:14px 17px; font-size:13px; display:flex; flex-direction:column; gap:6px}
 .note strong{color:var(--ink)}
 .note.warn{border-left-color:var(--warn)}
-.banner{
-  border-radius:8px; padding:16px 18px; font-size:13.5px;
-  background:var(--crit-bg); border:1px solid var(--crit); color:var(--crit);
-}
+.banner{border-radius:8px; padding:16px 18px; font-size:13.5px; background:var(--crit-bg); border:1px solid var(--crit); color:var(--crit)}
 .banner strong{display:block; font-size:15px; margin-bottom:4px}
 .loading{padding:80px 0; text-align:center; color:var(--ink-3); font-size:14px}
-.skel{
-  display:inline-block; width:180px; height:10px; border-radius:5px;
-  background:var(--hair); animation:pulse 1.3s ease-in-out infinite;
-}
+.skel{display:inline-block; width:180px; height:10px; border-radius:5px; background:var(--hair); animation:pulse 1.3s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.45}50%{opacity:.9}}
 @media (prefers-reduced-motion:reduce){.skel{animation:none}}
-footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--hair); font-size:11.5px; color:var(--ink-3); display:flex; gap:16px; flex-wrap:wrap}
+footer{margin-top:30px; padding-top:16px; border-top:1px solid var(--hair); font-size:11.5px; color:var(--ink-3); display:flex; gap:16px; flex-wrap:wrap}
 footer a{color:var(--ink-3)}
 </style>
 </head>
@@ -203,19 +165,18 @@ footer a{color:var(--ink-3)}
 
 <div class="tabbar">
   <div class="tabs" role="tablist" aria-label="Dashboard pages">
-    <button class="tab" role="tab" id="tab-funnel"  aria-controls="page-funnel"  aria-selected="true">Funnel</button>
-    <button class="tab" role="tab" id="tab-sales"   aria-controls="page-sales"   aria-selected="false">Sales</button>
-    <button class="tab" role="tab" id="tab-health"  aria-controls="page-health"  aria-selected="false">Data Health</button>
+    <button class="tab" role="tab" id="tab-overview" aria-controls="page-overview" aria-selected="true">Overview</button>
+    <button class="tab" role="tab" id="tab-team"     aria-controls="page-team"     aria-selected="false">Team KPIs</button>
+    <button class="tab" role="tab" id="tab-health"   aria-controls="page-health"   aria-selected="false">Data Health</button>
   </div>
 </div>
 
 <div class="wrap">
   <div id="boot" class="loading"><div class="skel"></div><div style="margin-top:14px">Reading the Master Tracker&hellip;</div></div>
   <div id="fail" hidden></div>
-
   <main id="app" hidden>
-    <section class="page" id="page-funnel" role="tabpanel" aria-labelledby="tab-funnel"></section>
-    <section class="page" id="page-sales" role="tabpanel" aria-labelledby="tab-sales" hidden></section>
+    <section class="page" id="page-overview" role="tabpanel" aria-labelledby="tab-overview"></section>
+    <section class="page" id="page-team" role="tabpanel" aria-labelledby="tab-team" hidden></section>
     <section class="page" id="page-health" role="tabpanel" aria-labelledby="tab-health" hidden></section>
     <footer>
       <span id="foot-fetch"></span>
@@ -230,8 +191,7 @@ footer a{color:var(--ink-3)}
 
 const SID = "1AaqCLsqpdhzktzE002UvN1aBGsMXajksak_w8qL_tos";
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/" + SID + "/edit";
-
-const S = { ws:[], cs:[], ss:[], dh:[], weeks:[], from:null, to:null, fetched:null };
+const S = { ws:[], cs:[], ss:[], dh:[], mo:[], weeks:[], from:null, to:null, fetched:null };
 
 /* ---------------- data ---------------- */
 async function gviz(tab){
@@ -240,9 +200,8 @@ async function gviz(tab){
   const res = await fetch(url);
   if(!res.ok) throw new Error("Tab “" + tab + "”: HTTP " + res.status + ". The sheet may no longer be shared with anyone-with-the-link.");
   const text = await res.text();
-  const open = text.indexOf("setResponse(");
-  const close = text.lastIndexOf(")");
-  if(open === -1 || close === -1) throw new Error("Tab “" + tab + "” returned an unexpected response. Check the tab still exists and is named exactly “" + tab + "”.");
+  const open = text.indexOf("setResponse("), close = text.lastIndexOf(")");
+  if(open === -1 || close === -1) throw new Error("Tab “" + tab + "” returned an unexpected response. Check the tab still exists under that exact name.");
   const d = JSON.parse(text.slice(open + 12, close));
   if(d.status !== "ok") throw new Error("Tab “" + tab + "”: " + JSON.stringify(d.errors || d.status));
   const cols = d.table.cols.map(c => (c.label || c.id || "").trim());
@@ -252,32 +211,44 @@ async function gviz(tab){
     return o;
   });
 }
-
 const n = v => (typeof v === "number" && isFinite(v)) ? v : 0;
 const has = v => v !== null && v !== undefined && v !== "";
 
 /* ---------------- format ---------------- */
-const money = v => (v === null || !isFinite(v)) ? "—" : "$" + Math.round(v).toLocaleString("en-US");
-const money2 = v => (v === null || !isFinite(v)) ? "—" : "$" + v.toLocaleString("en-US",{minimumFractionDigits:0, maximumFractionDigits:0});
-const num = v => (v === null || !isFinite(v)) ? "—" : Math.round(v).toLocaleString("en-US");
-const pct = v => (v === null || !isFinite(v)) ? "—" : (v*100).toFixed(1) + "%";
+const money = v => (v === null || v === undefined || !isFinite(v)) ? "—" : "$" + Math.round(v).toLocaleString("en-US");
+const num   = v => (v === null || v === undefined || !isFinite(v)) ? "—" : Math.round(v).toLocaleString("en-US");
+const pct   = v => (v === null || v === undefined || !isFinite(v)) ? "—" : (v*100).toFixed(1) + "%";
+const pct0  = v => (v === null || v === undefined || !isFinite(v)) ? "—" : Math.round(v*100) + "%";
 const wkShort = w => { const p = String(w).split("-"); if(p.length !== 3) return w;
-  return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+p[1]-1] + " " + (+p[2]); };
+  return MON[+p[1]-1] + " " + (+p[2]); };
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const moLabel = m => { const p = String(m).split("-"); return p.length === 2 ? MON[+p[1]-1] + " " + p[0] : m; };
 const esc = s => String(s === null || s === undefined ? "" : s)
   .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
 /* ---------------- math ---------------- */
 const sum = (rows, f) => rows.reduce((s,r) => s + n(f(r)), 0);
 const div = (a,b) => (b > 0 ? a/b : null);
+const inRange = w => w >= S.from && w <= S.to;
+const wsRows = () => S.ws.filter(r => inRange(r["Week (Thu)"]));
+const csRows = () => S.cs.filter(r => inRange(r["Week (Thu)"]));
+const ssRows = () => S.ss.filter(r => inRange(r["Week (Thu)"]));
 
-/* The Speed to Dial tab is a ROLLING 28-DAY WINDOW (STD_WINDOW_DAYS in the Apps
-   Script). Appointments older than that drop off the tab entirely, so every
-   appointment-derived metric decays for older weeks. A week whose last day is
-   already outside the window has no appointment data left at all, and printing
-   0% there would read as "nobody dialed fast" rather than "the data aged out". */
+/* Comparison period: the same number of weeks immediately before the selection. */
+function prevRows(){
+  const all = S.weeks, i = all.indexOf(S.from), len = wsRows().length;
+  if(i <= 0 || !len) return [];
+  const start = Math.max(0, i - len);
+  const prevWeeks = all.slice(start, i);
+  return S.ws.filter(r => prevWeeks.indexOf(r["Week (Thu)"]) > -1);
+}
+
+/* Speed to Dial is a rolling 28-day window in the Apps Script, so appointment
+   metrics vanish for older weeks. Printing 0% there would read as "nobody
+   dialed fast" instead of "the data aged out". */
 const STD_WINDOW_DAYS = 28;
-function stdCutoff(){
-  const d = new Date(Date.now() - STD_WINDOW_DAYS*86400000);
+function isoShift(days){
+  const d = new Date(Date.now() + days*86400000);
   return d.getUTCFullYear() + "-" + String(d.getUTCMonth()+1).padStart(2,"0") + "-" + String(d.getUTCDate()).padStart(2,"0");
 }
 function weekEnd(w){
@@ -285,169 +256,128 @@ function weekEnd(w){
   const d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2] + 6));
   return d.getUTCFullYear() + "-" + String(d.getUTCMonth()+1).padStart(2,"0") + "-" + String(d.getUTCDate()).padStart(2,"0");
 }
-const agedOut = w => weekEnd(w) < stdCutoff();
+const agedOut = w => weekEnd(w) < isoShift(-STD_WINDOW_DAYS);
 
-function inRange(w){ return w >= S.from && w <= S.to; }
-const wsRows = () => S.ws.filter(r => inRange(r["Week (Thu)"]));
-const csRows = () => S.cs.filter(r => inRange(r["Week (Thu)"]));
-const ssRows = () => S.ss.filter(r => inRange(r["Week (Thu)"]));
-
-/* ---------------- svg helpers ---------------- */
-const PLOT = { x0:52, x1:552, y0:14, y1:170, w:500, h:156 };
-
-function yTicks(max, count){
-  const out = [];
-  for(let i=0;i<=count;i++) out.push(max*i/count);
-  return out;
-}
-function gridSvg(max, fmt, count){
-  count = count || 4;
-  let g = '<g class="gridline">', t = '<g class="axis-txt" text-anchor="end">';
-  yTicks(max,count).forEach(v => {
-    const y = PLOT.y1 - (max ? v/max : 0)*PLOT.h;
-    g += '<line x1="'+PLOT.x0+'" y1="'+y.toFixed(1)+'" x2="'+PLOT.x1+'" y2="'+y.toFixed(1)+'"/>';
-    t += '<text x="'+(PLOT.x0-7)+'" y="'+(y+3.4).toFixed(1)+'">'+fmt(v)+'</text>';
-  });
-  return g + "</g>" + t + "</g>";
-}
-function xLabels(cats){
-  const band = PLOT.w / cats.length;
-  let t = '<g class="axis-txt" text-anchor="middle">';
-  cats.forEach((c,i) => {
-    t += '<text x="'+(PLOT.x0 + band*(i+0.5)).toFixed(1)+'" y="'+(PLOT.y1+18)+'">'+esc(wkShort(c))+'</text>';
-  });
-  return t + "</g>";
-}
-function niceMax(v){
-  if(!(v > 0)) return 1;
-  const mag = Math.pow(10, Math.floor(Math.log10(v)));
-  return Math.ceil(v/mag*2)/2*mag;
-}
-
-function barChart(cats, vals, opt){
+/* ---------------- cells ---------------- */
+function cell(label, val, opt){
   opt = opt || {};
-  const max = niceMax(Math.max.apply(null, vals.concat([0])));
-  const band = PLOT.w / cats.length;
-  const bw = Math.min(46, band*0.62);
-  let bars = '<g clip-path="url(#'+opt.clip+')" fill="var(--c1)">';
-  vals.forEach((v,i) => {
-    const h = max ? n(v)/max*PLOT.h : 0;
-    const x = PLOT.x0 + band*(i+0.5) - bw/2;
-    bars += '<rect class="bar" x="'+x.toFixed(1)+'" y="'+(PLOT.y1-h).toFixed(1)+'" width="'+bw.toFixed(1)+
-            '" height="'+Math.max(h,0.8).toFixed(1)+'" rx="4"><title>'+esc(wkShort(cats[i]))+' — '+
-            esc(opt.fmt ? opt.fmt(v) : v)+'</title></rect>';
-  });
-  bars += "</g>";
-  return '<svg viewBox="0 0 570 196" role="img" aria-label="'+esc(opt.alt||"")+'">'
-    + '<defs><clipPath id="'+opt.clip+'"><rect x="'+(PLOT.x0-2)+'" y="0" width="'+(PLOT.w+4)+'" height="'+PLOT.y1+'"/></clipPath></defs>'
-    + gridSvg(max, opt.fmt || num) + bars + xLabels(cats) + '</svg>';
+  const cls = opt.na ? " na" : (opt.tone ? " " + opt.tone : "");
+  return '<div class="cell'+cls+'">'
+    + '<div class="cell-label" title="'+esc(label)+'">'+esc(label)+'</div>'
+    + '<div class="cell-body">'
+    + '<span class="cell-val'+(opt.sm?" sm":"")+'">'+val+'</span>'
+    + (opt.sub ? '<span class="cell-sub">'+opt.sub+'</span>' : "")
+    + (opt.meter !== undefined && opt.meter !== null
+        ? '<div class="meter"><span style="width:'+Math.max(0,Math.min(100,opt.meter*100)).toFixed(1)+'%"></span></div>' : "")
+    + '</div></div>';
+}
+function panel(title, cells, cols){
+  return '<div class="panel"><div class="panel-head">'+esc(title)+'</div>'
+    + '<div class="panel-body pb'+(cols||2)+'">'+cells.join("")+'</div></div>';
+}
+function delta(cur, prev, fmt, invert){
+  if(prev === null || prev === undefined || !isFinite(prev) || prev === 0) return "";
+  if(cur === null || !isFinite(cur)) return "";
+  const change = (cur - prev)/Math.abs(prev);
+  if(Math.abs(change) < 0.005) return '<span class="delta flat">no change vs prior</span>';
+  const better = invert ? change < 0 : change > 0;
+  return '<span class="delta '+(better?"up":"down")+'">'+(change>0?"▲":"▼")+' '
+    + Math.abs(change*100).toFixed(1) + '% vs prior</span>';
+}
+function naCell(label, why){
+  return cell(label, "Not tracked", {na:true, sub:why});
 }
 
-function groupedBar(cats, seriesA, seriesB, opt){
-  const max = niceMax(Math.max.apply(null, seriesA.vals.concat(seriesB.vals, [0])));
-  const band = PLOT.w / cats.length;
-  const bw = Math.min(19, band*0.27);
-  let g = '<g clip-path="url(#'+opt.clip+')">';
-  [seriesA, seriesB].forEach((s, si) => {
-    g += '<g fill="'+s.color+'">';
-    s.vals.forEach((v,i) => {
-      const h = max ? n(v)/max*PLOT.h : 0;
-      const cx = PLOT.x0 + band*(i+0.5);
-      const x = cx + (si === 0 ? -bw-1 : 1);
-      g += '<rect class="bar" x="'+x.toFixed(1)+'" y="'+(PLOT.y1-h).toFixed(1)+'" width="'+bw.toFixed(1)+
-           '" height="'+Math.max(h,0.8).toFixed(1)+'" rx="3"><title>'+esc(wkShort(cats[i]))+' — '+
-           esc(s.name)+' '+num(v)+'</title></rect>';
-    });
-    g += "</g>";
-  });
-  g += "</g>";
-  return '<svg viewBox="0 0 570 196" role="img" aria-label="'+esc(opt.alt||"")+'">'
-    + '<defs><clipPath id="'+opt.clip+'"><rect x="'+(PLOT.x0-2)+'" y="0" width="'+(PLOT.w+4)+'" height="'+PLOT.y1+'"/></clipPath></defs>'
-    + gridSvg(max, num) + g + xLabels(cats) + '</svg>';
-}
+/* ---------------- OVERVIEW ---------------- */
+function renderOverview(){
+  const R = wsRows(), P = prevRows(), cats = R.map(r => r["Week (Thu)"]);
 
-function lineChart(cats, series, opt){
-  opt = opt || {};
-  let all = [];
-  series.forEach(s => s.vals.forEach(v => { if(v !== null && isFinite(v)) all.push(v); }));
-  const max = opt.max || niceMax(Math.max.apply(null, all.concat([0]))) || 1;
-  const band = PLOT.w / cats.length;
-  let out = "";
-  series.forEach(s => {
-    const pts = [];
-    s.vals.forEach((v,i) => {
-      if(v === null || !isFinite(v)) return;
-      const x = PLOT.x0 + band*(i+0.5);
-      const y = PLOT.y1 - (v/max)*PLOT.h;
-      pts.push(x.toFixed(1)+","+y.toFixed(1));
-    });
-    if(pts.length) out += '<polyline fill="none" stroke="'+s.color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="'+pts.join(" ")+'"/>';
-    s.vals.forEach((v,i) => {
-      if(v === null || !isFinite(v)) return;
-      const x = PLOT.x0 + band*(i+0.5);
-      const y = PLOT.y1 - (v/max)*PLOT.h;
-      out += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4.2" fill="'+s.color+'"><title>'+
-             esc(wkShort(cats[i]))+' — '+esc(s.name)+' '+(opt.fmt?opt.fmt(v):v)+'</title></circle>';
-    });
-  });
-  return '<svg viewBox="0 0 570 196" role="img" aria-label="'+esc(opt.alt||"")+'">'
-    + gridSvg(max, opt.fmt || pct) + out + xLabels(cats) + '</svg>';
-}
+  const cash    = sum(R,r=>r["Cash Collected"]),      pCash  = sum(P,r=>r["Cash Collected"]);
+  const rev     = sum(R,r=>r["Revenue Contracted"]),  pRev   = sum(P,r=>r["Revenue Contracted"]);
+  const closes  = sum(R,r=>r["Closes"]),              pCloses= sum(P,r=>r["Closes"]);
+  const held    = sum(R,r=>r["Calls Held"]),          pHeld  = sum(P,r=>r["Calls Held"]);
+  const due     = sum(R,r=>r["Calls Due"]),           pDue   = sum(P,r=>r["Calls Due"]);
+  const reg     = sum(R,r=>r["Registered"]),          pReg   = sum(P,r=>r["Registered"]);
+  const att     = sum(R,r=>r["Attended Live"]),       pAtt   = sum(P,r=>r["Attended Live"]);
+  const apps    = sum(R,r=>r["Applications"]),        pApps  = sum(P,r=>r["Applications"]);
+  const booked  = sum(R,r=>r["Calls Booked (stream day)"]), pBooked = sum(P,r=>r["Calls Booked (stream day)"]);
+  const offers  = sum(R,r=>r["Offers Pitched"]);
+  const pif     = sum(R,r=>r["PIF Deals"]), plan = sum(R,r=>r["Plan Deals"]);
+  const canc    = sum(R,r=>r["Cancelled Calls"]), cancTracked = sum(R,r=>r["Cancel Tracked Calls"]);
+  const resch   = sum(R,r=>r["Rescheduled Calls"]);
 
-function legend(items){
-  return '<div class="legend">' + items.map(i =>
-    '<span class="lg"><span class="sw'+(i.line?" line":"")+'" style="background:'+i.color+'"></span>'+esc(i.name)+'</span>'
-  ).join("") + '</div>';
-}
-function kpi(label, val, sub, cls){
-  return '<div class="card kpi'+(cls?" "+cls:"")+'"><span class="kpi-label">'+esc(label)+'</span>'
-    + '<span class="kpi-val">'+esc(val)+'</span>'
-    + (sub ? '<span class="kpi-sub">'+sub+'</span>' : "") + '</div>';
-}
-function table(headers, rows, opts){
-  opts = opts || {};
-  const th = headers.map((h,i) => '<th'+(opts.left && opts.left.indexOf(i)>-1 ? ' class="l"' : "")+'>'+esc(h)+'</th>').join("");
-  const tb = rows.map(r => '<tr>' + r.map((c,i) =>
-    '<td'+(opts.left && opts.left.indexOf(i)>-1 ? ' class="l"' : "")+'>'+(c === null || c === undefined ? "—" : c)+'</td>'
-  ).join("") + '</tr>').join("");
-  return '<div class="tw"><table><thead><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody></table></div>';
-}
-
-/* ---------------- pages ---------------- */
-function renderFunnel(){
-  const R = wsRows(), cats = R.map(r => r["Week (Thu)"]);
-  const cash = sum(R,r=>r["Cash Collected"]), rev = sum(R,r=>r["Revenue Contracted"]);
-  const closes = sum(R,r=>r["Closes"]), held = sum(R,r=>r["Calls Held"]);
-  const reg = sum(R,r=>r["Registered"]), att = sum(R,r=>r["Attended Live"]);
-  const apps = sum(R,r=>r["Applications"]), booked = sum(R,r=>r["Calls Booked (stream day)"]);
-  const c3k = sum(R,r=>r["$3K Closes"]), c497 = sum(R,r=>r["$497 Closes"]);
-
-  const methods = Array.from(new Set(R.filter(r=>has(r["Attended Live"])).map(r=>sourceMethod(r["Attendance Source"])).filter(has)));
-  const unverified = R.filter(r => String(r["Verified"]).toUpperCase() === "NO").length;
-  const dealMix = c3k + c497;
+  /* current calendar month from the Monthly tab */
+  const mo = S.mo.filter(r => has(r["Month"]));
+  const cur = mo[0] || null;                       /* sorted newest first */
+  const target = cur && has(cur["Target"]) ? n(cur["Target"]) : null;
+  const moCash = cur ? n(cur["Cash Collected"]) : null;
 
   let h = "";
-  h += '<div class="grid k4">'
-    + kpi("Cash collected", money(cash), esc(R.length + " webinar week" + (R.length===1?"":"s")))
-    + kpi("Revenue contracted", money(rev), (rev-cash) > 0 ? money(rev-cash) + " not yet collected" : "fully collected")
-    + kpi("Closes", num(closes), dealMix ? "offer mix " + pct(div(c3k,dealMix)) + " $3K / " + pct(div(c497,dealMix)) + " $497" : "")
-    + kpi("Cash AOV", money(div(cash,closes)), money(div(cash,held)) + " per live call")
-    + '</div>';
 
-  h += '<div class="grid k5">'
-    + kpi("Registered", num(reg))
-    + kpi("Attended live", num(att))
-    + kpi("Show rate", pct(div(att,reg)), methods.length > 1 ? "mixed measurement" : esc(methods[0]||""), methods.length > 1 ? "flag" : "")
-    + kpi("Applications", num(apps), pct(div(apps,att)) + " of attendees")
-    + kpi("Calls booked", num(booked), pct(div(booked,apps)) + " of applications")
-    + '</div>';
+  /* ---- row 1: revenue / webinar funnel / sales calls ---- */
+  h += '<div class="row r3">';
 
+  h += panel("Revenue", [
+    cell("Monthly revenue target", target === null ? "Not set" : money(target),
+      target === null ? {na:true, sub:"Set it on the Targets and Spend tab"} : {sub:"cash collected, per calendar month"}),
+    cell("Current month revenue", moCash === null ? "—" : money(moCash),
+      {sub: cur ? esc(moLabel(cur["Month"])) + " &middot; " + num(cur["Closes"]) + " closes" : "",
+       meter: (target && moCash !== null) ? moCash/target : null,
+       tone: (target && moCash >= target) ? "good" : ""}),
+    cell("Cash collected", money(cash), {sub: delta(cash, pCash) || "selected weeks"}),
+    cell("Revenue contracted", money(rev), {sub: (rev-cash) > 0 ? money(rev-cash) + " outstanding" : "fully collected"}),
+    cell("Average cash collected", money(div(cash,closes)), {sub:"per closed deal"}),
+    cell("Cash per live call", money(div(cash,held)), {sub:"benchmark $800–$2,000"})
+  ], 2);
+
+  h += panel("Webinar Funnel", [
+    cell("Registrations", num(reg), {sub: delta(reg, pReg) || "selected weeks"}),
+    cell("Attendance %", pct(div(att,reg)), {sub: num(att) + " attended live"}),
+    cell("Applications", num(apps), {sub: delta(apps, pApps) || ""}),
+    cell("Application %", pct(div(apps,att)), {sub:"of live attendees"}),
+    naCell("Qualified %", "No qualified-application count exists in GHL or Typeform yet"),
+    cell("Booking %", pct(div(booked,apps)), {sub: num(booked) + " calls booked"})
+  ], 2);
+
+  h += panel("Sales Calls", [
+    cell("Calls due", num(due), {sub: delta(due, pDue) || ""}),
+    cell("Calls held", num(held), {sub: delta(held, pHeld) || ""}),
+    cell("Show %", pct(div(held,due)), {sub:"target 70%", tone: div(held,due) >= 0.7 ? "good" : ""}),
+    cell("Offers pitched", num(offers), {sub: (div(offers,held) > 1)
+      ? "more than calls held — see Data Health"
+      : pct(div(offers,held)) + " of calls held"}),
+    cell("Closes", num(closes), {sub: delta(closes, pCloses) || ""}),
+    cell("Close %", pct(div(closes,held)), {sub:"of calls held &middot; target 30%", tone: div(closes,held) >= 0.3 ? "good" : ""})
+  ], 2);
+
+  h += '</div>';
+
+  /* ---- row 2: deal structure / cancellations ---- */
+  h += '<div class="row r2">';
+
+  h += panel("Payment Plan Structure", [
+    cell("Paid in full", num(pif), {sub: pct(div(pif, pif+plan)) + " of deals"}),
+    cell("Payment plan", num(plan), {sub: pct(div(plan, pif+plan)) + " of deals"}),
+    cell("Average contract", money(div(rev,closes)), {sub:"revenue per close"}),
+    cell("Collected %", pct(div(cash,rev)), {sub: money(rev-cash) + " still owed on contracts"})
+  ], 4);
+
+  h += panel("Cancellations & Reschedules", [
+    cell("Cancelled calls", num(canc), {sub: cancTracked ? pct(div(canc,cancTracked)) + " of " + num(cancTracked) + " tracked" : "not tracked in this range", tone: canc > 0 ? "bad" : ""}),
+    cell("Rescheduled calls", num(resch), {sub: pct(div(resch,due)) + " of calls due"}),
+    naCell("Refunds", "Whop key has no permissions; SCA pays by ACH so Stripe has nothing"),
+    cell("Never dialed", num(sum(R.filter(r=>!agedOut(r["Week (Thu)"])),r=>r["Never Dialed"])), {sub:"appointments, last 28 days"})
+  ], 4);
+
+  h += '</div>';
+
+  /* ---- charts ---- */
   h += '<div class="card"><div class="chart-head"><span class="chart-title">Cash collected by week</span>'
     + '<span class="chart-note">Dated on the call, from the closer EOC report</span></div>'
     + barChart(cats, R.map(r=>n(r["Cash Collected"])), {clip:"cf1", fmt:money, alt:"Cash collected by week"})
     + '</div>';
 
-  h += '<div class="grid c2">';
+  h += '<div class="row r2">';
   h += '<div class="card"><div class="chart-head"><span class="chart-title">Registered vs attended live</span>'
     + '<span class="chart-note">Same unit, one axis</span></div>'
     + groupedBar(cats,
@@ -459,131 +389,255 @@ function renderFunnel(){
   h += '<div class="card"><div class="chart-head"><span class="chart-title">Conversion rates by week</span>'
     + '<span class="chart-note">All three share a percentage axis</span></div>'
     + lineChart(cats, [
-        {name:"Show %", color:"var(--c1)", vals:R.map(r=>has(r["Show %"])?r["Show %"]:null)},
-        {name:"App rate %", color:"var(--c2)", vals:R.map(r=>has(r["App Rate % (of attendees)"])?r["App Rate % (of attendees)"]:null)},
-        {name:"Close rate %", color:"var(--c3)", vals:R.map(r=>has(r["Close Rate %"])?r["Close Rate %"]:null)}
-      ], {max:1, fmt:pct, alt:"Show rate, application rate and close rate by week"})
-    + legend([{name:"Show %",color:"var(--c1)",line:1},{name:"App rate %",color:"var(--c2)",line:1},{name:"Close rate %",color:"var(--c3)",line:1}])
+        {name:"Attendance %", color:"var(--c1)", vals:R.map(r=>has(r["Show %"])?r["Show %"]:null)},
+        {name:"Application %", color:"var(--c2)", vals:R.map(r=>has(r["App Rate % (of attendees)"])?r["App Rate % (of attendees)"]:null)},
+        {name:"Close %", color:"var(--c3)", vals:R.map(r=>has(r["Close Rate %"])?r["Close Rate %"]:null)}
+      ], {max:1, fmt:pct, alt:"Attendance, application and close rates by week"})
+    + legend([{name:"Attendance %",color:"var(--c1)",line:1},{name:"Application %",color:"var(--c2)",line:1},{name:"Close %",color:"var(--c3)",line:1}])
     + '</div>';
   h += '</div>';
 
-  h += table(
-    ["Week","Reg.","Attended","Show %","Apps","App %","Booked","Held","Closes","Close %","Cash","Source"],
-    R.map(r => [
-      esc(wkShort(r["Week (Thu)"])), num(r["Registered"]), num(r["Attended Live"]),
-      has(r["Show %"])?pct(r["Show %"]):null, num(r["Applications"]),
-      has(r["App Rate % (of attendees)"])?pct(r["App Rate % (of attendees)"]):null,
-      num(r["Calls Booked (stream day)"]), num(r["Calls Held"]), num(r["Closes"]),
-      has(r["Close Rate %"])?pct(r["Close Rate %"]):null, money(r["Cash Collected"]),
-      sourcePill(r)
-    ]), {left:[11]});
+  /* ---- weekly table ---- */
+  h += '<div class="panel"><div class="panel-head">Week by week</div><div class="tw">'
+    + tableInner(["Week","Reg.","Attended","Att. %","Apps","App %","Booked","Due","Held","Show %","Closes","Close %","Cash","Source"],
+      R.map(r => [
+        esc(wkShort(r["Week (Thu)"])), num(r["Registered"]), num(r["Attended Live"]),
+        has(r["Show %"])?pct(r["Show %"]):null, num(r["Applications"]),
+        has(r["App Rate % (of attendees)"])?pct(r["App Rate % (of attendees)"]):null,
+        num(r["Calls Booked (stream day)"]), num(r["Calls Due"]), num(r["Calls Held"]),
+        has(r["Call Show %"])?pct(r["Call Show %"]):null, num(r["Closes"]),
+        has(r["Close Rate %"])?pct(r["Close Rate %"]):null, money(r["Cash Collected"]), sourcePill(r)
+      ]), {left:[13]}) + '</div></div>';
 
+  const methods = Array.from(new Set(R.filter(r=>has(r["Attended Live"])).map(r=>sourceMethod(r["Attendance Source"])).filter(has)));
+  const unverified = R.filter(r => String(r["Verified"]).toUpperCase() === "NO").length;
   if(methods.length > 1 || unverified){
-    h += '<div class="note warn"><p><strong>Show rate is only comparable within one measurement method.</strong> '
+    h += '<div class="note warn"><p><strong>Attendance % is only comparable within one measurement method.</strong> '
       + 'This range mixes ' + methods.length + ' ways of counting attendance (' + esc(methods.join(", ")) + ')'
-      + (unverified ? ', and ' + unverified + ' week' + (unverified===1?" is":"s are") + ' still on the GHL click proxy, which ran 22% low against the Zoom report' : '')
-      + '. The YouTube weeks counted channel traffic that never registered, so their show rate is a ceiling, not a floor.</p></div>';
+      + (unverified ? ', and ' + unverified + ' week' + (unverified===1?" is":"s are") + ' still on the GHL click proxy, which ran 22% low against Zoom' : '')
+      + '. The YouTube weeks counted channel traffic that never registered, so their attendance rate is a ceiling, not a floor.</p></div>';
   }
-  document.getElementById("page-funnel").innerHTML = h;
+
+  document.getElementById("page-overview").innerHTML = h;
 }
 
-function sourceMethod(s){
-  s = String(s || "");
-  if(!s) return "";
-  if(/proxy/i.test(s)) return "click proxy";
-  if(/zoom/i.test(s)) return "Zoom";
-  if(/youtube/i.test(s)) return "YouTube";
-  if(/pre-?tracking/i.test(s)) return "pre-tracking";
-  return s;
-}
-function sourcePill(r){
-  const s = String(r["Attendance Source"] || "");
-  if(!s) return "—";
-  const m = sourceMethod(s);
-  const v = String(r["Verified"] || "").toUpperCase();
-  let cls = m === "Zoom" ? "ok" : (m === "click proxy" ? "bad" : "chk");
-  if(v === "NO") cls = "bad";
-  return '<span class="pill '+cls+'" title="'+esc(s)+'">'+esc(m)+'</span>';
-}
-
-function renderSales(){
+/* ---------------- TEAM ---------------- */
+function renderTeam(){
   const R = wsRows(), C = csRows(), T = ssRows(), cats = R.map(r=>r["Week (Thu)"]);
-  const held = sum(R,r=>r["Calls Held"]), due = sum(R,r=>r["Calls Due"]);
-  const closes = sum(R,r=>r["Closes"]), cash = sum(R,r=>r["Cash Collected"]);
-  /* appointment metrics only exist inside the rolling 28-day window */
   const Rlive = R.filter(r => !agedOut(r["Week (Thu)"]));
   const agedWeeks = R.filter(r => agedOut(r["Week (Thu)"])).map(r => wkShort(r["Week (Thu)"]));
   const appts = sum(Rlive,r=>r["Appts Booked (system)"]);
   const never = sum(Rlive,r=>r["Never Dialed"]);
-  const dialedWeightedLive = div(sum(Rlive,r=>n(r["Dialed <=20m %"])*n(r["Appts Booked (system)"])), appts);
+  const dialedW = div(sum(Rlive,r=>n(r["Dialed <=20m %"])*n(r["Appts Booked (system)"])), appts);
 
-  /* per-closer totals across the range */
-  const byCloser = {};
-  C.forEach(r => {
-    const k = r["Closer"]; if(!k) return;
-    byCloser[k] = byCloser[k] || {cash:0, held:0, closes:0, due:0};
-    byCloser[k].cash += n(r["Cash Collected"]); byCloser[k].held += n(r["Calls Held"]);
-    byCloser[k].closes += n(r["Closes"]); byCloser[k].due += n(r["Calls Due"]);
-  });
-  const closers = Object.keys(byCloser).sort((a,b)=>byCloser[b].cash-byCloser[a].cash);
+  const byC = {}, byS = {};
+  C.forEach(r => { const k=r["Closer"]; if(!k) return;
+    byC[k] = byC[k] || {cash:0,rev:0,held:0,due:0,closes:0,pif:0};
+    byC[k].cash+=n(r["Cash Collected"]); byC[k].rev+=n(r["Revenue Contracted"]);
+    byC[k].held+=n(r["Calls Held"]); byC[k].due+=n(r["Calls Due"]); byC[k].closes+=n(r["Closes"]); });
+  T.forEach(r => { const k=r["Setter"]; if(!k) return;
+    byS[k] = byS[k] || {appts:0,held:0,cash:0,closes:0,eod:0,dialSum:0,dialN:0};
+    byS[k].appts+=n(r["Appts Booked (system)"]); byS[k].held+=n(r["Calls Held"]);
+    byS[k].cash+=n(r["Cash Collected"]); byS[k].closes+=n(r["Closes"]); byS[k].eod+=n(r["EOD Forms Filed"]);
+    if(has(r["Avg Mins to Dial"])){ byS[k].dialSum += n(r["Avg Mins to Dial"]); byS[k].dialN++; } });
+
+  const closers = Object.keys(byC).sort((a,b)=>byC[b].cash-byC[a].cash);
+  /* Panels are for real people. "(UNASSIGNED)" and "NONE" are blank-field artifacts,
+     and a closer occasionally gets typed into the setter box. They stay in the table
+     below, where being visible is the point, but they don't get a scorecard. */
+  const ARTIFACT = /^\(UNASSIGNED\)$|^NONE$/i;
+  const setters = Object.keys(byS)
+    .filter(k => !ARTIFACT.test(k) && byS[k].appts > 0 && !byC[k])
+    .sort((a,b)=>byS[b].appts-byS[a].appts);
 
   let h = "";
-  h += '<div class="grid k4">'
-    + kpi("Close rate", pct(div(closes,held)), num(closes) + " of " + num(held) + " calls held")
-    + kpi("Call show rate", pct(div(held,due)), num(held) + " of " + num(due) + " due &middot; target 70%")
-    + kpi("Cash per live call", money(div(cash,held)), "benchmark $800&ndash;$2,000")
-    + kpi("Never dialed", num(never), num(appts) ? pct(div(never,appts)) + " of " + num(appts) + " appts &middot; last 28 days" : "no appointment data in window", never > 0 ? "flag" : "ok")
-    + '</div>';
 
-  h += '<div class="grid c2">';
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">Cash collected by closer</span>'
-    + '<span class="chart-note">Whole selected range</span></div>' + closerBars(closers, byCloser) + '</div>';
+  /* per-closer panels */
+  h += '<div class="row r'+(closers.length >= 3 ? 3 : 2)+'">';
+  closers.forEach(k => {
+    const c = byC[k];
+    h += panel(title(k) + " · Closer", [
+      cell("Cash collected", money(c.cash)),
+      cell("Closes", num(c.closes), {sub: pct(div(c.closes,c.held)) + " close rate"}),
+      cell("Calls held", num(c.held), {sub: pct(div(c.held,c.due)) + " show rate"}),
+      cell("Cash per call", money(div(c.cash,c.held)), {sub: money(div(c.cash,c.closes)) + " avg deal"})
+    ], 2);
+  });
+  h += '</div>';
+
+  /* per-setter panels */
+  h += '<div class="row r'+(setters.length >= 3 ? 3 : 2)+'">';
+  setters.forEach(k => {
+    const s = byS[k];
+    h += panel(title(k) + " · Setter", [
+      cell("Appointments booked", num(s.appts), {sub:"last 28 days only"}),
+      cell("Cash from their sets", money(s.cash)),
+      cell("Avg mins to dial", s.dialN ? num(s.dialSum/s.dialN) : "—", {sub:"target under 20"}),
+      cell("EOD forms filed", num(s.eod), {sub:"days, across the range"})
+    ], 2);
+  });
+  h += '</div>';
+
+  h += '<div class="row r2">';
   h += '<div class="card"><div class="chart-head"><span class="chart-title">Speed to lead</span>'
     + '<span class="chart-note">Share of bookings dialed within 20 minutes</span></div>'
     + lineChart(cats, [{name:"Dialed ≤20m", color:"var(--c2)",
         vals:R.map(r => (!agedOut(r["Week (Thu)"]) && n(r["Appts Booked (system)"]) > 0) ? n(r["Dialed <=20m %"]) : null)}],
         {fmt:pct, alt:"Share of bookings dialed within twenty minutes, by week"})
-    + '<p class="chart-note" style="margin:10px 0 0">Only dials placed through the GHL dialer are visible. Average across weeks still in the window '
-    + pct(dialedWeightedLive) + '.</p></div>';
+    + '<p class="chart-note" style="margin:10px 0 0">Average across weeks still in the window '+pct(dialedW)
+    + '. '+num(never)+' of '+num(appts)+' appointments were never dialed at all.</p></div>';
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">Cash collected by closer</span>'
+    + '<span class="chart-note">Whole selected range</span></div>' + closerBars(closers, byC) + '</div>';
   h += '</div>';
 
-  h += '<div class="sect">Closers</div>';
-  h += table(["Week","Closer","Due","Held","Show %","Closes","Close %","Cash","AOV"],
-    C.map(r => [
-      esc(wkShort(r["Week (Thu)"])), esc(title(r["Closer"])), num(r["Calls Due"]), num(r["Calls Held"]),
-      has(r["Call Show %"])?pct(r["Call Show %"]):null, num(r["Closes"]),
-      has(r["Close Rate %"])?pct(r["Close Rate %"]):null, money(r["Cash Collected"]),
-      has(r["Cash AOV"])?money(r["Cash AOV"]):null
-    ]), {left:[1]});
+  h += '<div class="panel"><div class="panel-head">Closers, week by week</div><div class="tw">'
+    + tableInner(["Week","Closer","Due","Held","Show %","Closes","Close %","Cash","Avg deal"],
+      C.map(r => [
+        esc(wkShort(r["Week (Thu)"])), esc(title(r["Closer"])), num(r["Calls Due"]), num(r["Calls Held"]),
+        has(r["Call Show %"])?pct(r["Call Show %"]):null, num(r["Closes"]),
+        has(r["Close Rate %"])?pct(r["Close Rate %"]):null, money(r["Cash Collected"]),
+        has(r["Cash AOV"])?money(r["Cash AOV"]):null
+      ]), {left:[1]}) + '</div></div>';
 
-  h += '<div class="sect">Setters</div>';
-  h += table(["Week","Setter","Appts booked","Dialed ≤20m","Avg mins to dial","Held","Cash","EOD filed"],
-    T.map(r => [
-      esc(wkShort(r["Week (Thu)"])), esc(title(r["Setter"])), num(r["Appts Booked (system)"]),
-      has(r["Dialed <=20m %"])?pct(r["Dialed <=20m %"]):null,
-      has(r["Avg Mins to Dial"])?num(r["Avg Mins to Dial"]):null,
-      num(r["Calls Held"]), money(r["Cash Collected"]), num(r["EOD Forms Filed"])
-    ]), {left:[1]});
+  h += '<div class="panel"><div class="panel-head">Setters, week by week</div><div class="tw">'
+    + tableInner(["Week","Setter","Appts booked","Dialed ≤20m","Avg mins to dial","Held","Cash","EOD filed"],
+      T.map(r => [
+        esc(wkShort(r["Week (Thu)"])), esc(title(r["Setter"])), num(r["Appts Booked (system)"]),
+        has(r["Dialed <=20m %"])?pct(r["Dialed <=20m %"]):null,
+        has(r["Avg Mins to Dial"])?num(r["Avg Mins to Dial"]):null,
+        num(r["Calls Held"]), money(r["Cash Collected"]), num(r["EOD Forms Filed"])
+      ]), {left:[1]}) + '</div></div>';
 
   if(agedWeeks.length){
     h += '<div class="note warn"><p><strong>Appointment data only covers the last 28 days.</strong> '
       + 'Speed to lead, never-dialed and dial times come from a rolling window that drops older bookings, so '
-      + esc(agedWeeks.join(", ")) + ' no longer have any. Those weeks are left off the speed-to-lead line rather than '
-      + 'drawn at zero, and the tiles above count only weeks still inside the window. '
+      + esc(agedWeeks.join(", ")) + ' no longer have any. Those weeks are left off the line rather than drawn at zero. '
       + 'Cash, closes and show rates are unaffected and go back to the beginning.</p></div>';
   }
+  h += '<div class="note"><p><strong>Read &ldquo;EOD forms filed&rdquo; before trusting any self-reported number.</strong> '
+    + 'It counts the days a setter actually filed, out of seven per week. Appointment counts and dial times come from the '
+    + 'system and do not depend on anyone filing anything.</p>'
+    + '<p style="color:var(--ink-3)">Per-setter appointment counts run about 12% below the team total, because the Setter Stats tab is '
+    + 'built from the closer call log rather than the appointment log.</p></div>';
 
-  h += '<div class="note"><p><strong>Read &ldquo;EOD filed&rdquo; before trusting any self-reported number.</strong> '
-    + 'It counts the days that setter actually filed a form that week, out of seven. Appointment counts and dial times '
-    + 'come from the system and do not depend on anyone filing anything.</p>'
-    + '<p style="color:var(--ink-3)">Per-setter appointment counts also run about 12% below the team total, because this table is '
-    + 'generated from the closer call log rather than the appointment log. Team totals above are correct.</p></div>';
-
-  document.getElementById("page-sales").innerHTML = h;
+  document.getElementById("page-team").innerHTML = h;
 }
-
 function title(s){ s = String(s||""); return s.charAt(0) + s.slice(1).toLowerCase(); }
 
+/* ---------------- HEALTH ---------------- */
+const HEALTH_TILES = [
+  {re:/cash in source/i,          label:"Cash reconciliation", sub:"source vs scorecard", money:true},
+  {re:/eoc rows in/i,             label:"Rows dropped",        sub:"cleaning layer"},
+  {re:/appointments in/i,         label:"Appointments lost",   sub:"cleaning layer"},
+  {re:/days since last webinar/i, label:"Days since webinar",  sub:"alerts past 8"}
+];
+function renderHealth(){
+  const rows = S.dh.filter(r => has(r["Check"]) && has(r["Status"]));
+  const claimed = [];
+  let tiles = "";
+  HEALTH_TILES.forEach(t => {
+    const r = rows.filter(x => t.re.test(String(x["Check"])))[0];
+    if(!r){ tiles += cell(t.label, "—", {na:true, sub:"check not found in sheet"}); return; }
+    claimed.push(r);
+    const ok = String(r["Status"]).toUpperCase() === "OK";
+    const v = typeof r["Count"] === "number" ? (t.money ? money(r["Count"]) : num(r["Count"])) : esc(r["Count"]);
+    tiles += cell(t.label, v, {sub:t.sub, tone: ok ? "good" : "bad"});
+  });
+  let h = panel("Reconciliation — these must stay at zero", [tiles], 4);
+
+  const issues = rows.filter(r => claimed.indexOf(r) === -1);
+  const bad = issues.filter(r => String(r["Status"]).toUpperCase() !== "OK").length;
+
+  h += '<div class="panel"><div class="panel-head">Open data issues</div><div class="tw">'
+    + tableInner(["Check","Count","Status","What it means"],
+      issues.map(r => [
+        esc(r["Check"]), num(r["Count"]),
+        '<span class="pill '+(String(r["Status"]).toUpperCase()==="OK"?"ok":"chk")+'">'+esc(String(r["Status"]).toLowerCase())+'</span>',
+        esc(r["What it means / what to do"])
+      ]), {left:[3]}) + '</div></div>';
+
+  h += '<div class="note"><p><strong>Why this page exists.</strong> Every number on the other pages inherits whatever is wrong here. '
+    + 'The reconciliation tiles must never move off zero — if one does, a call or a payment stopped flowing through the pipeline '
+    + 'and the cash figure is wrong.</p>'
+    + (bad ? '<p style="color:var(--ink-3)">'+bad+' check'+(bad===1?"":"s")+' currently need attention. None of them affect the cash total.</p>' : "")
+    + '</div>';
+
+  h += '<div class="panel"><div class="panel-head">KPIs we cannot calculate yet</div><div class="panel-body pb2">'
+    + cell("Qualified %", "Not tracked", {na:true, sub:"Nothing counts a qualified application. Typeform routes under-$500, male and under-18 away, but no count is written back to the sheet. Needs a GHL tag count or a Typeform outcome field."})
+    + cell("Refunds", "Not tracked", {na:true, sub:"The SCA Whop key has zero permissions enabled, and SCA pays by ACH so Stripe holds nothing. Needs Maya to enable Payments-read on the Whop key."})
+    + '</div></div>';
+
+  document.getElementById("page-health").innerHTML = h;
+}
+
+/* ---------------- svg ---------------- */
+const PLOT = { x0:52, x1:552, y0:14, y1:170, w:500, h:156 };
+function gridSvg(max, fmt, count){
+  count = count || 4;
+  let g = '<g class="gridline">', t = '<g class="axis-txt" text-anchor="end">';
+  for(let i=0;i<=count;i++){
+    const v = max*i/count, y = PLOT.y1 - (max ? v/max : 0)*PLOT.h;
+    g += '<line x1="'+PLOT.x0+'" y1="'+y.toFixed(1)+'" x2="'+PLOT.x1+'" y2="'+y.toFixed(1)+'"/>';
+    t += '<text x="'+(PLOT.x0-7)+'" y="'+(y+3.4).toFixed(1)+'">'+fmt(v)+'</text>';
+  }
+  return g + "</g>" + t + "</g>";
+}
+function xLabels(cats){
+  const band = PLOT.w / cats.length;
+  let t = '<g class="axis-txt" text-anchor="middle">';
+  cats.forEach((c,i) => { t += '<text x="'+(PLOT.x0 + band*(i+0.5)).toFixed(1)+'" y="'+(PLOT.y1+18)+'">'+esc(wkShort(c))+'</text>'; });
+  return t + "</g>";
+}
+function niceMax(v){ if(!(v > 0)) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(v))); return Math.ceil(v/mag*2)/2*mag; }
+function barChart(cats, vals, opt){
+  const max = niceMax(Math.max.apply(null, vals.concat([0])));
+  const band = PLOT.w / cats.length, bw = Math.min(46, band*0.62);
+  let bars = '<g clip-path="url(#'+opt.clip+')" fill="var(--c1)">';
+  vals.forEach((v,i) => {
+    const hh = max ? n(v)/max*PLOT.h : 0, x = PLOT.x0 + band*(i+0.5) - bw/2;
+    bars += '<rect class="bar" x="'+x.toFixed(1)+'" y="'+(PLOT.y1-hh).toFixed(1)+'" width="'+bw.toFixed(1)+
+            '" height="'+Math.max(hh,0.8).toFixed(1)+'" rx="4"><title>'+esc(wkShort(cats[i]))+' — '+esc(opt.fmt(v))+'</title></rect>';
+  });
+  return '<svg viewBox="0 0 570 196" role="img" aria-label="'+esc(opt.alt||"")+'">'
+    + '<defs><clipPath id="'+opt.clip+'"><rect x="'+(PLOT.x0-2)+'" y="0" width="'+(PLOT.w+4)+'" height="'+PLOT.y1+'"/></clipPath></defs>'
+    + gridSvg(max, opt.fmt) + bars + "</g>" + xLabels(cats) + '</svg>';
+}
+function groupedBar(cats, A, B, opt){
+  const max = niceMax(Math.max.apply(null, A.vals.concat(B.vals, [0])));
+  const band = PLOT.w / cats.length, bw = Math.min(19, band*0.27);
+  let g = '<g clip-path="url(#'+opt.clip+')">';
+  [A,B].forEach((s, si) => {
+    g += '<g fill="'+s.color+'">';
+    s.vals.forEach((v,i) => {
+      const hh = max ? n(v)/max*PLOT.h : 0, cx = PLOT.x0 + band*(i+0.5), x = cx + (si === 0 ? -bw-1 : 1);
+      g += '<rect class="bar" x="'+x.toFixed(1)+'" y="'+(PLOT.y1-hh).toFixed(1)+'" width="'+bw.toFixed(1)+
+           '" height="'+Math.max(hh,0.8).toFixed(1)+'" rx="3"><title>'+esc(wkShort(cats[i]))+' — '+esc(s.name)+' '+num(v)+'</title></rect>';
+    });
+    g += "</g>";
+  });
+  return '<svg viewBox="0 0 570 196" role="img" aria-label="'+esc(opt.alt||"")+'">'
+    + '<defs><clipPath id="'+opt.clip+'"><rect x="'+(PLOT.x0-2)+'" y="0" width="'+(PLOT.w+4)+'" height="'+PLOT.y1+'"/></clipPath></defs>'
+    + gridSvg(max, num) + g + "</g>" + xLabels(cats) + '</svg>';
+}
+function lineChart(cats, series, opt){
+  let all = [];
+  series.forEach(s => s.vals.forEach(v => { if(v !== null && isFinite(v)) all.push(v); }));
+  const max = opt.max || niceMax(Math.max.apply(null, all.concat([0]))) || 1;
+  const band = PLOT.w / cats.length;
+  let out = "";
+  series.forEach(s => {
+    const pts = [];
+    s.vals.forEach((v,i) => { if(v === null || !isFinite(v)) return;
+      pts.push((PLOT.x0 + band*(i+0.5)).toFixed(1)+","+(PLOT.y1 - (v/max)*PLOT.h).toFixed(1)); });
+    if(pts.length) out += '<polyline fill="none" stroke="'+s.color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="'+pts.join(" ")+'"/>';
+    s.vals.forEach((v,i) => { if(v === null || !isFinite(v)) return;
+      out += '<circle cx="'+(PLOT.x0 + band*(i+0.5)).toFixed(1)+'" cy="'+(PLOT.y1 - (v/max)*PLOT.h).toFixed(1)+
+             '" r="4.2" fill="'+s.color+'"><title>'+esc(wkShort(cats[i]))+' — '+esc(s.name)+' '+esc(opt.fmt(v))+'</title></circle>'; });
+  });
+  return '<svg viewBox="0 0 570 196" role="img" aria-label="'+esc(opt.alt||"")+'">'
+    + gridSvg(max, opt.fmt) + out + xLabels(cats) + '</svg>';
+}
 function closerBars(closers, by){
   if(!closers.length) return '<p class="chart-note">No closer rows in this range.</p>';
   const max = Math.max.apply(null, closers.map(k => by[k].cash).concat([1]));
@@ -591,84 +645,62 @@ function closerBars(closers, by){
   let out = '<svg viewBox="0 0 570 '+H+'" role="img" aria-label="Cash collected by closer">';
   closers.forEach((k,i) => {
     const y = i*rowH + 6, w = Math.max(by[k].cash/max*330, 2);
-    out += '<text x="82" y="'+(y+22)+'" text-anchor="end" font-family="var(--ui)" font-size="12.5" font-weight="600" fill="var(--ink)">'+esc(title(k))+'</text>';
-    out += '<rect class="bar" x="92" y="'+y+'" width="'+w.toFixed(1)+'" height="30" rx="4" fill="var(--c1)"'
-        + (i ? ' opacity="'+Math.max(0.45, 1-i*0.28).toFixed(2)+'"' : "") + '><title>'+esc(title(k))+' — '+money(by[k].cash)+'</title></rect>';
-    out += '<text class="dlabel" x="'+(92+w+9).toFixed(1)+'" y="'+(y+20)+'" font-size="11">'+esc(money(by[k].cash))+'</text>';
-    out += '<text class="axis-txt" x="'+(92+w+9).toFixed(1)+'" y="'+(y+31)+'" font-size="9">'
-        + esc(num(by[k].held)) + ' held &middot; ' + esc(pct(div(by[k].closes, by[k].held))) + ' close</text>';
+    out += '<text x="82" y="'+(y+22)+'" text-anchor="end" font-family="var(--ui)" font-size="12.5" font-weight="600" fill="var(--ink)">'+esc(title(k))+'</text>'
+        +  '<rect class="bar" x="92" y="'+y+'" width="'+w.toFixed(1)+'" height="30" rx="4" fill="var(--c1)"'
+        +  (i ? ' opacity="'+Math.max(0.45, 1-i*0.28).toFixed(2)+'"' : "") + '><title>'+esc(title(k))+' — '+money(by[k].cash)+'</title></rect>'
+        +  '<text class="dlabel" x="'+(92+w+9).toFixed(1)+'" y="'+(y+20)+'" font-size="11">'+esc(money(by[k].cash))+'</text>'
+        +  '<text class="axis-txt" x="'+(92+w+9).toFixed(1)+'" y="'+(y+31)+'" font-size="9">'
+        +  esc(num(by[k].held)) + ' held · ' + esc(pct(div(by[k].closes, by[k].held))) + ' close</text>';
   });
   return out + "</svg>";
 }
-
-/* The four headline tiles, matched explicitly. Anything not claimed by a tile
-   falls through to the issues table, so a newly added check can never vanish. */
-const HEALTH_TILES = [
-  {re:/cash in source/i,            label:"Cash reconciliation", sub:"source vs scorecard", money:true},
-  {re:/eoc rows in/i,               label:"Rows dropped",        sub:"cleaning layer"},
-  {re:/appointments in/i,           label:"Appointments lost",   sub:"cleaning layer"},
-  {re:/days since last webinar/i,   label:"Days since webinar",  sub:"alerts past 8", invert:true}
-];
-
-function renderHealth(){
-  const rows = S.dh.filter(r => has(r["Check"]) && has(r["Status"]));
-  const claimed = [];
-  let h = '<div class="grid k4">';
-
-  HEALTH_TILES.forEach(t => {
-    const r = rows.filter(x => t.re.test(String(x["Check"])))[0];
-    if(!r){ h += kpi(t.label, "—", "check not found in sheet", "flag"); return; }
-    claimed.push(r);
-    const ok = String(r["Status"]).toUpperCase() === "OK";
-    const v = typeof r["Count"] === "number" ? (t.money ? money(r["Count"]) : num(r["Count"])) : esc(r["Count"]);
-    h += kpi(t.label, v, t.sub, ok ? "ok" : "flag");
-  });
-  h += '</div>';
-
-  const issues = rows.filter(r => claimed.indexOf(r) === -1);
-  const bad = issues.filter(r => String(r["Status"]).toUpperCase() !== "OK").length;
-
-  h += table(["Check","Count","Status","What it means"],
-    issues.map(r => [
-      esc(r["Check"]), num(r["Count"]),
-      '<span class="pill '+(String(r["Status"]).toUpperCase()==="OK"?"ok":"chk")+'">'+esc(String(r["Status"]).toLowerCase())+'</span>',
-      esc(r["What it means / what to do"])
-    ]), {left:[3]});
-
-  h += '<div class="note"><p><strong>Why this page exists.</strong> Every number on the other two pages inherits whatever is wrong here. '
-    + 'The reconciliation tiles must never move off zero — if one does, a call or a payment stopped flowing through the pipeline and the cash figure is wrong.</p>'
-    + (bad ? '<p style="color:var(--ink-3)">'+bad+' check'+(bad===1?"":"s")+' currently need attention. None of them affect the cash total.</p>' : "")
-    + '</div>';
-
-  document.getElementById("page-health").innerHTML = h;
+function legend(items){
+  return '<div class="legend">' + items.map(i =>
+    '<span class="lg"><span class="sw'+(i.line?" line":"")+'" style="background:'+i.color+'"></span>'+esc(i.name)+'</span>').join("") + '</div>';
 }
-
+function tableInner(headers, rows, opts){
+  opts = opts || {};
+  const th = headers.map((hh,i) => '<th'+(opts.left && opts.left.indexOf(i)>-1 ? ' class="l"' : "")+'>'+esc(hh)+'</th>').join("");
+  const tb = rows.map(r => '<tr>' + r.map((c,i) =>
+    '<td'+(opts.left && opts.left.indexOf(i)>-1 ? ' class="l"' : "")+'>'+(c === null || c === undefined ? "—" : c)+'</td>').join("") + '</tr>').join("");
+  return '<table><thead><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody></table>';
+}
+function sourceMethod(s){
+  s = String(s || ""); if(!s) return "";
+  if(/proxy/i.test(s)) return "click proxy";
+  if(/zoom/i.test(s)) return "Zoom";
+  if(/youtube/i.test(s)) return "YouTube";
+  if(/pre-?tracking/i.test(s)) return "pre-tracking";
+  return s;
+}
+function sourcePill(r){
+  const s = String(r["Attendance Source"] || ""); if(!s) return "—";
+  const m = sourceMethod(s), v = String(r["Verified"] || "").toUpperCase();
+  let cls = m === "Zoom" ? "ok" : (m === "click proxy" ? "bad" : "chk");
+  if(v === "NO") cls = "bad";
+  return '<span class="pill '+cls+'" title="'+esc(s)+'">'+esc(m)+'</span>';
+}
 function daysSince(wk){
   const p = String(wk).split("-"); if(p.length !== 3) return null;
-  const d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2]));
-  return Math.floor((Date.now() - d.getTime()) / 86400000);
+  return Math.floor((Date.now() - Date.UTC(+p[0], +p[1]-1, +p[2])) / 86400000);
 }
 
 /* ---------------- chrome ---------------- */
-function renderAll(){ renderFunnel(); renderSales(); renderHealth(); }
-
+function renderAll(){ renderOverview(); renderTeam(); renderHealth(); }
 function buildRange(){
   const from = document.getElementById("from"), to = document.getElementById("to");
-  from.innerHTML = S.weeks.map(w => '<option value="'+w+'">'+wkShort(w)+'</option>').join("");
-  to.innerHTML   = S.weeks.map(w => '<option value="'+w+'">'+wkShort(w)+'</option>').join("");
+  const opts = S.weeks.map(w => '<option value="'+w+'">'+wkShort(w)+'</option>').join("");
+  from.innerHTML = opts; to.innerHTML = opts;
   from.value = S.from; to.value = S.to;
   from.onchange = () => { S.from = from.value; if(S.from > S.to){ S.to = S.from; to.value = S.to; } renderAll(); };
   to.onchange   = () => { S.to = to.value;     if(S.to < S.from){ S.from = S.to; from.value = S.from; } renderAll(); };
 }
-
 function wireTabs(){
   const tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
   function sel(t, push){
-    tabs.forEach(x => {
-      const on = x === t;
+    tabs.forEach(x => { const on = x === t;
       x.setAttribute("aria-selected", on ? "true" : "false");
-      document.getElementById(x.getAttribute("aria-controls")).hidden = !on;
-    });
+      document.getElementById(x.getAttribute("aria-controls")).hidden = !on; });
     if(push !== false) location.hash = t.id.replace("tab-","");
   }
   const wanted = tabs.filter(t => t.id === "tab-" + location.hash.replace("#",""))[0];
@@ -683,53 +715,46 @@ function wireTabs(){
     });
   });
 }
-
 function fail(err){
   document.getElementById("boot").hidden = true;
-  const el = document.getElementById("fail");
-  el.hidden = false;
+  const el = document.getElementById("fail"); el.hidden = false;
   el.innerHTML = '<div class="banner"><strong>The dashboard could not read the Master Tracker.</strong>'
     + esc(err && err.message ? err.message : String(err))
     + '<div style="margin-top:12px"><a class="ghost" href="'+SHEET_URL+'" target="_blank" rel="noopener">Open the sheet</a></div></div>';
-  const d = document.getElementById("dot"); d.className = "dot bad";
+  document.getElementById("dot").className = "dot bad";
   document.getElementById("status-txt").textContent = "Failed to load";
   throw err;
 }
-
 async function boot(){
   document.getElementById("sheet-link").href = SHEET_URL;
   document.getElementById("foot-sheet").href = SHEET_URL;
   wireTabs();
-  let ws, cs, ss, dh;
+  let out;
   try{
-    const out = await Promise.all([
-      gviz("Weekly Scorecard"), gviz("Closer Stats"), gviz("Setter Stats"), gviz("Data Health")
-    ]);
-    ws = out[0]; cs = out[1]; ss = out[2]; dh = out[3];
+    out = await Promise.all([gviz("Weekly Scorecard"), gviz("Closer Stats"),
+                             gviz("Setter Stats"), gviz("Data Health"), gviz("Monthly")]);
   }catch(e){ fail(e); return; }
 
-  S.ws = ws.filter(r => has(r["Week (Thu)"]));
-  S.cs = cs.filter(r => has(r["Week (Thu)"]));
-  S.ss = ss.filter(r => has(r["Week (Thu)"]));
-  S.dh = dh;
+  S.ws = out[0].filter(r => has(r["Week (Thu)"]));
+  S.cs = out[1].filter(r => has(r["Week (Thu)"]));
+  S.ss = out[2].filter(r => has(r["Week (Thu)"]));
+  S.dh = out[3];
+  S.mo = out[4].filter(r => has(r["Month"]));
   if(!S.ws.length) fail(new Error("The Weekly Scorecard tab returned no populated weeks. Check the Apps Script is still writing to this sheet."));
 
   S.weeks = S.ws.map(r => r["Week (Thu)"]).sort();
   S.from = S.weeks[0]; S.to = S.weeks[S.weeks.length-1];
   S.fetched = new Date();
 
-  buildRange();
-  renderAll();
+  buildRange(); renderAll();
 
   const stale = daysSince(S.weeks[S.weeks.length-1]);
-  const dot = document.getElementById("dot");
-  dot.className = "dot" + (stale > 8 ? " warn" : "");
+  document.getElementById("dot").className = "dot" + (stale > 8 ? " warn" : "");
   document.getElementById("status-txt").textContent =
     "Live · " + S.fetched.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) +
     (stale > 8 ? " · no webinar row in " + stale + " days" : "");
   document.getElementById("foot-fetch").textContent =
     "Fetched " + S.fetched.toLocaleString() + " · " + S.ws.length + " weeks";
-
   document.getElementById("boot").hidden = true;
   document.getElementById("app").hidden = false;
 }
