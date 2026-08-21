@@ -55,8 +55,11 @@ header.top{border-bottom:1px solid var(--hair); background:var(--surface); posit
 .dot{width:7px; height:7px; border-radius:50%; background:var(--good); flex:none}
 .dot.warn{background:var(--warn)} .dot.bad{background:var(--crit)}
 .range{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink-3)}
-select{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--hair); border-radius:5px; padding:5px 8px; cursor:pointer}
-select:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+select,input[type="date"]{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--hair); border-radius:5px; padding:5px 8px; cursor:pointer}
+select:focus-visible,input[type="date"]:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+input[type="date"]{color-scheme:light}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) input[type="date"]{color-scheme:dark} }
+:root[data-theme="dark"] input[type="date"]{color-scheme:dark}
 .ghost{font-family:var(--ui); font-size:12px; font-weight:600; color:var(--ink-2); background:none; border:1px solid var(--hair); border-radius:5px; padding:6px 11px; cursor:pointer; text-decoration:none; display:inline-block}
 .ghost:hover{border-color:var(--accent); color:var(--accent)}
 
@@ -155,14 +158,16 @@ footer a{color:var(--ink-3)}
     <span class="status" id="status"><span class="dot" id="dot"></span><span id="status-txt">Loading&hellip;</span></span>
     <span class="range">
       <select id="preset" aria-label="Date range preset">
-        <option value="4">Last 4 weeks</option>
-        <option value="8" selected>Last 8 weeks</option>
-        <option value="all">All weeks</option>
+        <option value="7">Last 7 days</option>
+        <option value="30">Last 30 days</option>
+        <option value="60" selected>Last 60 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="all">All time</option>
         <option value="custom">Custom&hellip;</option>
       </select>
-      <select id="from" aria-label="From week"></select>
+      <input type="date" id="from" aria-label="From date">
       <span aria-hidden="true">&rarr;</span>
-      <select id="to" aria-label="To week"></select>
+      <input type="date" id="to" aria-label="To date">
     </span>
     <a class="ghost" id="sheet-link" href="#" target="_blank" rel="noopener">Open sheet</a>
   </div>
@@ -197,7 +202,7 @@ footer a{color:var(--ink-3)}
 
 const SID = "1AaqCLsqpdhzktzE002UvN1aBGsMXajksak_w8qL_tos";
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/" + SID + "/edit";
-const S = { ws:[], cs:[], ss:[], dh:[], mo:[], weeks:[], from:null, to:null, fetched:null };
+const S = { ws:[], cs:[], ss:[], dh:[], mo:[], weeks:[], fromD:null, toD:null, fetched:null };
 
 /* ---------------- data ---------------- */
 async function gviz(tab){
@@ -239,17 +244,20 @@ const esc = s => String(s === null || s === undefined ? "" : s)
 /* ---------------- math ---------------- */
 const sum = (rows, f) => rows.reduce((s,r) => s + n(f(r)), 0);
 const div = (a,b) => (b > 0 ? a/b : null);
-const inRange = w => w >= S.from && w <= S.to;
+/* The pickers select calendar DATES; the data is Thursday-anchored WEEKS.
+   A week is in range when its Thu–Wed span overlaps the selected dates. */
+const inRange = w => weekEnd(w) >= S.fromD && String(w) <= S.toD;
 const wsRows = () => S.ws.filter(r => inRange(r["Week (Thu)"]));
 const csRows = () => S.cs.filter(r => inRange(r["Week (Thu)"]));
 const ssRows = () => S.ss.filter(r => inRange(r["Week (Thu)"]));
 
 /* Comparison period: the same number of weeks immediately before the selection. */
 function prevRows(){
-  const all = S.weeks, i = all.indexOf(S.from), len = wsRows().length;
-  if(i <= 0 || !len) return [];
-  const start = Math.max(0, i - len);
-  const prevWeeks = all.slice(start, i);
+  const sel = wsRows().map(r => r["Week (Thu)"]);
+  if(!sel.length) return [];
+  const i = S.weeks.indexOf(sel[0]);
+  if(i <= 0) return [];
+  const prevWeeks = S.weeks.slice(Math.max(0, i - sel.length), i);
   return S.ws.filter(r => prevWeeks.indexOf(r["Week (Thu)"]) > -1);
 }
 
@@ -696,25 +704,36 @@ function daysSince(wk){
 }
 
 /* ---------------- chrome ---------------- */
-function renderAll(){ renderOverview(); renderTeam(); renderHealth(); }
-/* Presets are the primary control; the two week pickers are the escape hatch.
-   Picking a week by hand flips the preset to Custom so the label never lies. */
+const fmtD = d => { const p = String(d).split("-"); return p.length === 3 ? MON[+p[1]-1] + " " + (+p[2]) : d; };
+function renderAll(){
+  if(!wsRows().length){
+    const msg = '<div class="note warn"><p><strong>No webinar weeks between '+esc(fmtD(S.fromD))+' and '+esc(fmtD(S.toD))+'.</strong> '
+      + 'Webinars run Thursdays; widen the range or pick a preset above.</p></div>';
+    ["page-overview","page-team","page-health"].forEach(id => { document.getElementById(id).innerHTML = msg; });
+    return;
+  }
+  renderOverview(); renderTeam(); renderHealth();
+}
+/* Presets are the primary control; the calendar pickers are the escape hatch.
+   Picking a date by hand flips the preset to Custom so the label never lies. */
 function applyPreset(p){
   if(p === "custom") return;
-  const k = p === "all" ? S.weeks.length : Math.min(+p, S.weeks.length);
-  S.from = S.weeks[S.weeks.length - k]; S.to = S.weeks[S.weeks.length - 1];
-  document.getElementById("from").value = S.from;
-  document.getElementById("to").value = S.to;
+  S.toD = isoShift(0);
+  S.fromD = p === "all" ? S.weeks[0] : isoShift(-(+p - 1));
+  document.getElementById("from").value = S.fromD;
+  document.getElementById("to").value = S.toD;
 }
 function buildRange(){
   const from = document.getElementById("from"), to = document.getElementById("to"),
         preset = document.getElementById("preset");
-  const opts = S.weeks.map(w => '<option value="'+w+'">'+wkRange(w)+'</option>').join("");
-  from.innerHTML = opts; to.innerHTML = opts;
-  from.value = S.from; to.value = S.to;
+  from.min = S.weeks[0]; to.min = S.weeks[0];
+  from.max = isoShift(0); to.max = isoShift(0);
+  if(S.fromD){ from.value = S.fromD; to.value = S.toD; }
   preset.onchange = () => { applyPreset(preset.value); renderAll(); };
-  from.onchange = () => { preset.value = "custom"; S.from = from.value; if(S.from > S.to){ S.to = S.from; to.value = S.to; } renderAll(); };
-  to.onchange   = () => { preset.value = "custom"; S.to = to.value;     if(S.to < S.from){ S.from = S.to; from.value = S.from; } renderAll(); };
+  from.onchange = () => { if(!from.value) return; preset.value = "custom"; S.fromD = from.value;
+    if(S.fromD > S.toD){ S.toD = S.fromD; to.value = S.toD; } renderAll(); };
+  to.onchange   = () => { if(!to.value) return; preset.value = "custom"; S.toD = to.value;
+    if(S.toD < S.fromD){ S.fromD = S.toD; from.value = S.fromD; } renderAll(); };
 }
 function wireTabs(){
   const tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
@@ -761,14 +780,12 @@ async function load(preserveRange){
   if(!S.ws.length){ if(!preserveRange) fail(new Error("The Weekly Scorecard tab returned no populated weeks. Check the Apps Script is still writing to this sheet.")); return; }
 
   S.weeks = S.ws.map(r => r["Week (Thu)"]).sort();
-  const keep = preserveRange && S.weeks.indexOf(S.from) > -1 && S.weeks.indexOf(S.to) > -1
-    && document.getElementById("preset").value === "custom";
+  const preset = document.getElementById("preset");
+  const keep = preserveRange && preset.value === "custom" && S.fromD && S.toD;
   S.fetched = new Date();
 
   buildRange();
-  if(!keep) applyPreset(document.getElementById("preset").value);
-  document.getElementById("from").value = S.from;
-  document.getElementById("to").value = S.to;
+  if(!keep) applyPreset(preset.value);
   renderAll();
 
   /* Freshness: weeks are Thursday-anchored, so if the newest row is more than
