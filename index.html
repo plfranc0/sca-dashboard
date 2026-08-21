@@ -143,6 +143,10 @@ tbody tr:hover td{background:var(--surface-2)}
 .skel{display:inline-block; width:180px; height:10px; border-radius:5px; background:var(--hair); animation:pulse 1.3s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.45}50%{opacity:.9}}
 @media (prefers-reduced-motion:reduce){.skel{animation:none}}
+#health-pop{margin-top:18px; display:flex; flex-direction:column; gap:14px}
+#health-pop[hidden]{display:none}
+#health-pill.warn{border-color:var(--warn); color:var(--warn)}
+#health-pill.ok{color:var(--good)}
 footer{margin-top:30px; padding-top:16px; border-top:1px solid var(--hair); font-size:11.5px; color:var(--ink-3); display:flex; gap:16px; flex-wrap:wrap}
 footer a{color:var(--ink-3)}
 </style>
@@ -156,6 +160,7 @@ footer a{color:var(--ink-3)}
       <span class="sub">Growth dashboard &middot; live from the SCA Master Tracker</span>
     </div>
     <span class="status" id="status"><span class="dot" id="dot"></span><span id="status-txt">Loading&hellip;</span></span>
+    <button class="ghost" id="health-pill" aria-expanded="false" title="Data quality checks" hidden>Data &#10003;</button>
     <span class="range">
       <select id="preset" aria-label="Date range preset">
         <option value="7">Last 7 days</option>
@@ -177,7 +182,7 @@ footer a{color:var(--ink-3)}
   <div class="tabs" role="tablist" aria-label="Dashboard pages">
     <button class="tab" role="tab" id="tab-overview" aria-controls="page-overview" aria-selected="true">Overview</button>
     <button class="tab" role="tab" id="tab-team"     aria-controls="page-team"     aria-selected="false">Team KPIs</button>
-    <button class="tab" role="tab" id="tab-health"   aria-controls="page-health"   aria-selected="false">Data Health</button>
+    <button class="tab" role="tab" id="tab-webinars" aria-controls="page-webinars" aria-selected="false">Webinars</button>
   </div>
 </div>
 
@@ -185,10 +190,11 @@ footer a{color:var(--ink-3)}
   <div id="boot" class="loading"><div class="skel"></div><div style="margin-top:14px">Reading the Master Tracker&hellip;</div></div>
   <div id="fail" hidden></div>
   <div id="stale" hidden style="margin-top:18px"></div>
+  <section id="health-pop" hidden></section>
   <main id="app" hidden>
     <section class="page" id="page-overview" role="tabpanel" aria-labelledby="tab-overview"></section>
     <section class="page" id="page-team" role="tabpanel" aria-labelledby="tab-team" hidden></section>
-    <section class="page" id="page-health" role="tabpanel" aria-labelledby="tab-health" hidden></section>
+    <section class="page" id="page-webinars" role="tabpanel" aria-labelledby="tab-webinars" hidden></section>
     <footer>
       <span id="foot-fetch"></span>
       <span>Weeks run Thursday to Wednesday.</span>
@@ -202,12 +208,14 @@ footer a{color:var(--ink-3)}
 
 const SID = "1AaqCLsqpdhzktzE002UvN1aBGsMXajksak_w8qL_tos";
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/" + SID + "/edit";
-const S = { ws:[], cs:[], ss:[], dh:[], mo:[], weeks:[], fromD:null, toD:null, fetched:null };
+const S = { ws:[], cs:[], ss:[], dh:[], mo:[], wd:[], tg:{}, weeks:[], fromD:null, toD:null, wsel:null, fetched:null };
 
 /* ---------------- data ---------------- */
 async function gviz(tab){
+  /* headers=1 forces row 1 to be the header row — without it, all-text tabs
+     (Webinar Detail, Targets and Spend) come back with A/B/C column ids. */
   const url = "https://docs.google.com/spreadsheets/d/" + SID +
-              "/gviz/tq?tqx=out:json&sheet=" + encodeURIComponent(tab) + "&t=" + Date.now();
+              "/gviz/tq?tqx=out:json&headers=1&sheet=" + encodeURIComponent(tab) + "&t=" + Date.now();
   const res = await fetch(url);
   if(!res.ok) throw new Error("Tab “" + tab + "”: HTTP " + res.status + ". The sheet may no longer be shared with anyone-with-the-link.");
   const text = await res.text();
@@ -330,6 +338,16 @@ function renderOverview(){
   const target = cur && has(cur["Target"]) ? n(cur["Target"]) : null;
   const moCash = cur ? n(cur["Cash Collected"]) : null;
 
+  /* straight-line pace projection, only for the real current month, and not
+     in the first two days when one deal makes the line meaningless */
+  const nowD = new Date();
+  const curKey = nowD.getFullYear() + "-" + String(nowD.getMonth()+1).padStart(2,"0");
+  let pace = null;
+  if(cur && String(cur["Month"]) === curKey && moCash !== null && nowD.getDate() >= 3){
+    const dim = new Date(nowD.getFullYear(), nowD.getMonth()+1, 0).getDate();
+    pace = moCash / nowD.getDate() * dim;
+  }
+
   let h = "";
 
   /* ---- row 1: revenue / webinar funnel / sales calls ---- */
@@ -339,9 +357,10 @@ function renderOverview(){
     cell("Monthly revenue target", target === null ? "Not set" : money(target),
       target === null ? {na:true, sub:"Set it on the Targets and Spend tab"} : {sub:"cash collected, per calendar month"}),
     cell("Current month revenue", moCash === null ? "—" : money(moCash),
-      {sub: cur ? esc(moLabel(cur["Month"])) + " &middot; " + num(cur["Closes"]) + " closes" : "",
+      {sub: (cur ? esc(moLabel(cur["Month"])) + " &middot; " + num(cur["Closes"]) + " closes" : "")
+            + (pace !== null ? " &middot; on pace for " + money(pace) : ""),
        meter: (target && moCash !== null) ? moCash/target : null,
-       tone: (target && moCash >= target) ? "good" : ""}),
+       tone: (target && moCash >= target) ? "good" : (pace !== null && target && pace >= target ? "good" : "")}),
     cell("Cash collected", money(cash), {sub: delta(cash, pCash) || "selected weeks"}),
     cell("Revenue contracted", money(rev), {sub: (rev-cash) > 0 ? money(rev-cash) + " outstanding" : "fully collected"}),
     cell("Average cash collected", money(div(cash,closes)), {sub:"per closed deal"}),
@@ -360,12 +379,12 @@ function renderOverview(){
   h += panel("Sales Calls", [
     cell("Calls due", num(due), {sub: delta(due, pDue) || ""}),
     cell("Calls held", num(held), {sub: delta(held, pHeld) || ""}),
-    cell("Show %", pct(div(held,due)), {sub:"target 70%", tone: div(held,due) >= 0.7 ? "good" : ""}),
+    cell("Show %", pct(div(held,due)), {sub:"target " + pct0(tgt("Call show rate target",0.7)), tone: div(held,due) >= tgt("Call show rate target",0.7) ? "good" : ""}),
     cell("Offers pitched", num(offers), {sub: (div(offers,held) > 1)
       ? "more than calls held — see Data Health"
       : pct(div(offers,held)) + " of calls held"}),
     cell("Closes", num(closes), {sub: delta(closes, pCloses) || ""}),
-    cell("Close %", pct(div(closes,held)), {sub:"of calls held &middot; target 30%", tone: div(closes,held) >= 0.3 ? "good" : ""})
+    cell("Close %", pct(div(closes,held)), {sub:"of calls held &middot; target " + pct0(tgt("Close rate target",0.3)), tone: div(closes,held) >= tgt("Close rate target",0.3) ? "good" : ""})
   ], 2);
 
   h += '</div>';
@@ -470,31 +489,31 @@ function renderTeam(){
 
   let h = "";
 
-  /* per-closer panels */
-  h += '<div class="row r'+(closers.length >= 3 ? 3 : 2)+'">';
-  closers.forEach(k => {
-    const c = byC[k];
-    h += panel(title(k) + " · Closer", [
-      cell("Cash collected", money(c.cash)),
-      cell("Closes", num(c.closes), {sub: pct(div(c.closes,c.held)) + " close rate"}),
-      cell("Calls held", num(c.held), {sub: pct(div(c.held,c.due)) + " show rate"}),
-      cell("Cash per call", money(div(c.cash,c.held)), {sub: money(div(c.cash,c.closes)) + " avg deal"})
-    ], 2);
-  });
-  h += '</div>';
+  /* Scoreboards: one row per person, scored against the targets set on the
+     Targets and Spend tab. Green = at or above target, red = below. */
+  const closeT = tgt("Close rate target", 0.3), showT = tgt("Call show rate target", 0.7),
+        dialT = tgt("Speed-to-lead target (mins)", 20);
+  const scoreHi = (v,t) => v === null ? null : '<span class="pill '+(v >= t ? "ok" : "bad")+'">'+pct(v)+'</span>';
+  const scoreLo = (v,t) => v === null ? null : '<span class="pill '+(v <= t ? "ok" : "bad")+'">'+num(v)+' min</span>';
 
-  /* per-setter panels */
-  h += '<div class="row r'+(setters.length >= 3 ? 3 : 2)+'">';
-  setters.forEach(k => {
-    const s = byS[k];
-    h += panel(title(k) + " · Setter", [
-      cell("Appointments booked", num(s.appts), {sub:"last 28 days only"}),
-      cell("Cash from their sets", money(s.cash)),
-      cell("Avg mins to dial", s.dialN ? num(s.dialSum/s.dialN) : "—", {sub:"target under 20"}),
-      cell("EOD forms filed", num(s.eod), {sub:"days, across the range"})
-    ], 2);
-  });
-  h += '</div>';
+  h += '<div class="panel"><div class="panel-head">Closer scoreboard &middot; close target '+pct0(closeT)+', show target '+pct0(showT)+'</div><div class="tw">'
+    + tableInner(["Closer","Cash","Closes","Close %","Due","Held","Show %","Avg deal","Cash / call"],
+      closers.map(k => { const c = byC[k]; return [
+        esc(title(k)), money(c.cash), num(c.closes),
+        scoreHi(div(c.closes,c.held), closeT),
+        num(c.due), num(c.held),
+        scoreHi(div(c.held,c.due), showT),
+        money(div(c.cash,c.closes)), money(div(c.cash,c.held))
+      ];})) + '</div></div>';
+
+  h += '<div class="panel"><div class="panel-head">Setter scoreboard &middot; dial target '+num(dialT)+' min &middot; appointments cover the last 28 days only</div><div class="tw">'
+    + tableInner(["Setter","Appts booked","Avg mins to dial","Dialed ≤20m","Held","Cash from sets","EOD filed"],
+      setters.map(k => { const s = byS[k]; return [
+        esc(title(k)), num(s.appts),
+        scoreLo(s.dialN ? s.dialSum/s.dialN : null, dialT),
+        s.appts > 0 ? pct(div(sum(T.filter(r=>r["Setter"]===k && !agedOut(r["Week (Thu)"])), r=>n(r["Dialed <=20m %"])*n(r["Appts Booked (system)"])), s.appts)) : null,
+        num(s.held), money(s.cash), num(s.eod)
+      ];})) + '</div></div>';
 
   h += '<div class="row r2">';
   h += '<div class="card"><div class="chart-head"><span class="chart-title">Speed to lead</span>'
@@ -542,6 +561,127 @@ function renderTeam(){
 }
 function title(s){ s = String(s||""); return s.charAt(0) + s.slice(1).toLowerCase(); }
 
+/* ---------------- WEBINARS (per-webinar drill-down) ---------------- */
+function wdFor(date){
+  const o = {meta:{}, curve:[], calendar:[], capacity:[], goal:[], blocker:[]};
+  S.wd.forEach(r => {
+    if(String(r["Date"]) !== date) return;
+    const kind = String(r["Kind"]), k = r["Key"], v = r["Value"];
+    if(kind === "meta") o.meta[String(k)] = v;
+    else if(kind === "curve") o.curve.push([parseFloat(k), parseFloat(v)]);
+    else if(o[kind]) o[kind].push([String(k), parseFloat(v)]);
+  });
+  o.curve.sort((a,b) => a[0]-b[0]);
+  ["calendar","capacity","goal","blocker"].forEach(k => o[k].sort((a,b) => b[1]-a[1]));
+  return o;
+}
+function shortLabel(s){
+  s = String(s);
+  if(/^Under \$500/.test(s)) return "Under $500";
+  if(/^\$500/.test(s)) return "$500–$2,000";
+  if(/^\$2,000/.test(s)) return "$2,000–$3,000";
+  if(/^\$3,000/.test(s)) return "$3,000+";
+  if(/10k\/month or more/.test(s)) return "$10k+/mo";
+  if(/\$3k-\$9k/.test(s)) return "$3k–$9k/mo (replace job)";
+  if(/\$1k-\$3k/.test(s)) return "$1k–$3k/mo (side hustle)";
+  return s.length > 30 ? s.slice(0,29) + "…" : s;
+}
+function hbars(items, opt){
+  opt = opt || {};
+  if(!items.length) return '<p class="chart-note">No data for this webinar.</p>';
+  const max = Math.max.apply(null, items.map(i => i[1]).concat([1]));
+  const rowH = 34, H = items.length*rowH + 6;
+  let out = '<svg viewBox="0 0 570 '+H+'" role="img" aria-label="'+esc(opt.alt||"")+'">';
+  items.forEach((it,i) => {
+    const y = i*rowH + 4, w = Math.max(it[1]/max*280, 2);
+    out += '<text x="218" y="'+(y+16)+'" text-anchor="end" font-size="11" fill="var(--ink-2)" font-family="var(--ui)">'+esc(shortLabel(it[0]))+'</text>'
+        + '<rect class="bar" x="226" y="'+y+'" width="'+w.toFixed(1)+'" height="22" rx="3" fill="'+(opt.color||"var(--c2)")+'"><title>'+esc(it[0])+' — '+num(it[1])+'</title></rect>'
+        + '<text class="dlabel" x="'+(226+w+7).toFixed(1)+'" y="'+(y+16)+'">'+num(it[1])
+        + (opt.total ? ' <tspan fill="var(--ink-3)">· '+pct0(it[1]/opt.total)+'</tspan>' : '') + '</text>';
+  });
+  return out + '</svg>';
+}
+function retentionChart(curve, pitchMin){
+  if(!curve.length) return '<p class="chart-note">No retention data for this webinar.</p>';
+  const endX = curve[curve.length-1][0];
+  const maxY = niceMax(Math.max.apply(null, curve.map(p => p[1])));
+  const X = m => PLOT.x0 + (m/endX)*PLOT.w, Y = v => PLOT.y1 - (v/maxY)*PLOT.h;
+  let out = "";
+  if(pitchMin !== null && pitchMin > 0 && pitchMin < endX){
+    out += '<rect x="'+X(pitchMin).toFixed(1)+'" y="'+PLOT.y0+'" width="'+(X(endX)-X(pitchMin)).toFixed(1)
+        + '" height="'+(PLOT.y1-PLOT.y0)+'" fill="var(--surface-3)" opacity="0.75"/>'
+        + '<text class="axis-txt" x="'+(X(pitchMin)+5).toFixed(1)+'" y="'+(PLOT.y0+10)+'">pitch &rarr;</text>';
+  }
+  const pts = curve.map(p => X(p[0]).toFixed(1)+","+Y(p[1]).toFixed(1));
+  out += '<polygon fill="var(--c1)" opacity="0.12" points="'+X(curve[0][0]).toFixed(1)+','+PLOT.y1+' '+pts.join(" ")+' '+X(endX).toFixed(1)+','+PLOT.y1+'"/>'
+      +  '<polyline fill="none" stroke="var(--c1)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" points="'+pts.join(" ")+'"/>';
+  curve.forEach(p => { out += '<circle cx="'+X(p[0]).toFixed(1)+'" cy="'+Y(p[1]).toFixed(1)
+    + '" r="3.4" fill="var(--c1)"><title>minute '+p[0]+' — '+num(p[1])+' watching</title></circle>'; });
+  let xl = '<g class="axis-txt" text-anchor="middle">';
+  for(let mnt = 0; mnt <= endX; mnt += 15) xl += '<text x="'+X(mnt).toFixed(1)+'" y="'+(PLOT.y1+18)+'">'+mnt+'m</text>';
+  xl += '</g>';
+  return '<svg viewBox="0 0 570 196" role="img" aria-label="How many people were watching, minute by minute">'
+    + gridSvg(maxY, num) + out + xl + '</svg>';
+}
+function renderWebinars(){
+  const page = document.getElementById("page-webinars");
+  const dates = Array.from(new Set(S.wd.map(r => String(r["Date"])))).sort().reverse();
+  if(!dates.length){
+    page.innerHTML = '<div class="note"><p><strong>No webinar detail yet.</strong> The Webinar Detail tab in the Master Tracker is empty — it fills when the weekly webinar report runs.</p></div>';
+    return;
+  }
+  if(!S.wsel || dates.indexOf(S.wsel) === -1) S.wsel = dates[0];
+  const d = wdFor(S.wsel), m = d.meta;
+  const mv = k => { const v = parseFloat(m[k]); return isFinite(v) ? v : null; };
+  const att = mv("attended"), reg = mv("registered"), apps = mv("apps"), booked = mv("booked");
+  const peak = mv("peak_viewers"), close = mv("close_viewers"), pitch = mv("pitch_min");
+  const personal = d.calendar.filter(c => /personal/i.test(c[0])).reduce((s,c) => s + c[1], 0);
+
+  let h = '<div class="card" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">'
+    + '<span class="chart-title">Webinar</span><select id="wsel" aria-label="Pick a webinar">'
+    + dates.map(dt => '<option value="'+dt+'"'+(dt === S.wsel ? " selected" : "")+'>Thu '+fmtD(dt)+'</option>').join("")
+    + '</select><span class="chart-note">Per-minute data starts with the Zoom era (Aug 13) — the YouTube weeks have no retention export.</span></div>';
+
+  h += panel("The Room — " + fmtD(S.wsel), [
+    cell("Attended live", num(att), {sub: reg ? pct(div(att,reg)) + " of " + num(reg) + " registered" : ""}),
+    cell("Peak viewers", num(peak), {sub: "minute " + num(mv("peak_minute"))}),
+    cell("Still there at close", num(close), {sub: "minute " + num(mv("close_minute")) + (peak ? " &middot; " + pct0(div(close,peak)) + " of peak" : "")}),
+    cell("Median minutes watched", num(mv("median_minutes")), {sub: "average " + num(mv("avg_minutes"))}),
+    cell("Stayed 60+ minutes", num(mv("stayed_60plus")), {sub: att ? pct0(div(mv("stayed_60plus"),att)) + " of attendees" : ""}),
+    cell("Left inside 10 minutes", num(mv("left_under_10")), {sub: att ? pct0(div(mv("left_under_10"),att)) + " of attendees" : ""})
+  ], 3);
+
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">Who was in the room, minute by minute</span>'
+    + '<span class="chart-note">From the Zoom attendee report &middot; first join ' + esc(m["first_join_pt"]||"—") + ', last leave ' + esc(m["last_leave_pt"]||"—") + '</span></div>'
+    + retentionChart(d.curve, pitch)
+    + (pitch === null ? '<p class="chart-note" style="margin:10px 0 0">Pitch minute not marked for this webinar — fill the <code>pitch_min</code> row on the Webinar Detail tab and the shaded region appears.</p>' : '')
+    + '</div>';
+
+  h += '<div class="row r2">';
+  h += panel("Applications & Bookings", [
+    cell("Applications", num(apps), {sub: num(mv("apps_post_stream")) + " after stream start &middot; " + num(mv("apps_unique_emails")) + " unique emails"}),
+    cell("App % of attendees", pct(div(apps,att)), {sub: "whole day"}),
+    cell("Calls booked (stream day)", num(booked), {sub: apps ? pct0(div(booked,apps)) + " of applications" : ""}),
+    cell("Personal-calendar bookings", num(personal), {sub: "should be zero — check routing", tone: personal > 0 ? "bad" : "good"})
+  ], 2);
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">Bookings by calendar</span>'
+    + '<span class="chart-note">Strategy = $3K track &middot; Discovery = $497 track</span></div>'
+    + hbars(d.calendar, {alt:"Bookings by calendar", color:"var(--c1)", total: booked}) + '</div>';
+  h += '</div>';
+
+  h += '<div class="row r3">';
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">Budget they stated</span><span class="chart-note">Application answers</span></div>'
+    + hbars(d.capacity, {alt:"Stated budget", total: apps}) + '</div>';
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">Income goal</span><span class="chart-note">Application answers</span></div>'
+    + hbars(d.goal, {alt:"Income goal", color:"var(--c3)", total: apps}) + '</div>';
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">Biggest blocker</span><span class="chart-note">Application answers</span></div>'
+    + hbars(d.blocker, {alt:"Biggest blocker", color:"var(--c4)", total: apps}) + '</div>';
+  h += '</div>';
+
+  page.innerHTML = h;
+  document.getElementById("wsel").onchange = e => { S.wsel = e.target.value; renderWebinars(); };
+}
+
 /* ---------------- HEALTH ---------------- */
 const HEALTH_TILES = [
   {re:/cash in source/i,          label:"Cash reconciliation", sub:"source vs scorecard", money:true},
@@ -585,7 +725,14 @@ function renderHealth(){
     + cell("Refunds", "Not tracked", {na:true, sub:"The SCA Whop key has zero permissions enabled, and SCA pays by ACH so Stripe holds nothing. Needs Maya to enable Payments-read on the Whop key."})
     + '</div></div>';
 
-  document.getElementById("page-health").innerHTML = h;
+  document.getElementById("health-pop").innerHTML = h;
+
+  /* header pill: at-a-glance data quality, click to expand the details */
+  const allBad = rows.filter(r => String(r["Status"]).toUpperCase() !== "OK").length;
+  const pill = document.getElementById("health-pill");
+  pill.hidden = false;
+  pill.className = "ghost " + (allBad ? "warn" : "ok");
+  pill.innerHTML = allBad ? "Data: " + allBad + " check" + (allBad === 1 ? "" : "s") + " &#9662;" : "Data &#10003;";
 }
 
 /* ---------------- svg ---------------- */
@@ -705,14 +852,17 @@ function daysSince(wk){
 
 /* ---------------- chrome ---------------- */
 const fmtD = d => { const p = String(d).split("-"); return p.length === 3 ? MON[+p[1]-1] + " " + (+p[2]) : d; };
+const tgt = (name, fb) => { const v = parseFloat(S.tg[name]); return isFinite(v) ? v : fb; };
 function renderAll(){
   if(!wsRows().length){
     const msg = '<div class="note warn"><p><strong>No webinar weeks between '+esc(fmtD(S.fromD))+' and '+esc(fmtD(S.toD))+'.</strong> '
       + 'Webinars run Thursdays; widen the range or pick a preset above.</p></div>';
-    ["page-overview","page-team","page-health"].forEach(id => { document.getElementById(id).innerHTML = msg; });
-    return;
+    ["page-overview","page-team"].forEach(id => { document.getElementById(id).innerHTML = msg; });
+  } else {
+    renderOverview(); renderTeam();
   }
-  renderOverview(); renderTeam(); renderHealth();
+  renderWebinars();   /* the drill-down has its own webinar selector, independent of the date range */
+  renderHealth();
 }
 /* Presets are the primary control; the calendar pickers are the escape hatch.
    Picking a date by hand flips the preset to Custom so the label never lies. */
@@ -769,7 +919,8 @@ async function load(preserveRange){
   let out;
   try{
     out = await Promise.all([gviz("Weekly Scorecard"), gviz("Closer Stats"),
-                             gviz("Setter Stats"), gviz("Data Health"), gviz("Monthly")]);
+                             gviz("Setter Stats"), gviz("Data Health"), gviz("Monthly"),
+                             gviz("Webinar Detail"), gviz("Targets and Spend")]);
   }catch(e){ if(preserveRange){ return; } fail(e); return; }
 
   S.ws = out[0].filter(r => has(r["Week (Thu)"]));
@@ -777,6 +928,9 @@ async function load(preserveRange){
   S.ss = out[2].filter(r => has(r["Week (Thu)"]));
   S.dh = out[3];
   S.mo = out[4].filter(r => has(r["Month"]));
+  S.wd = out[5].filter(r => has(r["Date"]) && has(r["Kind"]));
+  S.tg = {};
+  out[6].forEach(r => { if(has(r["Setting"]) && has(r["Value"])) S.tg[r["Setting"]] = r["Value"]; });
   if(!S.ws.length){ if(!preserveRange) fail(new Error("The Weekly Scorecard tab returned no populated weeks. Check the Apps Script is still writing to this sheet.")); return; }
 
   S.weeks = S.ws.map(r => r["Week (Thu)"]).sort();
@@ -817,6 +971,11 @@ async function boot(){
   document.getElementById("sheet-link").href = SHEET_URL;
   document.getElementById("foot-sheet").href = SHEET_URL;
   wireTabs();
+  const pill = document.getElementById("health-pill"), pop = document.getElementById("health-pop");
+  pill.addEventListener("click", () => {
+    pop.hidden = !pop.hidden;
+    pill.setAttribute("aria-expanded", String(!pop.hidden));
+  });
   await load(false);
   /* Keep the page current without a manual reload: re-pull every 10 minutes,
      and immediately when the tab regains focus after 10+ minutes away. */
