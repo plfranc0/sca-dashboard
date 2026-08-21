@@ -154,7 +154,12 @@ footer a{color:var(--ink-3)}
     </div>
     <span class="status" id="status"><span class="dot" id="dot"></span><span id="status-txt">Loading&hellip;</span></span>
     <span class="range">
-      <label for="from">Weeks</label>
+      <select id="preset" aria-label="Date range preset">
+        <option value="4">Last 4 weeks</option>
+        <option value="8" selected>Last 8 weeks</option>
+        <option value="all">All weeks</option>
+        <option value="custom">Custom&hellip;</option>
+      </select>
       <select id="from" aria-label="From week"></select>
       <span aria-hidden="true">&rarr;</span>
       <select id="to" aria-label="To week"></select>
@@ -174,6 +179,7 @@ footer a{color:var(--ink-3)}
 <div class="wrap">
   <div id="boot" class="loading"><div class="skel"></div><div style="margin-top:14px">Reading the Master Tracker&hellip;</div></div>
   <div id="fail" hidden></div>
+  <div id="stale" hidden style="margin-top:18px"></div>
   <main id="app" hidden>
     <section class="page" id="page-overview" role="tabpanel" aria-labelledby="tab-overview"></section>
     <section class="page" id="page-team" role="tabpanel" aria-labelledby="tab-team" hidden></section>
@@ -222,6 +228,10 @@ const pct0  = v => (v === null || v === undefined || !isFinite(v)) ? "—" : Mat
 const wkShort = w => { const p = String(w).split("-"); if(p.length !== 3) return w;
   return MON[+p[1]-1] + " " + (+p[2]); };
 const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+/* Full label for the range pickers: "Thu Aug 13 – Wed Aug 19" */
+const wkRange = w => { const p = String(w).split("-"); if(p.length !== 3) return w;
+  const e = weekEnd(w).split("-");
+  return "Thu " + MON[+p[1]-1] + " " + (+p[2]) + " – Wed " + MON[+e[1]-1] + " " + (+e[2]); };
 const moLabel = m => { const p = String(m).split("-"); return p.length === 2 ? MON[+p[1]-1] + " " + p[0] : m; };
 const esc = s => String(s === null || s === undefined ? "" : s)
   .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -687,13 +697,24 @@ function daysSince(wk){
 
 /* ---------------- chrome ---------------- */
 function renderAll(){ renderOverview(); renderTeam(); renderHealth(); }
+/* Presets are the primary control; the two week pickers are the escape hatch.
+   Picking a week by hand flips the preset to Custom so the label never lies. */
+function applyPreset(p){
+  if(p === "custom") return;
+  const k = p === "all" ? S.weeks.length : Math.min(+p, S.weeks.length);
+  S.from = S.weeks[S.weeks.length - k]; S.to = S.weeks[S.weeks.length - 1];
+  document.getElementById("from").value = S.from;
+  document.getElementById("to").value = S.to;
+}
 function buildRange(){
-  const from = document.getElementById("from"), to = document.getElementById("to");
-  const opts = S.weeks.map(w => '<option value="'+w+'">'+wkShort(w)+'</option>').join("");
+  const from = document.getElementById("from"), to = document.getElementById("to"),
+        preset = document.getElementById("preset");
+  const opts = S.weeks.map(w => '<option value="'+w+'">'+wkRange(w)+'</option>').join("");
   from.innerHTML = opts; to.innerHTML = opts;
   from.value = S.from; to.value = S.to;
-  from.onchange = () => { S.from = from.value; if(S.from > S.to){ S.to = S.from; to.value = S.to; } renderAll(); };
-  to.onchange   = () => { S.to = to.value;     if(S.to < S.from){ S.from = S.to; from.value = S.from; } renderAll(); };
+  preset.onchange = () => { applyPreset(preset.value); renderAll(); };
+  from.onchange = () => { preset.value = "custom"; S.from = from.value; if(S.from > S.to){ S.to = S.from; to.value = S.to; } renderAll(); };
+  to.onchange   = () => { preset.value = "custom"; S.to = to.value;     if(S.to < S.from){ S.from = S.to; from.value = S.from; } renderAll(); };
 }
 function wireTabs(){
   const tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
@@ -725,38 +746,67 @@ function fail(err){
   document.getElementById("status-txt").textContent = "Failed to load";
   throw err;
 }
-async function boot(){
-  document.getElementById("sheet-link").href = SHEET_URL;
-  document.getElementById("foot-sheet").href = SHEET_URL;
-  wireTabs();
+async function load(preserveRange){
   let out;
   try{
     out = await Promise.all([gviz("Weekly Scorecard"), gviz("Closer Stats"),
                              gviz("Setter Stats"), gviz("Data Health"), gviz("Monthly")]);
-  }catch(e){ fail(e); return; }
+  }catch(e){ if(preserveRange){ return; } fail(e); return; }
 
   S.ws = out[0].filter(r => has(r["Week (Thu)"]));
   S.cs = out[1].filter(r => has(r["Week (Thu)"]));
   S.ss = out[2].filter(r => has(r["Week (Thu)"]));
   S.dh = out[3];
   S.mo = out[4].filter(r => has(r["Month"]));
-  if(!S.ws.length) fail(new Error("The Weekly Scorecard tab returned no populated weeks. Check the Apps Script is still writing to this sheet."));
+  if(!S.ws.length){ if(!preserveRange) fail(new Error("The Weekly Scorecard tab returned no populated weeks. Check the Apps Script is still writing to this sheet.")); return; }
 
   S.weeks = S.ws.map(r => r["Week (Thu)"]).sort();
-  S.from = S.weeks[0]; S.to = S.weeks[S.weeks.length-1];
+  const keep = preserveRange && S.weeks.indexOf(S.from) > -1 && S.weeks.indexOf(S.to) > -1
+    && document.getElementById("preset").value === "custom";
   S.fetched = new Date();
 
-  buildRange(); renderAll();
+  buildRange();
+  if(!keep) applyPreset(document.getElementById("preset").value);
+  document.getElementById("from").value = S.from;
+  document.getElementById("to").value = S.to;
+  renderAll();
 
-  const stale = daysSince(S.weeks[S.weeks.length-1]);
-  document.getElementById("dot").className = "dot" + (stale > 8 ? " warn" : "");
+  /* Freshness: weeks are Thursday-anchored, so if the newest row is more than
+     7 days old a webinar Thursday has passed without the Apps Script writing
+     its row. That is a pipeline failure, not "no news" — say so loudly. */
+  const latest = S.weeks[S.weeks.length-1];
+  const stale = daysSince(latest);
+  const staleEl = document.getElementById("stale");
+  if(stale > 7){
+    staleEl.hidden = false;
+    staleEl.innerHTML = '<div class="banner"><strong>Data stopped on ' + esc(wkRange(latest)) + '.</strong>'
+      + 'The Thursday webinar after that has no row, which means the Apps Script trigger in the '
+      + 'Master Tracker did not fire (it also silently failed on 7/30 and 8/6). Everything below is '
+      + 'accurate through ' + esc(wkShort(latest)) + ' but blind after it. Fix: open the Apps Script on the '
+      + 'Master Tracker and run <code>diagnoseTriggers()</code>, then <code>setupTriggers()</code>.</div>';
+  } else { staleEl.hidden = true; }
+
+  document.getElementById("dot").className = "dot" + (stale > 7 ? " warn" : "");
   document.getElementById("status-txt").textContent =
     "Live · " + S.fetched.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) +
-    (stale > 8 ? " · no webinar row in " + stale + " days" : "");
+    (stale > 7 ? " · data ends " + wkShort(latest) : "");
   document.getElementById("foot-fetch").textContent =
-    "Fetched " + S.fetched.toLocaleString() + " · " + S.ws.length + " weeks";
+    "Data through " + wkRange(latest) + " · fetched " + S.fetched.toLocaleString() +
+    " · refreshes every 10 min while open";
   document.getElementById("boot").hidden = true;
   document.getElementById("app").hidden = false;
+}
+async function boot(){
+  document.getElementById("sheet-link").href = SHEET_URL;
+  document.getElementById("foot-sheet").href = SHEET_URL;
+  wireTabs();
+  await load(false);
+  /* Keep the page current without a manual reload: re-pull every 10 minutes,
+     and immediately when the tab regains focus after 10+ minutes away. */
+  setInterval(() => load(true), 10*60*1000);
+  document.addEventListener("visibilitychange", () => {
+    if(!document.hidden && S.fetched && (Date.now() - S.fetched.getTime()) > 10*60*1000) load(true);
+  });
 }
 boot();
 </script>
