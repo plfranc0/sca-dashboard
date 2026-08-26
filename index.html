@@ -518,21 +518,22 @@ function renderTeam(){
         num(s.held), money(s.cash), num(s.eod)
       ];})) + '</div></div>';
 
-  /* ---- Commissions and payouts ----
+  /* ---- Commissions ----
      Earned = commission columns on the Cash Log (closer/setter rates from the
      Targets and Spend tab, applied to EOC-reported cash collected).
-     Paid   = rows a human logs on the Payouts tab.
-     Owed   = all-time earned minus all-time paid — deliberately NOT sliced by
-     the date range, because a debt doesn't shrink when you narrow the picker. */
+     Paid / Owed were REMOVED 2026-08-25: the Payouts tab was never kept current,
+     so every already-paid commission was still being reported as owed. Earned is
+     the only figure the sheet can actually stand behind. S.po is still fetched
+     (see loadAll) so restoring the paid/owed columns is a display change only. */
   const cRate = tgt("Closer commission rate", 0.10), sRate = tgt("Setter commission rate", 0.05);
   if(!Array.isArray(S.cl)){
-    h += '<div class="panel"><div class="panel-head">Commissions &amp; payouts</div>'
+    h += '<div class="panel"><div class="panel-head">Commissions</div>'
       + '<div class="note warn" style="margin:0"><p><strong>Commission data unavailable.</strong> '
       + esc(S.cl && S.cl.message ? S.cl.message : String(S.cl)) + '</p></div></div>';
   }else{
     const norm = s => String(s||"").trim().toUpperCase();
     const PP = {};
-    const addP = k => (PP[k] = PP[k] || {selC:0, selS:0, allC:0, allS:0, paid:0, roles:{}});
+    const addP = k => (PP[k] = PP[k] || {selC:0, selS:0, allC:0, allS:0, roles:{}});
     S.cl.forEach(r => {
       const w = r["Week (Thu)"], sel = inRange(w);
       const c = norm(r["Closer"]), s = norm(r["Setter"]);
@@ -541,39 +542,30 @@ function renderTeam(){
       if(s && !ARTIFACT.test(s)){ const p = addP(s); p.roles["Setter"] = 1;
         p.allS += n(r["Setter Commission"]); if(sel) p.selS += n(r["Setter Commission"]); }
     });
-    S.po.forEach(r => { const k = norm(r["Person"]);
-      if(k && !ARTIFACT.test(k)) addP(k).paid += n(r["Amount Paid"]); });
 
     const people = Object.keys(PP).sort((a,b) =>
-      (PP[b].allC + PP[b].allS - PP[b].paid) - (PP[a].allC + PP[a].allS - PP[a].paid));
+      (PP[b].selC + PP[b].selS) - (PP[a].selC + PP[a].selS));
     const latestWk = S.weeks.length ? S.weeks[S.weeks.length-1] : null;
     const latestEarned = sum(S.cl.filter(r => String(r["Week (Thu)"]) === String(latestWk)),
       r => n(r["Closer Commission"]) + n(r["Setter Commission"]));
     const selEarned = sum(S.cl.filter(r => inRange(r["Week (Thu)"])),
       r => n(r["Closer Commission"]) + n(r["Setter Commission"]));
     const allEarned = sum(S.cl, r => n(r["Closer Commission"]) + n(r["Setter Commission"]));
-    const allPaid = sum(S.po, r => n(r["Amount Paid"]));
-    const owedTot = allEarned - allPaid;
 
-    h += panel("Commissions & payouts — closer " + pct0(cRate) + " / setter " + pct0(sRate) + " of cash collected", [
-      cell("Owed to the team now", money(owedTot),
-        {sub: allPaid > 0 ? "all-time earned minus payouts logged" : "no payouts logged yet",
-         tone: owedTot > 0 ? "" : "good"}),
+    h += panel("Commissions earned — closer " + pct0(cRate) + " / setter " + pct0(sRate) + " of cash collected", [
       cell("Earned, latest week", money(latestEarned), {sub: latestWk ? "week of " + wkShort(latestWk) : ""}),
       cell("Earned, selected range", money(selEarned), {sub: "commissions on cash collected in range"}),
-      cell("Paid out, all time", money(allPaid), {sub: num(S.po.length) + " payout" + (S.po.length === 1 ? "" : "s") + " logged"})
-    ], 4);
+      cell("Earned, all time", money(allEarned), {sub: "every deal on the Cash Log"})
+    ], 3);
 
-    h += '<div class="panel"><div class="panel-head">Payout board &middot; one row per person &middot; sorted by what they are owed</div><div class="tw">'
-      + tableInner(["Person","Role","Earned (range)","Earned (all time)","Paid (all time)","Owed now"],
-        people.map(k => { const p = PP[k]; const owed = p.allC + p.allS - p.paid;
+    h += '<div class="panel"><div class="panel-head">Commission by person &middot; one row per person &middot; sorted by the selected range</div><div class="tw">'
+      + tableInner(["Person","Role","Earned (range)","Earned (all time)"],
+        people.map(k => { const p = PP[k];
           return [
             esc(title(k)),
             esc(Object.keys(p.roles).join(" + ")),
-            money(p.selC + p.selS),
-            money(p.allC + p.allS),
-            money(p.paid),
-            '<span class="pill ' + (owed > 0.005 ? "chk" : "ok") + '">' + money(owed) + '</span>'
+            '<span class="pill chk">' + money(p.selC + p.selS) + '</span>',
+            money(p.allC + p.allS)
           ];}), {left:[0,1]}) + '</div></div>';
 
     const deals = S.cl.filter(r => inRange(r["Week (Thu)"]));
@@ -587,8 +579,8 @@ function renderTeam(){
         ]), {left:[1,4,6]}) + '</div></div>';
 
     h += '<div class="note"><p><strong>Where these numbers come from.</strong> Deals land here automatically from the '
-      + 'closers’ EOC forms via the Master Tracker’s Cash Log — nobody types deals in twice. Payouts are logged by hand on the '
-      + 'Master Tracker’s <strong>Payouts</strong> tab (date, person, role, amount); until a payout is logged, everything earned shows as owed.</p>'
+      + 'closers’ EOC forms via the Master Tracker’s Cash Log — nobody types deals in twice. These are commissions '
+      + '<strong>earned</strong>; the dashboard does not track what has already been paid out, so check your own payment records before paying a line.</p>'
       + '<p style="color:var(--ink-3)">Commission applies to cash collected, so a payment-plan deal earns on the deposit now and on later '
       + 'installments only when those get filed through an EOC form. The same numbers live in the SCA Commission Tracker sheet.</p></div>';
   }
