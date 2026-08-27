@@ -181,7 +181,9 @@ footer a{color:var(--ink-3)}
 <div class="tabbar">
   <div class="tabs" role="tablist" aria-label="Dashboard pages">
     <button class="tab" role="tab" id="tab-overview" aria-controls="page-overview" aria-selected="true">Overview</button>
-    <button class="tab" role="tab" id="tab-team"     aria-controls="page-team"     aria-selected="false">Team KPIs</button>
+    <button class="tab" role="tab" id="tab-team"     aria-controls="page-team"     aria-selected="false">Sales Team</button>
+    <button class="tab" role="tab" id="tab-comm"     aria-controls="page-comm"     aria-selected="false">Commissions</button>
+    <button class="tab" role="tab" id="tab-replay"   aria-controls="page-replay"   aria-selected="false">Replay</button>
     <button class="tab" role="tab" id="tab-webinars" aria-controls="page-webinars" aria-selected="false">Webinars</button>
   </div>
 </div>
@@ -194,10 +196,12 @@ footer a{color:var(--ink-3)}
   <main id="app" hidden>
     <section class="page" id="page-overview" role="tabpanel" aria-labelledby="tab-overview"></section>
     <section class="page" id="page-team" role="tabpanel" aria-labelledby="tab-team" hidden></section>
+    <section class="page" id="page-comm" role="tabpanel" aria-labelledby="tab-comm" hidden></section>
+    <section class="page" id="page-replay" role="tabpanel" aria-labelledby="tab-replay" hidden></section>
     <section class="page" id="page-webinars" role="tabpanel" aria-labelledby="tab-webinars" hidden></section>
     <footer>
       <span id="foot-fetch"></span>
-      <span>Weeks run Thursday to Wednesday.</span>
+      <span>Weeks run Thursday to Wednesday. Cancel, no-show, pick-up and replay numbers read the GHL feeds added Aug 27.</span>
       <a href="#" id="foot-sheet" target="_blank" rel="noopener">SCA Master Tracker</a>
     </footer>
   </main>
@@ -208,14 +212,16 @@ footer a{color:var(--ink-3)}
 
 const SID = "1AaqCLsqpdhzktzE002UvN1aBGsMXajksak_w8qL_tos";
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/" + SID + "/edit";
-const S = { ws:[], cs:[], ss:[], dh:[], mo:[], wd:[], tg:{}, cl:[], po:[], weeks:[], fromD:null, toD:null, wsel:null, fetched:null };
+const S = { ws:[], cs:[], ss:[], dh:[], mo:[], wd:[], tg:{}, cl:[], po:[], ap:[], da:[], rr:[], ra:[], wr:[], calls:[], weeks:[], fromD:null, toD:null, wsel:null, fetched:null };
 
 /* ---------------- data ---------------- */
-async function gviz(tab){
+async function gviz(tab, range){
   /* headers=1 forces row 1 to be the header row — without it, all-text tabs
-     (Webinar Detail, Targets and Spend) come back with A/B/C column ids. */
+     (Webinar Detail, Targets and Spend) come back with A/B/C column ids.
+     `range` reads a sub-block, for tabs that carry a summary above the table. */
   const url = "https://docs.google.com/spreadsheets/d/" + SID +
-              "/gviz/tq?tqx=out:json&headers=1&sheet=" + encodeURIComponent(tab) + "&t=" + Date.now();
+              "/gviz/tq?tqx=out:json&headers=1&sheet=" + encodeURIComponent(tab) +
+              (range ? "&range=" + encodeURIComponent(range) : "") + "&t=" + Date.now();
   const res = await fetch(url);
   if(!res.ok) throw new Error("Tab “" + tab + "”: HTTP " + res.status + ". The sheet may no longer be shared with anyone-with-the-link.");
   const text = await res.text();
@@ -231,6 +237,14 @@ async function gviz(tab){
   });
 }
 const n = v => (typeof v === "number" && isFinite(v)) ? v : 0;
+/* Feed tabs written as ISO text come back from Sheets as real date cells
+   ("Date(2026,7,13)"). Normalise the named columns so string compares work. */
+const DATE_COLS = ["Week (Thu)","Start Date","Booked Date","Date","Registered","First Booking","First Paid","Call Date","Whop Paid Date","Date Paid"];
+function isoRows(rows){
+  rows.forEach(r => DATE_COLS.forEach(k => { if(k in r && r[k] !== null && r[k] !== "") r[k] = gvDate(r[k]); }));
+  return rows;
+}
+const softFail = e => (e instanceof Error) ? e : e;
 const has = v => v !== null && v !== undefined && v !== "";
 
 /* ---------------- format ---------------- */
@@ -402,12 +416,33 @@ function renderOverview(){
     cell("Collected %", pct(div(cash,rev)), {sub: money(rev-cash) + " still owed on contracts"})
   ], 4);
 
-  h += panel("Cancellations & Reschedules", [
-    cell("Cancelled calls", num(canc), {sub: cancTracked ? pct(div(canc,cancTracked)) + " of " + num(cancTracked) + " tracked" : "not tracked in this range", tone: canc > 0 ? "bad" : ""}),
-    cell("Rescheduled calls", num(resch), {sub: pct(div(resch,due)) + " of calls due"}),
-    naCell("Refunds", "Whop key has no permissions; SCA pays by ACH so Stripe has nothing"),
+  /* Cancel / no-show / confirmation now come from the GHL calendar itself
+     (GHL Appointments feed), not the closers' self-reported EOC forms, which
+     were catching 0-3 cancels a week against 20+ on the calendar. */
+  const A = apRows(), Apast = A.filter(r => n(r["Past-dated"]) === 1);
+  const aCanc = Apast.filter(r => n(r["Cancelled"]) === 1).length;
+  const aNS = Apast.filter(r => n(r["No-show"]) === 1).length;
+  const aYes = A.filter(r => String(r["Replied YES"]).toUpperCase() === "YES").length;
+  const aAsked = A.filter(r => has(r["Replied YES"])).length;
+  const nsSince = Apast.filter(r => String(r["Start Date"]) >= "2026-08-14");
+  const nsRate = nsSince.length ? div(nsSince.filter(r => n(r["No-show"]) === 1).length, nsSince.length) : null;
+  const refunds = Array.isArray(S.wr) ? sum(S.wr.filter(r => inRange(r["Week (Thu)"])), r => r["Whop Refunded"]) : null;
+  h += panel("Cancellations & No-Shows — from the GHL calendar", [
+    cell("Cancel rate", Apast.length ? pct(div(aCanc, Apast.length)) : "—",
+      {sub: num(aCanc) + " of " + num(Apast.length) + " past-dated bookings", tone: div(aCanc, Apast.length) > 0.4 ? "bad" : ""}),
+    cell("No-show rate", nsRate === null ? "—" : pct(nsRate),
+      {sub: nsRate === null ? "no-shows only marked since Aug 14" : num(nsSince.filter(r => n(r["No-show"]) === 1).length) + " of " + num(nsSince.length) + " since Aug 14, when marking began", tone: nsRate > 0.25 ? "bad" : ""}),
+    cell("Confirmation rate", aAsked ? pct(div(aYes, aAsked)) : "—",
+      {sub: aAsked ? num(aYes) + " of " + num(aAsked) + " replied YES after booking" : "reply sweep not run for this range"}),
+    cell("Rescheduled calls", num(resch), {sub: pct(div(resch,due)) + " of calls due (EOC-reported)"}),
+    refunds === null ? naCell("Refunds", "Whop Recon tab unavailable") : cell("Refunds", money(refunds), {sub:"Whop, selected weeks", tone: refunds > 0 ? "bad" : ""}),
     cell("Never dialed", num(sum(R.filter(r=>!agedOut(r["Week (Thu)"])),r=>r["Never Dialed"])), {sub:"appointments, last 28 days"})
-  ], 4);
+  ], 3);
+  if(Array.isArray(S.ap) && A.length){
+    h += '<div class="note"><p><strong>Cancel rate reads the GHL calendar, not the EOC forms.</strong> '
+      + 'The forms reported ' + num(canc) + ' cancel' + (canc===1?"":"s") + ' in this range; the calendar shows ' + num(aCanc)
+      + '. A booking that texts back YES cancels far less often than a silent one (24% vs 67% on the Strategy calendar, Aug 13–26), so the confirmation rate is the number to push.</p></div>';
+  }
 
   h += '</div>';
 
@@ -518,73 +553,49 @@ function renderTeam(){
         num(s.held), money(s.cash), num(s.eod)
       ];})) + '</div></div>';
 
-  /* ---- Commissions ----
-     Earned = commission columns on the Cash Log (closer/setter rates from the
-     Targets and Spend tab, applied to EOC-reported cash collected).
-     Paid / Owed were REMOVED 2026-08-25: the Payouts tab was never kept current,
-     so every already-paid commission was still being reported as owed. Earned is
-     the only figure the sheet can actually stand behind. S.po is still fetched
-     (see loadAll) so restoring the paid/owed columns is a display change only. */
-  const cRate = tgt("Closer commission rate", 0.10), sRate = tgt("Setter commission rate", 0.05);
-  if(!Array.isArray(S.cl)){
-    h += '<div class="panel"><div class="panel-head">Commissions</div>'
-      + '<div class="note warn" style="margin:0"><p><strong>Commission data unavailable.</strong> '
-      + esc(S.cl && S.cl.message ? S.cl.message : String(S.cl)) + '</p></div></div>';
-  }else{
-    const norm = s => String(s||"").trim().toUpperCase();
-    const PP = {};
-    const addP = k => (PP[k] = PP[k] || {selC:0, selS:0, allC:0, allS:0, roles:{}});
-    S.cl.forEach(r => {
-      const w = r["Week (Thu)"], sel = inRange(w);
-      const c = norm(r["Closer"]), s = norm(r["Setter"]);
-      if(c && !ARTIFACT.test(c)){ const p = addP(c); p.roles["Closer"] = 1;
-        p.allC += n(r["Closer Commission"]); if(sel) p.selC += n(r["Closer Commission"]); }
-      if(s && !ARTIFACT.test(s)){ const p = addP(s); p.roles["Setter"] = 1;
-        p.allS += n(r["Setter Commission"]); if(sel) p.selS += n(r["Setter Commission"]); }
-    });
-
-    const people = Object.keys(PP).sort((a,b) =>
-      (PP[b].selC + PP[b].selS) - (PP[a].selC + PP[a].selS));
-    const latestWk = S.weeks.length ? S.weeks[S.weeks.length-1] : null;
-    const latestEarned = sum(S.cl.filter(r => String(r["Week (Thu)"]) === String(latestWk)),
-      r => n(r["Closer Commission"]) + n(r["Setter Commission"]));
-    const selEarned = sum(S.cl.filter(r => inRange(r["Week (Thu)"])),
-      r => n(r["Closer Commission"]) + n(r["Setter Commission"]));
-    const allEarned = sum(S.cl, r => n(r["Closer Commission"]) + n(r["Setter Commission"]));
-
-    h += panel("Commissions earned — closer " + pct0(cRate) + " / setter " + pct0(sRate) + " of cash collected", [
-      cell("Earned, latest week", money(latestEarned), {sub: latestWk ? "week of " + wkShort(latestWk) : ""}),
-      cell("Earned, selected range", money(selEarned), {sub: "commissions on cash collected in range"}),
-      cell("Earned, all time", money(allEarned), {sub: "every deal on the Cash Log"})
-    ], 3);
-
-    h += '<div class="panel"><div class="panel-head">Commission by person &middot; one row per person &middot; sorted by the selected range</div><div class="tw">'
-      + tableInner(["Person","Role","Earned (range)","Earned (all time)"],
-        people.map(k => { const p = PP[k];
-          return [
-            esc(title(k)),
-            esc(Object.keys(p.roles).join(" + ")),
-            '<span class="pill chk">' + money(p.selC + p.selS) + '</span>',
-            money(p.allC + p.allS)
-          ];}), {left:[0,1]}) + '</div></div>';
-
-    const deals = S.cl.filter(r => inRange(r["Week (Thu)"]));
-    h += '<div class="panel"><div class="panel-head">Deals behind those numbers &middot; selected range'
-      + (deals.length > 15 ? ' &middot; newest 15 of ' + num(deals.length) : '') + '</div><div class="tw">'
-      + tableInner(["Date","Prospect","Cash","Pay type","Closer","Closer comm","Setter","Setter comm"],
-        deals.slice(0, 15).map(r => [
-          esc(fmtD(gvDate(r["Call Date"]))), esc(r["Prospect"]), money(n(r["Cash Collected"])),
-          esc(r["Pay Type"]), esc(title(r["Closer"])), money(n(r["Closer Commission"])),
-          r["Setter"] ? esc(title(r["Setter"])) : null, money(n(r["Setter Commission"]))
-        ]), {left:[1,4,6]}) + '</div></div>';
-
-    h += '<div class="note"><p><strong>Where these numbers come from.</strong> Deals land here automatically from the '
-      + 'closers’ EOC forms via the Master Tracker’s Cash Log — nobody types deals in twice. These are commissions '
-      + '<strong>earned</strong>; the dashboard does not track what has already been paid out, so check your own payment records before paying a line.</p>'
-      + '<p style="color:var(--ink-3)">Commission applies to cash collected, so a payment-plan deal earns on the deposit now and on later '
-      + 'installments only when those get filed through an EOC form. The same numbers live in the SCA Commission Tracker sheet.</p></div>';
+  /* ---- Pick-up rate + activity, from the Dial Activity feed ---- */
+  const D = daRows();
+  if(Array.isArray(S.da)){
+    const byR = {};
+    D.forEach(r => { const k = String(r["Rep"]||""); if(!k || /^\(no user\)$/.test(k) || /^[A-Za-z0-9]{20}$/.test(k)) return;
+      byR[k] = byR[k] || {dials:0, ans:0, talk:0, texts:0, days:new Set()};
+      byR[k].dials += n(r["Dials"]); byR[k].ans += n(r["Answered (>=30s)"]); byR[k].talk += n(r["Talk secs"]); byR[k].texts += n(r["Texts"]);
+      byR[k].days.add(String(r["Date"])); });
+    const reps = Object.keys(byR).sort((a,b) => (byR[b].dials + byR[b].texts) - (byR[a].dials + byR[a].texts));
+    const tD = reps.reduce((s,k)=>s+byR[k].dials,0), tA = reps.reduce((s,k)=>s+byR[k].ans,0), tT = reps.reduce((s,k)=>s+byR[k].texts,0);
+    h += panel("Dial activity — from the GHL dialer, selected dates", [
+      cell("Dials", num(tD), {sub:"outbound calls placed by a person"}),
+      cell("Pick-up rate", tD ? pct(div(tA,tD)) : "—", {sub: num(tA) + " answered, 30 seconds or longer", tone: div(tA,tD) >= 0.3 ? "good" : ""}),
+      cell("Texts sent", num(tT), {sub:"manual SMS, not automations"}),
+      cell("Talk time", tA ? (Math.round(reps.reduce((s,k)=>s+byR[k].talk,0)/60)) + " min" : "—", {sub:"total across answered calls"})
+    ], 4);
+    h += '<div class="panel"><div class="panel-head">Pick-up rate by rep &middot; a dial counts once, an answer needs 30+ seconds</div><div class="tw">'
+      + tableInner(["Rep","Dials","Answered","Pick-up %","Texts","Talk min","Active days"],
+        reps.map(k => { const r = byR[k]; return [esc(k), num(r.dials), num(r.ans),
+          r.dials ? '<span class="pill '+(div(r.ans,r.dials) >= 0.3 ? "ok" : "bad")+'">'+pct(div(r.ans,r.dials))+'</span>' : null,
+          num(r.texts), r.ans ? num(r.talk/60) : null, num(r.days.size)]; }), {left:[0]}) + '</div></div>';
+    h += '<div class="note"><p><strong>Amanda dialed from her own phone until Aug 27.</strong> Dials before that date only show the calls she placed inside GHL, so her early numbers are a floor, not her real activity. From Aug 27 everything is on the GHL line.</p></div>';
+  } else {
+    h += '<div class="note warn"><p><strong>Dial activity unavailable.</strong> ' + esc(S.da && S.da.message ? S.da.message : "Dial Activity tab missing") + '</p></div>';
   }
 
+  /* ---- Cancel rate by calendar, from the GHL Appointments feed ---- */
+  const AP = apRows().filter(r => n(r["Past-dated"]) === 1);
+  if(Array.isArray(S.ap) && AP.length){
+    const byCal = {};
+    AP.forEach(r => { const k = String(r["Calendar"]||"").replace("Book a ","").replace(" Personal Calendar","").replace("'s","");
+      byCal[k] = byCal[k] || {n:0,c:0,ns:0,yes:0};
+      byCal[k].n++; byCal[k].c += n(r["Cancelled"]); byCal[k].ns += n(r["No-show"]); byCal[k].yes += String(r["Replied YES"]).toUpperCase()==="YES" ? 1 : 0; });
+    const cals = Object.keys(byCal).sort((a,b)=>byCal[b].n-byCal[a].n);
+    h += '<div class="panel"><div class="panel-head">Cancel and no-show rate by calendar &middot; past-dated bookings in range</div><div class="tw">'
+      + tableInner(["Calendar","Booked","Cancelled","Cancel %","No-show","No-show %","Replied YES"],
+        cals.map(k => { const c = byCal[k]; return [esc(k), num(c.n), num(c.c),
+          '<span class="pill '+(div(c.c,c.n) > 0.4 ? "bad" : "ok")+'">'+pct(div(c.c,c.n))+'</span>',
+          num(c.ns), c.ns ? '<span class="pill '+(div(c.ns,c.n) > 0.25 ? "bad" : "ok")+'">'+pct(div(c.ns,c.n))+'</span>' : pct(0),
+          pct(div(c.yes,c.n))]; }), {left:[0]}) + '</div></div>';
+  }
+
+  /* Commissions moved to their own tab 2026-08-27 (renderCommissions). */
   h += '<div class="row r2">';
   h += '<div class="card"><div class="chart-head"><span class="chart-title">Speed to lead</span>'
     + '<span class="chart-note">Share of bookings dialed within 20 minutes</span></div>'
@@ -628,6 +639,194 @@ function renderTeam(){
     + 'built from the closer call log rather than the appointment log.</p></div>';
 
   document.getElementById("page-team").innerHTML = h;
+}
+
+/* ---------------- shared feed filters ---------------- */
+const apRows = () => Array.isArray(S.ap) ? S.ap.filter(r => inRange(r["Week (Thu)"])) : [];
+const daRows = () => Array.isArray(S.da) ? S.da.filter(r => String(r["Date"]) >= S.fromD && String(r["Date"]) <= S.toD) : [];
+const normName = s => String(s||"").trim().toUpperCase();
+
+/* ---------------- COMMISSIONS ----------------
+   Model decided at the 2026-08-26 ops meeting:
+     closers  10% of cash collected (Cash Log col J, rate on Targets and Spend)
+     setters  flat $30 per held call + $50 per close they set, from the week of
+              Aug 27. Before that, 5% of cash (Cash Log col K).
+     Kaia     10% on $497 closes is covered by the closer rate; the $150/week
+              DM-setting retainer is listed as an assumed line until Maya's brief.
+   Paid = the Payouts tab. Whop-verified = the Whop Recon tab. */
+const SETTER_FLAT_FROM = "2026-08-27";
+const SETTER_SHOW = 30, SETTER_CLOSE = 50, KAIA_WEEKLY = 150;
+function renderCommissions(){
+  const page = document.getElementById("page-comm");
+  if(!Array.isArray(S.cl)){
+    page.innerHTML = '<div class="note warn"><p><strong>Commission data unavailable.</strong> ' + esc(S.cl && S.cl.message ? S.cl.message : String(S.cl)) + '</p></div>';
+    return;
+  }
+  const cRate = tgt("Closer commission rate", 0.10), sRate = tgt("Setter commission rate", 0.05);
+  const ARTIFACT = /^\(UNASSIGNED\)$|^NONE$/i;
+  const calls = Array.isArray(S.calls) ? S.calls : [];
+  const wr = Array.isArray(S.wr) ? S.wr : [];
+
+  /* Whop verification per Cash Log deal: match on prospect + call date */
+  /* Join on prospect + call date, tolerating a one-day drift either side: the
+     recon tab is written by Apps Script and sheet-timezone rounding can move a
+     date by a day. */
+  const dayShift = (iso, d) => { const p = String(iso).split("-"); if(p.length !== 3) return iso;
+    const t = new Date(Date.UTC(+p[0], +p[1]-1, +p[2] + d)); return t.toISOString().slice(0,10); };
+  const wmap = {};
+  wr.forEach(r => { const nm = normName(r["Prospect"]), cd = String(r["Call Date"]); if(!nm) return;
+    [0, -1, 1].forEach((d, i) => { const k = nm + "|" + dayShift(cd, d); if(i === 0 || !wmap[k]) wmap[k] = String(r["Recon Status"]||""); }); });
+  const wkey = r => normName(r["Prospect"]) + "|" + String(r["Call Date"]);
+  const whopPill = st => {
+    if(!wr.length) return '<span class="pill">no recon</span>';
+    if(!st) return '<span class="pill bad">not on Whop</span>';
+    if(/^MATCHED/.test(st)) return '<span class="pill ok">Whop ✓</span>';
+    if(/^PROBABLE/.test(st)) return '<span class="pill chk">probable</span>';
+    if(/^EOC ONLY/.test(st)) return '<span class="pill bad">no payment</span>';
+    return '<span class="pill">'+esc(st.slice(0,14))+'</span>';
+  };
+
+  /* Per-deal ledger from the Cash Log */
+  const deals = S.cl.map(r => {
+    const wk = String(r["Week (Thu)"]), flat = wk >= SETTER_FLAT_FROM;
+    const setter = normName(r["Setter"]), closer = normName(r["Closer"]);
+    const cash = n(r["Cash Collected"]);
+    /* setter under the flat model: $30 if the call was held (it was — it's on the Cash Log), $50 if closed */
+    const setterComm = flat ? (ARTIFACT.test(setter) || !setter ? 0 : SETTER_SHOW + SETTER_CLOSE) : n(r["Setter Commission"]);
+    return { wk, date: String(r["Call Date"]), prospect: String(r["Prospect"]||""), cash, pay: String(r["Pay Type"]||""),
+             offer: String(r["Offer"]||""), closer, setter, closerComm: n(r["Closer Commission"]), setterComm, flat,
+             whop: wmap[wkey(r)] || "" };
+  });
+  /* Setter shows without a close: held calls from _calls where Closed = 0 (flat model only) */
+  const shows = calls.filter(r => String(r["Week (Thu)"]) >= SETTER_FLAT_FROM && n(r["Held"]) === 1 && n(r["Closed"]) === 0 && r["Setter"] && !ARTIFACT.test(normName(r["Setter"])))
+    .map(r => ({ wk:String(r["Week (Thu)"]), date:String(r["Call Date"]), prospect:String(r["Prospect"]||""), setter: normName(r["Setter"]), comm: SETTER_SHOW }));
+
+  /* People */
+  const PP = {};
+  const P = k => (PP[k] = PP[k] || {roles:{}, sel:0, all:0, selC:0, selS:0, paid:0, deals:0});
+  deals.forEach(d => {
+    const sel = inRange(d.wk);
+    if(d.closer && !ARTIFACT.test(d.closer)){ const p = P(d.closer); p.roles.Closer = 1; p.all += d.closerComm; if(sel){ p.sel += d.closerComm; p.selC += d.closerComm; p.deals++; } }
+    if(d.setter && !ARTIFACT.test(d.setter)){ const p = P(d.setter); p.roles.Setter = 1; p.all += d.setterComm; if(sel){ p.sel += d.setterComm; p.selS += d.setterComm; } }
+  });
+  shows.forEach(x => { const p = P(x.setter); p.roles.Setter = 1; p.all += x.comm; if(inRange(x.wk)){ p.sel += x.comm; p.selS += x.comm; } });
+  /* Kaia weekly DM retainer, assumed from the flat-model start */
+  const weeksSince = S.weeks.filter(w => w >= SETTER_FLAT_FROM);
+  if(PP["KAIA"] || weeksSince.length){ const p = P("KAIA"); p.roles["DM setter"] = 1;
+    p.all += KAIA_WEEKLY * weeksSince.length; p.sel += KAIA_WEEKLY * weeksSince.filter(w => inRange(w)).length; }
+  S.po.forEach(r => { const k = normName(r["Person"]); if(!k) return; P(k).paid += n(r["Amount Paid"]); });
+
+  const people = Object.keys(PP).sort((a,b) => PP[b].sel - PP[a].sel);
+  const totalSel = people.reduce((s,k)=>s+PP[k].sel,0), totalAll = people.reduce((s,k)=>s+PP[k].all,0), totalPaid = people.reduce((s,k)=>s+PP[k].paid,0);
+  const verified = deals.filter(d => inRange(d.wk) && /^MATCHED/.test(d.whop)).length, inRangeDeals = deals.filter(d => inRange(d.wk));
+
+  let h = "";
+  h += panel("Commissions — closer " + pct0(cRate) + " of cash · setter $" + SETTER_SHOW + " per show + $" + SETTER_CLOSE + " per close (from Aug 27)", [
+    cell("Earned, selected range", money(totalSel), {sub: num(inRangeDeals.length) + " deals on the Cash Log"}),
+    cell("Earned, all time", money(totalAll), {sub:"every deal, both models"}),
+    cell("Paid out, all time", money(totalPaid), {sub: S.po.length ? num(S.po.length) + " payouts logged on the Payouts tab" : "Payouts tab is empty — nothing logged yet", tone: S.po.length ? "" : "bad"}),
+    cell("Owed now", money(totalAll - totalPaid), {sub:"earned all time minus paid all time"}),
+    cell("Whop-verified deals", inRangeDeals.length ? pct(div(verified, inRangeDeals.length)) : "—", {sub: num(verified) + " of " + num(inRangeDeals.length) + " in range match a Whop payment", tone: div(verified, inRangeDeals.length) >= 0.9 ? "good" : "bad"}),
+    cell("Setter model switch", fmtD(SETTER_FLAT_FROM), {sub:"5% of cash before, flat $30 / $50 after", sm:true})
+  ], 3);
+
+  h += '<div class="panel"><div class="panel-head">By person &middot; tick Paid on the Payouts tab of the Master Tracker, it shows here</div><div class="tw">'
+    + tableInner(["Person","Role","Earned (range)","Earned (all time)","Paid (all time)","Owed","Status"],
+      people.map(k => { const p = PP[k]; const owed = p.all - p.paid;
+        return [esc(title(k)), esc(Object.keys(p.roles).join(" + ")), '<span class="pill chk">'+money(p.sel)+'</span>', money(p.all), money(p.paid), money(owed),
+          owed <= 0 ? '<span class="pill ok">Paid up</span>' : '<span class="pill bad">' + money(owed) + ' owed</span>']; }), {left:[0,1]}) + '</div></div>';
+
+  /* Deal ledger with paid + whop columns. Paid is FIFO per person: oldest deals are covered first by that person's payouts. */
+  const remaining = {}; people.forEach(k => remaining[k] = PP[k].paid);
+  const ledger = deals.slice().sort((a,b) => a.date < b.date ? -1 : 1);
+  ledger.forEach(d => {
+    d.closerPaid = false; d.setterPaid = false;
+    if(d.closer && remaining[d.closer] !== undefined && remaining[d.closer] >= d.closerComm && d.closerComm > 0){ remaining[d.closer] -= d.closerComm; d.closerPaid = true; }
+    if(d.setter && remaining[d.setter] !== undefined && remaining[d.setter] >= d.setterComm && d.setterComm > 0){ remaining[d.setter] -= d.setterComm; d.setterPaid = true; }
+  });
+  const show = ledger.filter(d => inRange(d.wk)).reverse();
+  const paidPill = (ok, amt) => amt > 0 ? (ok ? '<span class="pill ok">paid</span>' : '<span class="pill bad">owed</span>') : null;
+  h += '<div class="panel"><div class="panel-head">Deal ledger &middot; selected range &middot; newest first</div><div class="tw">'
+    + tableInner(["Date","Prospect","Offer","Cash","Whop","Closer","Closer comm","Paid?","Setter","Setter comm","Paid?"],
+      show.map(d => [esc(fmtD(d.date)), esc(d.prospect), esc(d.offer), money(d.cash), whopPill(d.whop),
+        esc(title(d.closer)), money(d.closerComm), paidPill(d.closerPaid, d.closerComm),
+        d.setter && !ARTIFACT.test(d.setter) ? esc(title(d.setter)) : null, d.setterComm ? money(d.setterComm) : null, paidPill(d.setterPaid, d.setterComm)]),
+      {left:[1,2,5,8]}) + '</div></div>';
+
+  const showsSel = shows.filter(x => inRange(x.wk));
+  if(showsSel.length){
+    h += '<div class="panel"><div class="panel-head">Setter shows without a close &middot; $' + SETTER_SHOW + ' each &middot; selected range</div><div class="tw">'
+      + tableInner(["Date","Prospect","Setter","Earned"], showsSel.map(x => [esc(fmtD(x.date)), esc(x.prospect), esc(title(x.setter)), money(x.comm)]), {left:[1,2]}) + '</div></div>';
+  }
+
+  /* Link closes: Whop payments with no EOC form */
+  const linkCloses = wr.filter(r => /^WHOP ONLY/.test(String(r["Recon Status"])) && inRange(r["Week (Thu)"]) || (/^WHOP ONLY/.test(String(r["Recon Status"])) && !has(r["Week (Thu)"]) && String(r["Whop Paid Date"]) >= S.fromD && String(r["Whop Paid Date"]) <= S.toD));
+  if(linkCloses.length){
+    h += '<div class="panel"><div class="panel-head">Paid on Whop, no EOC form &middot; link closes to attribute by hand</div><div class="tw">'
+      + tableInner(["Paid","Name","Email","Amount","Type"], linkCloses.map(r => [esc(fmtD(String(r["Whop Paid Date"]))), esc(r["Whop Billing Name"]), esc(r["Whop Email"]), money(n(r["Whop Amount"])), esc(r["Whop Billing Reason"])]), {left:[1,2]}) + '</div></div>';
+  }
+
+  h += '<div class="note"><p><strong>How to read this.</strong> Deals land from the closers’ EOC forms via the Cash Log. '
+    + '<strong>Whop ✓</strong> means the deal matched a real Whop payment on amount, date and name; <strong>probable</strong> means amount and date matched but the name on the card differs; <strong>no payment</strong> means a form was filed and no money landed. '
+    + '<strong>Paid</strong> comes from the Payouts tab, oldest deals covered first, so log every payout there or everything reads as owed.</p>'
+    + '<p style="color:var(--ink-3)">Setter pay switched from 5% of cash to a flat $' + SETTER_SHOW + ' per held call and $' + SETTER_CLOSE + ' per close on ' + esc(fmtD(SETTER_FLAT_FROM)) + '. '
+    + 'Kaia’s $' + KAIA_WEEKLY + '/week DM-setting line is an assumed rule from the Aug 26 meeting, pending Maya’s brief. Patrick’s replay commission is not on this page.</p></div>';
+  page.innerHTML = h;
+}
+
+/* ---------------- REPLAY ----------------
+   Replay-attributed = the contact carried webinar-no-show or watched-replay
+   and their first Whop payment landed within 30 days (Exhibit A rule). The
+   tag date is proxied by registration, since GHL keeps no per-tag timestamp. */
+function renderReplay(){
+  const page = document.getElementById("page-replay");
+  if(!Array.isArray(S.rr) || !Array.isArray(S.ra)){
+    page.innerHTML = '<div class="note warn"><p><strong>Replay data unavailable.</strong> ' + esc((S.rr && S.rr.message) || (S.ra && S.ra.message) || "Replay tabs missing") + '</p></div>';
+    return;
+  }
+  const RR = S.rr.filter(r => inRange(r["Week (Thu)"])), cats = RR.map(r => r["Week (Thu)"]);
+  const tagged = sum(RR, r=>r["Replay-tagged"]), qual = sum(RR, r=>r["Qualify"]), applied = sum(RR, r=>r["Applied"]),
+        booked = sum(RR, r=>r["Booked"]), paid = sum(RR, r=>r["Paid (any)"]), attr = sum(RR, r=>r["Attributed"]), cash = sum(RR, r=>r["Attributed Cash"]);
+  const RA = S.ra.filter(r => inRange(r["Week (Thu)"]));
+  const review = RA.filter(r => /^REVIEW/.test(String(r["Status"])));
+
+  let h = "";
+  h += panel("Replay funnel — registrants who missed the live stream or watched the replay", [
+    cell("Reached by replay", num(qual), {sub: num(tagged) + " replay-tagged, " + num(qual) + " qualify (no-show or watched)"}),
+    cell("Applied", num(applied), {sub: pct(div(applied, qual)) + " of reached"}),
+    cell("Booked a call", num(booked), {sub: pct(div(booked, qual)) + " of reached"}),
+    cell("Closed, attributed", num(attr), {sub: num(paid) + " paid at any point; " + num(attr) + " inside the 30-day window"}),
+    cell("Attributed cash", money(cash), {sub:"Whop-verified, first payment within 30 days"}),
+    cell("Needs review", num(review.length), {sub: review.length ? money(sum(review, r=>r["Cash (all)"])) + " where the sale came >30 days after registration" : "nothing flagged", tone: review.length ? "bad" : ""})
+  ], 3);
+
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">Replay reach → bookings → attributed closes, by week</span>'
+    + '<span class="chart-note">Registration week</span></div>'
+    + groupedBar(cats,
+        {name:"Reached", color:"var(--c1)", vals:RR.map(r=>n(r["Qualify"]))},
+        {name:"Booked", color:"var(--c2)", vals:RR.map(r=>n(r["Booked"]))},
+        {clip:"cf9", alt:"Replay reach and bookings by week"})
+    + legend([{name:"Reached",color:"var(--c1)"},{name:"Booked",color:"var(--c2)"}]) + '</div>';
+
+  h += '<div class="panel"><div class="panel-head">Week by week</div><div class="tw">'
+    + tableInner(["Week","Tagged","Reached","Applied","App %","Booked","Book %","Paid","Attributed","Cash"],
+      RR.slice().reverse().map(r => [esc(wkShort(r["Week (Thu)"])), num(r["Replay-tagged"]), num(r["Qualify"]), num(r["Applied"]),
+        pct(div(n(r["Applied"]), n(r["Qualify"]))), num(r["Booked"]), pct(div(n(r["Booked"]), n(r["Qualify"]))), num(r["Paid (any)"]), num(r["Attributed"]), money(n(r["Attributed Cash"]))])) + '</div></div>';
+
+  const statusPill = st => /^ATTRIBUTED/.test(st) ? '<span class="pill ok">attributed</span>' : /^REVIEW/.test(st) ? '<span class="pill bad">review</span>' : /attended live/.test(st) ? '<span class="pill">live close</span>' : '<span class="pill chk">' + esc(st) + '</span>';
+  const detail = RA.filter(r => /^(ATTRIBUTED|REVIEW)/.test(String(r["Status"])) || has(r["First Booking"]) || has(r["First Paid"]));
+  h += '<div class="panel"><div class="panel-head">Contacts behind the numbers &middot; booked or paid &middot; selected range</div><div class="tw">'
+    + tableInner(["Registered","Name","Replay tag","Applied","Booked","Held","Paid","Cash","Status"],
+      detail.map(r => [esc(fmtD(String(r["Registered"]))), esc(title(String(r["Name"]||""))), esc(String(r["Replay Entry Tag"]||"").replace("+"," + ")),
+        n(r["Applied"]) ? "yes" : null, has(r["First Booking"]) ? esc(fmtD(String(r["First Booking"]))) : null, n(r["Held"]) ? "yes" : (n(r["Cancelled"]) ? "cancelled" : null),
+        has(r["First Paid"]) ? esc(fmtD(String(r["First Paid"]))) : null, has(r["Cash (all)"]) ? money(n(r["Cash (all)"])) : null, statusPill(String(r["Status"]||""))]),
+      {left:[1,2]}) + '</div></div>';
+
+  h += '<div class="note"><p><strong>What counts.</strong> A sale is replay-attributed when the contact carried <code>webinar-no-show</code> or <code>watched-replay</code> and her first Whop payment landed within 30 days. '
+    + 'People who attended live and closed are listed as <em>live close</em> and are deliberately not counted, per the attribution rule. '
+    + '<strong>Review</strong> rows qualify on the tag but bought more than 30 days after they registered; GHL does not record when a tag was applied, so those need a human to confirm which webinar pulled them back in.</p>'
+    + '<p style="color:var(--ink-3)">Silent no-shows are counted in the weekly reach numbers but not listed individually. Refreshes with the Whop reconciliation.</p></div>';
+  page.innerHTML = h;
 }
 function title(s){ s = String(s||""); return s.charAt(0) + s.slice(1).toLowerCase(); }
 
@@ -927,9 +1126,9 @@ function renderAll(){
   if(!wsRows().length){
     const msg = '<div class="note warn"><p><strong>No webinar weeks between '+esc(fmtD(S.fromD))+' and '+esc(fmtD(S.toD))+'.</strong> '
       + 'Webinars run Thursdays; widen the range or pick a preset above.</p></div>';
-    ["page-overview","page-team"].forEach(id => { document.getElementById(id).innerHTML = msg; });
+    ["page-overview","page-team","page-comm","page-replay"].forEach(id => { document.getElementById(id).innerHTML = msg; });
   } else {
-    renderOverview(); renderTeam();
+    renderOverview(); renderTeam(); renderCommissions(); renderReplay();
   }
   renderWebinars();   /* the drill-down has its own webinar selector, independent of the date range */
   renderHealth();
@@ -993,7 +1192,11 @@ async function load(preserveRange){
     out = await Promise.all([gviz("Weekly Scorecard"), gviz("Closer Stats"),
                              gviz("Setter Stats"), gviz("Data Health"), gviz("Monthly"),
                              gviz("Webinar Detail"), gviz("Targets and Spend"),
-                             gviz("Cash Log").catch(e => e), gviz("Payouts").catch(e => e)]);
+                             gviz("Cash Log").catch(e => e), gviz("Payouts").catch(e => e),
+                             /* feeds added 2026-08-27; each degrades its own section only */
+                             gviz("GHL Appointments").catch(e => e), gviz("Dial Activity").catch(e => e),
+                             gviz("Replay Rollup").catch(e => e), gviz("Replay Attribution").catch(e => e),
+                             gviz("Whop Recon", "A10:Q1000").catch(e => e), gviz("_calls").catch(e => e)]);
   }catch(e){ if(preserveRange){ return; } fail(e); return; }
 
   S.ws = out[0].filter(r => has(r["Week (Thu)"]));
@@ -1005,7 +1208,14 @@ async function load(preserveRange){
   S.tg = {};
   out[6].forEach(r => { if(has(r["Setting"]) && has(r["Value"])) S.tg[r["Setting"]] = r["Value"]; });
   S.cl = Array.isArray(out[7]) ? out[7].filter(r => has(r["Week (Thu)"]) && has(r["Closer"])) : out[7];
-  S.po = Array.isArray(out[8]) ? out[8].filter(r => has(r["Person"]) && has(r["Amount Paid"])) : [];
+  S.po = Array.isArray(out[8]) ? isoRows(out[8].filter(r => has(r["Person"]) && has(r["Amount Paid"]))) : [];
+  S.ap = Array.isArray(out[9])  ? isoRows(out[9].filter(r => has(r["Appt ID"]))) : out[9];
+  S.da = Array.isArray(out[10]) ? isoRows(out[10].filter(r => has(r["Rep"]))) : out[10];
+  S.rr = Array.isArray(out[11]) ? isoRows(out[11].filter(r => has(r["Week (Thu)"]))) : out[11];
+  S.ra = Array.isArray(out[12]) ? isoRows(out[12].filter(r => has(r["Contact ID"]))) : out[12];
+  S.wr = Array.isArray(out[13]) ? isoRows(out[13].filter(r => has(r["Recon Status"]))) : out[13];
+  S.calls = Array.isArray(out[14]) ? isoRows(out[14].filter(r => has(r["Week (Thu)"]) && has(r["Closer"]))) : out[14];
+  if(Array.isArray(S.cl)) isoRows(S.cl);
   if(!S.ws.length){ if(!preserveRange) fail(new Error("The Weekly Scorecard tab returned no populated weeks. Check the Apps Script is still writing to this sheet.")); return; }
 
   S.weeks = S.ws.map(r => r["Week (Thu)"]).sort();
