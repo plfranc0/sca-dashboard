@@ -870,6 +870,60 @@ function hbars(items, opt){
   });
   return out + '</svg>';
 }
+/* Sankey-style funnel: a strict left-to-right chain where the main flow stays
+   top-aligned (so it reads as a straight river) and the people lost at each
+   step split off as a grey stream that falls to a stub below the next stage.
+   Hand-rolled SVG like every other chart here — no library. */
+function sankeyFunnel(stages){
+  stages = stages.filter(s => s.value !== null && s.value !== undefined && isFinite(s.value));
+  if(stages.length < 2) return '<p class="chart-note">Not enough data for the funnel — this webinar is missing its registered or attended counts.</p>';
+  const v0 = Math.max(stages[0].value, 1);
+  const W = 1140, NW = 16, x0 = 8, xEnd = W - 250;
+  const colW = (xEnd - x0)/(stages.length - 1);
+  const yTop = 50, maxH = 160, scale = maxH/v0;
+  const hOf = v => v > 0 ? Math.max(v*scale, 3) : 0;
+  const X = i => x0 + i*colW;
+  let ribbons = "", nodes = "", labels = "", bottom = yTop + maxH;
+
+  stages.forEach((s, i) => {
+    const h = hOf(s.value), x = X(i);
+    /* node */
+    nodes += '<rect x="'+x+'" y="'+yTop+'" width="'+NW+'" height="'+h.toFixed(1)+'" rx="3" fill="'+s.color+'">'
+          +  '<title>'+esc(s.label)+' — '+num(s.value)+'</title></rect>';
+    /* label above the node */
+    labels += '<text x="'+x+'" y="18" font-family="var(--ui)" font-size="11" font-weight="700" letter-spacing=".06em" fill="var(--ink-3)">'+esc(s.label.toUpperCase())+'</text>'
+           +  '<text x="'+x+'" y="38" font-family="var(--mono)" font-size="16" font-weight="600" fill="var(--ink)">'+num(s.value)
+           +  (i > 0 ? ' <tspan font-size="11" fill="var(--ink-3)">· '+pct0(s.value/v0)+' of reg.</tspan>' : '') + '</text>';
+
+    if(i === stages.length - 1) return;
+    const nxt = stages[i+1];
+    const flow = Math.min(s.value, nxt.value), drop = Math.max(0, s.value - nxt.value);
+    const fh = hOf(flow), sx = x + NW, tx = X(i+1), mx = (sx + tx)/2;
+    /* main ribbon: tops are aligned, so it's a straight band */
+    if(flow > 0){
+      ribbons += '<rect x="'+sx+'" y="'+yTop+'" width="'+(tx-sx).toFixed(1)+'" height="'+fh.toFixed(1)+'" fill="'+nxt.color+'" opacity="0.22">'
+              +  '<title>'+num(flow)+' of '+num(s.value)+' ('+pct(div(flow, s.value))+') → '+esc(nxt.label)+'</title></rect>';
+      labels += '<text x="'+mx.toFixed(1)+'" y="'+(yTop + Math.max(fh/2, 7) + 4).toFixed(1)+'" text-anchor="middle" font-family="var(--mono)" font-size="11.5" font-weight="600" fill="var(--ink-2)">'+pct0(div(flow, s.value))+'</text>';
+    }
+    /* dropout stream: falls to a grey stub below the next stage */
+    if(drop > 0){
+      const dh = hOf(drop), sy = yTop + fh, yD = yTop + hOf(nxt.value) + 34;
+      ribbons += '<path d="M '+sx+','+sy.toFixed(1)
+              +  ' C '+mx.toFixed(1)+','+sy.toFixed(1)+' '+mx.toFixed(1)+','+yD.toFixed(1)+' '+tx+','+yD.toFixed(1)
+              +  ' l 0,'+dh.toFixed(1)
+              +  ' C '+mx.toFixed(1)+','+(yD+dh).toFixed(1)+' '+mx.toFixed(1)+','+(sy+dh).toFixed(1)+' '+sx+','+(sy+dh).toFixed(1)
+              +  ' Z" fill="var(--ink-3)" opacity="0.16"><title>'+esc(s.drop||"Lost")+' — '+num(drop)+' ('+pct(div(drop, s.value))+')</title></path>';
+      nodes += '<rect x="'+tx+'" y="'+yD.toFixed(1)+'" width="'+NW+'" height="'+dh.toFixed(1)+'" rx="3" fill="var(--ink-3)" opacity="0.5">'
+            +  '<title>'+esc(s.drop||"Lost")+' — '+num(drop)+'</title></rect>';
+      labels += '<text x="'+(tx+NW+8)+'" y="'+(yD + Math.max(dh/2, 6) + 4).toFixed(1)+'" font-family="var(--ui)" font-size="11" fill="var(--ink-3)">'+esc(s.drop||"Lost")+' · '+num(drop)+' <tspan font-family="var(--mono)">('+pct0(div(drop, s.value))+')</tspan></text>';
+      bottom = Math.max(bottom, yD + dh);
+    }
+  });
+
+  const H = Math.ceil(bottom + 14);
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Funnel from registration to a booked sales call">'
+    + ribbons + nodes + labels + '</svg>';
+}
 function retentionChart(curve, pitchMin){
   if(!curve.length) return '<p class="chart-note">No retention data for this webinar.</p>';
   const endX = curve[curve.length-1][0];
@@ -910,6 +964,17 @@ function renderWebinars(){
     + '<span class="chart-title">Webinar</span><select id="wsel" aria-label="Pick a webinar">'
     + dates.map(dt => '<option value="'+dt+'"'+(dt === S.wsel ? " selected" : "")+'>Thu '+fmtD(dt)+'</option>').join("")
     + '</select><span class="chart-note">Per-minute data starts with the Zoom era (Aug 13) — the YouTube weeks have no retention export.</span></div>';
+
+  h += '<div class="card"><div class="chart-head"><span class="chart-title">The funnel, start to finish — ' + fmtD(S.wsel) + '</span>'
+    + '<span class="chart-note">Every registrant, from sign-up to a booked sales call. Colored band = people who moved on; grey streams = people lost at that step. Hover anything for exact counts.</span></div>'
+    + sankeyFunnel([
+        {label:"Registered",    value:reg,    color:"var(--c2)", drop:"Didn't show up"},
+        {label:"Attended live", value:att,    color:"var(--c1)", drop:"Watched, didn't apply"},
+        {label:"Applied",       value:apps,   color:"var(--c3)", drop:"Applied, no call yet"},
+        {label:"Booked a call", value:booked, color:"var(--c4)"}
+      ])
+    + (apps !== null && att !== null && apps > att ? '<p class="chart-note" style="margin:10px 0 0">Applications count the whole day, so this week more people applied than attended live — the funnel draws the overlap.</p>' : '')
+    + '</div>';
 
   h += panel("The Room — " + fmtD(S.wsel), [
     cell("Attended live", num(att), {sub: reg ? pct(div(att,reg)) + " of " + num(reg) + " registered" : ""}),
