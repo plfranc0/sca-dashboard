@@ -3,1338 +3,458 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SCA Growth Dashboard</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>📊</text></svg>">
+<meta name="color-scheme" content="light only">
+<meta name="robots" content="noindex, nofollow">
+<title>SCA Sales Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%237A1420'/><path d='M8 22 L14 14 L19 18 L25 9' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 <style>
 :root{
+  color-scheme: light only;
   --ground:#FDF9F4; --surface:#FFFFFF; --surface-2:#F7EFEA; --surface-3:#F1E4DD;
   --ink:#221418; --ink-2:#4C3A3D; --ink-3:#8A7477;
-  --accent:#7A1420; --head-bg:#7A1420; --head-ink:#FFFFFF;
-  --hair:#E4D6CF; --hair-2:#F0E4DE;
-  --c1:#A32235; --c2:#0077A8; --c3:#B57614; --c4:#6B4A8F;
-  --good:#2F6B4F; --warn:#9A6B12; --crit:#B3261E;
-  --good-bg:#E6F0EA; --warn-bg:#F6EEDD; --crit-bg:#F8E6E4;
+  --accent:#7A1420; --hair:#E4D6CF; --hair-2:#F0E4DE;
+  --good:#2F6B4F; --warn:#9A6B12; --crit:#B3261E; --good-bg:#E6F0EA; --warn-bg:#F6EEDD; --crit-bg:#F8E6E4;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948;
   --shadow:0 1px 2px rgba(34,20,24,.05), 0 8px 24px -14px rgba(34,20,24,.16);
   --display:Georgia,'Iowan Old Style','Times New Roman',serif;
   --ui:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
   --mono:'SF Mono','Cascadia Mono',Menlo,Consolas,monospace;
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --ground:#17110F; --surface:#221A19; --surface-2:#2C2221; --surface-3:#352827;
-    --ink:#F4EBE6; --ink-2:#C4B0AC; --ink-3:#8E7B78;
-    --accent:#DC6076; --head-bg:#4A1F27; --head-ink:#F7E4E6;
-    --hair:#3A2B2B; --hair-2:#2E2323;
-    --c1:#DC6076; --c2:#2E93CC; --c3:#C2871A; --c4:#9070C6;
-    --good:#5FAF87; --warn:#D2A03F; --crit:#E0706A;
-    --good-bg:#1D2A24; --warn-bg:#2C2418; --crit-bg:#2E1E1D;
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.6);
-  }
-}
-:root[data-theme="dark"]{
-  --ground:#17110F; --surface:#221A19; --surface-2:#2C2221; --surface-3:#352827;
-  --ink:#F4EBE6; --ink-2:#C4B0AC; --ink-3:#8E7B78;
-  --accent:#DC6076; --head-bg:#4A1F27; --head-ink:#F7E4E6;
-  --hair:#3A2B2B; --hair-2:#2E2323;
-  --c1:#DC6076; --c2:#2E93CC; --c3:#C2871A; --c4:#9070C6;
-  --good:#5FAF87; --warn:#D2A03F; --crit:#E0706A;
-  --good-bg:#1D2A24; --warn-bg:#2C2418; --crit-bg:#2E1E1D;
-  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.6);
-}
-*{box-sizing:border-box}
-html,body{margin:0}
-body{background:var(--ground); color:var(--ink-2); font-family:var(--ui); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased}
-.wrap{max-width:1320px; margin:0 auto; padding:0 20px 80px}
-
-header.top{border-bottom:1px solid var(--hair); background:var(--surface); position:sticky; top:0; z-index:20}
-.top-in{max-width:1320px; margin:0 auto; padding:13px 20px; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
-.brand{display:flex; flex-direction:column; gap:1px; margin-right:auto}
-.brand h1{font-family:var(--display); font-size:20px; font-weight:600; color:var(--ink); margin:0; letter-spacing:-.01em}
-.brand .sub{font-size:11.5px; color:var(--ink-3)}
-.status{display:inline-flex; align-items:center; gap:7px; font-size:11.5px; color:var(--ink-3)}
-.dot{width:7px; height:7px; border-radius:50%; background:var(--good); flex:none}
-.dot.warn{background:var(--warn)} .dot.bad{background:var(--crit)}
-.range{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink-3)}
-select,input[type="date"]{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--surface); border:1px solid var(--hair); border-radius:5px; padding:5px 8px; cursor:pointer}
-select:focus-visible,input[type="date"]:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
-input[type="date"]{color-scheme:light}
-@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) input[type="date"]{color-scheme:dark} }
-:root[data-theme="dark"] input[type="date"]{color-scheme:dark}
-.ghost{font-family:var(--ui); font-size:12px; font-weight:600; color:var(--ink-2); background:none; border:1px solid var(--hair); border-radius:5px; padding:6px 11px; cursor:pointer; text-decoration:none; display:inline-block}
-.ghost:hover{border-color:var(--accent); color:var(--accent)}
-
-.tabbar{border-bottom:1px solid var(--hair); background:var(--surface)}
-.tabs{display:flex; max-width:1320px; margin:0 auto; padding:0 20px; flex-wrap:wrap}
-.tab{appearance:none; background:none; border:none; cursor:pointer; font-family:var(--ui); font-size:13px; font-weight:600; color:var(--ink-3); padding:13px 2px; margin-right:24px; border-bottom:2px solid transparent}
-.tab:hover{color:var(--ink)}
-.tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent)}
-.tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
-
-.page{padding-top:22px; display:flex; flex-direction:column; gap:14px}
-.page[hidden]{display:none}
-.row{display:grid; gap:14px}
-.r3{grid-template-columns:repeat(3,1fr)}
-.r2{grid-template-columns:1fr 1fr}
-.r21{grid-template-columns:2fr 1fr}
-@media(max-width:1080px){.r3{grid-template-columns:1fr 1fr}}
-@media(max-width:820px){.r3,.r2,.r21{grid-template-columns:1fr}}
-
-/* ---- panel: title bar + grid of labelled metric cells ---- */
-.panel{background:var(--surface); border:1px solid var(--hair); border-radius:8px; overflow:hidden; box-shadow:var(--shadow); display:flex; flex-direction:column}
-.panel-head{background:var(--head-bg); color:var(--head-ink); font-family:var(--display); font-size:15.5px; font-weight:600; text-align:center; padding:11px 14px; letter-spacing:.01em}
-.panel-body{display:grid; gap:1px; background:var(--hair); flex:1}
-.pb1{grid-template-columns:1fr}
-.pb2{grid-template-columns:1fr 1fr}
-.pb3{grid-template-columns:repeat(3,1fr)}
-.pb4{grid-template-columns:repeat(4,1fr)}
-@media(max-width:900px){.pb4{grid-template-columns:1fr 1fr}}
-@media(max-width:520px){.pb3{grid-template-columns:1fr 1fr}}
-.cell{background:var(--surface); display:flex; flex-direction:column; min-width:0}
-.cell-label{background:var(--surface-2); padding:7px 12px; font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.cell-body{padding:11px 12px 12px; display:flex; flex-direction:column; gap:2px; flex:1}
-.cell-val{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:23px; font-weight:600; color:var(--ink); line-height:1.1; letter-spacing:-.02em}
-.cell-val.sm{font-size:18px}
-.cell-sub{font-size:11px; color:var(--ink-3); line-height:1.35}
-.cell.na .cell-val{color:var(--ink-3); font-size:15px; font-weight:500}
-.cell.good .cell-val{color:var(--good)}
-.cell.bad .cell-val{color:var(--crit)}
-.delta{font-family:var(--mono); font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:3px}
-.delta.up{color:var(--good)} .delta.down{color:var(--crit)} .delta.flat{color:var(--ink-3)}
-
-/* progress meter for target */
-.meter{height:6px; border-radius:3px; background:var(--surface-3); overflow:hidden; margin-top:6px}
-.meter span{display:block; height:100%; border-radius:3px; background:var(--accent)}
-
-.card{background:var(--surface); border:1px solid var(--hair); border-radius:8px; padding:16px 18px; box-shadow:var(--shadow)}
-.chart-head{display:flex; flex-direction:column; gap:2px; margin-bottom:14px}
-.chart-title{font-size:13.5px; font-weight:700; color:var(--ink)}
-.chart-note{font-size:11.5px; color:var(--ink-3)}
-svg{display:block; width:100%; height:auto; overflow:visible}
-.gridline{stroke:var(--hair-2); stroke-width:1}
-.axis-txt{font-family:var(--mono); font-size:9.5px; fill:var(--ink-3)}
-.dlabel{font-family:var(--mono); font-size:9.5px; font-weight:600; fill:var(--ink-2)}
-.bar{transition:opacity .12s} .bar:hover{opacity:.72}
-.legend{display:flex; gap:14px; flex-wrap:wrap; margin-top:11px}
-.lg{display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--ink-2)}
-.sw{width:10px; height:10px; border-radius:2px; flex:none}
-.sw.line{height:3px; width:14px; border-radius:2px}
-
-.tw{overflow-x:auto}
-table{border-collapse:collapse; width:100%; font-size:12.5px; min-width:640px}
-th,td{padding:9px 13px; text-align:right; border-bottom:1px solid var(--hair-2); white-space:nowrap}
-th:first-child,td:first-child,th.l,td.l{text-align:left}
-th{font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); background:var(--surface-2)}
-td{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--ink-2)}
-td:first-child{font-family:var(--ui); color:var(--ink); font-weight:600}
-td.l{font-family:var(--ui); white-space:normal; min-width:250px}
-tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--surface-2)}
-.pill{display:inline-block; font-family:var(--ui); font-size:10px; font-weight:700; letter-spacing:.04em; padding:2px 8px; border-radius:20px}
-.pill.ok{background:var(--good-bg); color:var(--good)}
-.pill.chk{background:var(--warn-bg); color:var(--warn)}
-.pill.bad{background:var(--crit-bg); color:var(--crit)}
-
-.note{border:1px solid var(--hair); border-left:3px solid var(--accent); background:var(--surface); border-radius:6px; padding:14px 17px; font-size:13px; display:flex; flex-direction:column; gap:6px}
-.note strong{color:var(--ink)}
-.note.warn{border-left-color:var(--warn)}
-.banner{border-radius:8px; padding:16px 18px; font-size:13.5px; background:var(--crit-bg); border:1px solid var(--crit); color:var(--crit)}
-.banner strong{display:block; font-size:15px; margin-bottom:4px}
-.loading{padding:80px 0; text-align:center; color:var(--ink-3); font-size:14px}
-.skel{display:inline-block; width:180px; height:10px; border-radius:5px; background:var(--hair); animation:pulse 1.3s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:.45}50%{opacity:.9}}
-@media (prefers-reduced-motion:reduce){.skel{animation:none}}
-#health-pop{margin-top:18px; display:flex; flex-direction:column; gap:14px}
-#health-pop[hidden]{display:none}
-#health-pill.warn{border-color:var(--warn); color:var(--warn)}
-#health-pill.ok{color:var(--good)}
-footer{margin-top:30px; padding-top:16px; border-top:1px solid var(--hair); font-size:11.5px; color:var(--ink-3); display:flex; gap:16px; flex-wrap:wrap}
-footer a{color:var(--ink-3)}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+body{background:var(--ground);color:var(--ink-2);font-family:var(--ui);font-size:14.5px;line-height:1.45;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+button{font-family:var(--ui)}
+.wrap{max-width:1380px;margin:0 auto;padding:22px 16px 80px}
+h1{font-family:var(--display);font-size:28px;font-weight:600;color:var(--ink);letter-spacing:-.01em;line-height:1.1}
+.sub{font-size:12.5px;color:var(--ink-3);margin-top:4px}
+.topbar{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctl label{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+select,input{font-family:var(--ui);font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--hair);border-radius:6px;padding:6px 9px}
+.btn{appearance:none;border:1px solid var(--hair);background:var(--surface);color:var(--ink);font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer}
+.btn:hover{background:var(--surface-2)} .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.pills{display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--ink-3)}
+.pill{border:1px solid var(--hair);border-radius:12px;padding:2px 9px;background:var(--surface);display:inline-flex;align-items:center;gap:5px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--good);display:inline-block}.dot.bad{background:var(--crit)}.dot.warn{background:var(--warn)}
+.banner{border-radius:8px;padding:10px 14px;margin:10px 0;font-size:13px;border:1px solid}
+.banner.crit{background:var(--crit-bg);border-color:#E5B5B1;color:var(--crit)} .banner.warn{background:var(--warn-bg);border-color:#E7D3A5;color:var(--warn)}
+.banner ul{margin:4px 0 0 18px}
+.sec{margin-top:26px}
+.sec-h{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
+.sec-h h2{font-family:var(--display);font-size:18px;font-weight:600;color:var(--ink)}
+.sec-h .tag{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.sec-h .note{font-size:12px;color:var(--ink-3)}
+.grid{display:grid;gap:12px}
+.g4{grid-template-columns:repeat(4,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g6{grid-template-columns:repeat(6,1fr)} .g2{grid-template-columns:2fr 1fr}
+@media (max-width:1000px){.g4,.g6{grid-template-columns:repeat(2,1fr)} .g3,.g2{grid-template-columns:1fr}}
+@media (max-width:560px){.g4,.g6{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--hair);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow)}
+.tile{cursor:pointer;position:relative} .tile:hover{border-color:var(--accent)}
+.tile .k{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);display:flex;justify-content:space-between;gap:6px}
+.tile .k .n{font-family:var(--mono);font-size:10.5px;background:var(--surface-2);border-radius:10px;padding:0 7px;color:var(--ink-2)}
+.tile .v{font-family:var(--display);font-size:30px;font-weight:600;color:var(--ink);margin-top:6px;line-height:1.1}
+.tile .v.sm{font-size:24px}
+.tile .d{font-size:12px;color:var(--ink-3);margin-top:6px;border-top:1px solid var(--hair-2);padding-top:6px}
+.delta{font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:9px;margin-right:4px}
+.delta.up{background:var(--good-bg);color:var(--good)}.delta.dn{background:var(--crit-bg);color:var(--crit)}.delta.flat{background:var(--surface-2);color:var(--ink-3)}
+.road{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.road .big{font-family:var(--display);font-size:34px;color:var(--ink)}
+.road .bar{flex:1;min-width:260px;height:22px;background:var(--surface-2);border-radius:11px;overflow:hidden;display:flex}
+.road .bar i{display:block;height:100%} .road .bar .w{background:var(--good)} .road .bar .dep{background:#8FC6A8}
+.flow .row{display:grid;grid-template-columns:90px 1fr 120px;align-items:center;gap:12px;margin:8px 0}
+.flow .lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.flow .bar{height:40px;background:var(--surface-2);border-radius:6px;overflow:hidden;cursor:pointer}
+.flow .bar i{display:flex;align-items:center;padding-left:12px;height:100%;color:#fff;font-family:var(--display);font-size:20px;font-weight:600;border-radius:6px;min-width:44px}
+.flow .meta{font-size:12px;color:var(--ink-3);text-align:right}
+.states{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}
+@media (max-width:900px){.states{grid-template-columns:repeat(3,1fr)}}
+.state{border:1px solid var(--hair);border-radius:8px;padding:8px 10px;cursor:pointer;background:var(--surface)} .state:hover{border-color:var(--accent)}
+.state .k{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)} .state .v{font-family:var(--display);font-size:22px;color:var(--ink)}
+.state .d{font-size:11px;color:var(--ink-3)}
+.outbar{display:flex;height:40px;border-radius:7px;overflow:hidden;gap:2px;background:var(--surface-2)}
+.outbar i{display:flex;align-items:center;justify-content:center;color:#1a1a1a;font-family:var(--mono);font-size:12.5px;cursor:pointer;min-width:0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;margin-top:8px} .legend span{display:inline-flex;align-items:center;gap:6px;cursor:pointer} .legend b{width:11px;height:11px;border-radius:3px;display:inline-block}
+table{width:100%;border-collapse:collapse;font-size:13px} th{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-align:right;padding:8px 8px;border-bottom:1px solid var(--hair)}
+td{padding:8px 8px;border-bottom:1px solid var(--hair-2);text-align:right;font-variant-numeric:tabular-nums} th:first-child,td:first-child{text-align:left}
+td.c{cursor:pointer;color:var(--accent)} td.c:hover{text-decoration:underline}
+tr.total td{font-weight:700;border-top:2px solid var(--hair);color:var(--ink)}
+.mono{font-family:var(--mono);font-size:12px} .muted{color:var(--ink-3)} .small{font-size:12px}
+.recon{font-family:var(--mono);font-size:12px;line-height:1.7} .recon .ok{color:var(--good)} .recon .bad{color:var(--crit);font-weight:700}
+.warnrow{color:var(--warn)}
+/* drill-down panel */
+.panel{position:fixed;top:0;right:0;width:min(720px,100%);height:100vh;background:var(--surface);border-left:1px solid var(--hair);box-shadow:-12px 0 40px rgba(0,0,0,.12);z-index:50;display:flex;flex-direction:column}
+.panel header{padding:14px 18px;border-bottom:1px solid var(--hair);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.panel header h3{font-family:var(--display);font-size:18px;color:var(--ink)} .panel .body{overflow:auto;padding:10px 18px 30px}
+.panel table{font-size:12.5px} .panel td,.panel th{padding:6px 6px;text-align:left}
+.scrim{position:fixed;inset:0;background:rgba(34,20,24,.25);z-index:40}
+.login{max-width:380px;margin:120px auto;text-align:center} .login input{width:100%;margin:12px 0}
+.sankey text{font-family:var(--ui);font-size:12px;fill:var(--ink)} .sankey .lbl2{fill:var(--ink-3);font-size:11px}
+.sankey path{opacity:.55} .sankey path:hover{opacity:.85}
+.howto{font-size:12.5px;color:var(--ink-2);line-height:1.55} .howto dt{font-weight:700;color:var(--ink);margin-top:8px} .howto dd{margin-left:0}
+details summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--ink)}
+.err{background:var(--crit-bg);color:var(--crit);padding:12px;border-radius:8px;margin:20px 0;font-family:var(--mono);font-size:12.5px;white-space:pre-wrap}
 </style>
 </head>
 <body>
-
-<header class="top">
-  <div class="top-in">
-    <div class="brand">
-      <h1>She Creates Academy</h1>
-      <span class="sub">Growth dashboard &middot; live from the SCA Master Tracker</span>
-    </div>
-    <span class="status" id="status"><span class="dot" id="dot"></span><span id="status-txt">Loading&hellip;</span></span>
-    <button class="ghost" id="health-pill" aria-expanded="false" title="Data quality checks" hidden>Data &#10003;</button>
-    <span class="range">
-      <select id="preset" aria-label="Date range preset">
-        <option value="7">Last 7 days</option>
-        <option value="30">Last 30 days</option>
-        <option value="60" selected>Last 60 days</option>
-        <option value="90">Last 90 days</option>
-        <option value="all">All time</option>
-        <option value="custom">Custom&hellip;</option>
-      </select>
-      <input type="date" id="from" aria-label="From date">
-      <span aria-hidden="true">&rarr;</span>
-      <input type="date" id="to" aria-label="To date">
-    </span>
-    <a class="ghost" id="sheet-link" href="#" target="_blank" rel="noopener">Open sheet</a>
-  </div>
-</header>
-
-<div class="tabbar">
-  <div class="tabs" role="tablist" aria-label="Dashboard pages">
-    <button class="tab" role="tab" id="tab-overview" aria-controls="page-overview" aria-selected="true">Overview</button>
-    <button class="tab" role="tab" id="tab-team"     aria-controls="page-team"     aria-selected="false">Sales Team</button>
-    <button class="tab" role="tab" id="tab-comm"     aria-controls="page-comm"     aria-selected="false">Commissions</button>
-    <button class="tab" role="tab" id="tab-replay"   aria-controls="page-replay"   aria-selected="false">Replay</button>
-    <button class="tab" role="tab" id="tab-webinars" aria-controls="page-webinars" aria-selected="false">Webinars</button>
-  </div>
-</div>
-
-<div class="wrap">
-  <div id="boot" class="loading"><div class="skel"></div><div style="margin-top:14px">Reading the Master Tracker&hellip;</div></div>
-  <div id="fail" hidden></div>
-  <div id="stale" hidden style="margin-top:18px"></div>
-  <section id="health-pop" hidden></section>
-  <main id="app" hidden>
-    <section class="page" id="page-overview" role="tabpanel" aria-labelledby="tab-overview"></section>
-    <section class="page" id="page-team" role="tabpanel" aria-labelledby="tab-team" hidden></section>
-    <section class="page" id="page-comm" role="tabpanel" aria-labelledby="tab-comm" hidden></section>
-    <section class="page" id="page-replay" role="tabpanel" aria-labelledby="tab-replay" hidden></section>
-    <section class="page" id="page-webinars" role="tabpanel" aria-labelledby="tab-webinars" hidden></section>
-    <footer>
-      <span id="foot-fetch"></span>
-      <span>Weeks run Thursday to Wednesday. Cancel, no-show, pick-up and replay numbers read the GHL feeds added Aug 27.</span>
-      <a href="#" id="foot-sheet" target="_blank" rel="noopener">SCA Master Tracker</a>
-    </footer>
-  </main>
-</div>
-
+<div class="wrap" id="app"></div>
 <script>
-"use strict";
+/* ======================= CONFIG ======================= */
+const CFG = {
+  API: "https://script.google.com/macros/s/AKfycbyLH-LgwU3fubggLAFFX6bBn6jPiwSyBlU9oY3rvd2cNdDvfTBtRfy32W_a0BHgBg-k6Q/exec",   /* Apps Script web app /exec URL (deployed 2026-10-21) */
+  GHL_LOC: "",   /* filled from the API (config.loc) */
+};
+/* ======================= STATE ======================= */
+const S = { D:null, token:sessionStorage.getItem("dash_token") || "", period:"30", from:null, to:null, cohort:"all", cal:"all", fetched:null };
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money = n => (n < 0 ? "-$" : "$") + Math.round(Math.abs(n || 0)).toLocaleString("en-US");
+const pct = (n, d) => d ? (100 * n / d).toFixed(1) + "%" : "—";
+const num = n => (n || 0).toLocaleString("en-US");
+const PT = "America/Los_Angeles";
+const dayPT = ms => { const p = new Intl.DateTimeFormat("en-CA", { timeZone: PT, year:"numeric", month:"2-digit", day:"2-digit" }).format(new Date(ms)); return p; };
+const ptMidnight = day => { const guess = Date.parse(day + "T00:00:00-07:00"); const off = new Intl.DateTimeFormat("en-US",{timeZone:PT,timeZoneName:"longOffset"}).formatToParts(new Date(guess)).find(p=>p.type==="timeZoneName").value; const m = /GMT([+-]\d{2}):(\d{2})/.exec(off); return Date.parse(day + "T00:00:00" + (m ? m[1] + ":" + m[2] : "-07:00")); };
+const fmtD = iso => { const d = new Date(iso); return new Intl.DateTimeFormat("en-US",{timeZone:PT,month:"short",day:"numeric"}).format(d); };
+const fmtDT = iso => { const d = new Date(iso); return new Intl.DateTimeFormat("en-US",{timeZone:PT,month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(d); };
+const ago = iso => { if (!iso) return "never"; const m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 1 ? "just now" : m < 60 ? m + " min ago" : m < 1440 ? Math.round(m / 60) + " h ago" : Math.round(m / 1440) + " d ago"; };
 
-const SID = "1AaqCLsqpdhzktzE002UvN1aBGsMXajksak_w8qL_tos";
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/" + SID + "/edit";
-const S = { ws:[], cs:[], ss:[], dh:[], mo:[], wd:[], tg:{}, cl:[], po:[], ap:[], da:[], rr:[], ra:[], wr:[], calls:[], weeks:[], fromD:null, toD:null, wsel:null, fetched:null };
+/* ======================= API ======================= */
+async function api(params){
+  if (!CFG.API) throw new Error("CFG.API is empty: paste the Apps Script /exec URL into index.html");
+  const u = new URL(CFG.API); Object.entries(Object.assign({ token:S.token }, params)).forEach(([k,v]) => u.searchParams.set(k, v));
+  const r = await fetch(u.toString(), { redirect:"follow" }); const j = await r.json();
+  if (!j.ok) throw new Error(j.error || "API error");
+  return j;
+}
+async function load(refresh){
+  const j = await api({ action: refresh ? "refresh" : "data" });
+  S.D = j.data; S.fetched = new Date(); CFG.GHL_LOC = (S.D.config && S.D.config.loc) || CFG.GHL_LOC;
+  sessionStorage.setItem("dash_token", S.token);
+  render();
+}
 
-/* ---------------- data ---------------- */
-async function gviz(tab, range){
-  /* headers=1 forces row 1 to be the header row — without it, all-text tabs
-     (Webinar Detail, Targets and Spend) come back with A/B/C column ids.
-     `range` reads a sub-block, for tabs that carry a summary above the table. */
-  const url = "https://docs.google.com/spreadsheets/d/" + SID +
-              "/gviz/tq?tqx=out:json&headers=1&sheet=" + encodeURIComponent(tab) +
-              (range ? "&range=" + encodeURIComponent(range) : "") + "&t=" + Date.now();
-  const res = await fetch(url);
-  if(!res.ok) throw new Error("Tab “" + tab + "”: HTTP " + res.status + ". The sheet may no longer be shared with anyone-with-the-link.");
-  const text = await res.text();
-  const open = text.indexOf("setResponse("), close = text.lastIndexOf(")");
-  if(open === -1 || close === -1) throw new Error("Tab “" + tab + "” returned an unexpected response. Check the tab still exists under that exact name.");
-  const d = JSON.parse(text.slice(open + 12, close));
-  if(d.status !== "ok") throw new Error("Tab “" + tab + "”: " + JSON.stringify(d.errors || d.status));
-  const cols = d.table.cols.map(c => (c.label || c.id || "").trim());
-  return d.table.rows.map(r => {
-    const o = {};
-    cols.forEach((name, i) => { const cell = r.c[i]; o[name] = cell ? cell.v : null; });
-    return o;
+/* ======================= PERIOD / FILTERS ======================= */
+function range(){
+  const now = Date.now();
+  if (S.cohort !== "all") { const c = S.D.cohorts.find(x => x.date === S.cohort); const st = Date.parse(c.start), nx = S.D.cohorts[S.D.cohorts.indexOf(c) + 1]; return { from: st, to: nx ? Date.parse(nx.start) : now, label: "Webinar " + fmtD(c.start), cohort: c.date, prior: null }; }
+  if (S.period === "custom" && S.from && S.to) { const f = ptMidnight(S.from), t = ptMidnight(S.to) + 864e5; return { from:f, to:t, label: fmtD(new Date(f).toISOString()) + " → " + fmtD(new Date(t - 1).toISOString()), prior: { from: f - (t - f), to: f } }; }
+  if (S.period === "dispo") { const f = ptMidnight(S.D.config.dispoFrom); return { from:f, to:now, label:"Since " + fmtD(new Date(f).toISOString()) + " (Dispo form live)", prior:null }; }
+  const days = Number(S.period) || 30, f = now - days * 864e5;
+  return { from:f, to:now, label:"Last " + days + " days", prior: { from: f - days * 864e5, to: f } };
+}
+const inR = (iso, r) => { const t = typeof iso === "number" ? iso : Date.parse(iso); return t >= r.from && t < r.to; };
+function calOk(b){ return S.cal === "all" ? true : b.kind === "main"; }
+/* bookings in the period: booked within the range (booking lens, same as JJ's example: "cohort = people who booked a call in this period") */
+function bookingsIn(r){ return S.D.bookings.filter(b => calOk(b) && (r.cohort ? b.cohort === r.cohort : inR(b.bookedAt, r))); }
+function heldIn(r){ return bookingsIn(r).filter(b => b.held || b.outcome === "owed"); }
+function scaPaidIn(r){ return S.D.payments.filter(p => p.sca && p.status === "paid" && inR(p.t, r)); }
+
+/* ======================= METRICS ======================= */
+function metrics(r){
+  const B = bookingsIn(r), by = k => B.filter(b => b.outcome === k);
+  const showed = by("showed"), noshow = by("noshow"), owed = by("owed"), cancelled = by("cancelled"), upcoming = by("upcoming"), resched = by("rescheduled"), unknown = by("unknown");
+  const won = B.filter(b => b.won), qualified = B.filter(b => b.qualified && b.outcome !== "cancelled");
+  const happened = showed.length + noshow.length + owed.length;
+  const pay = scaPaidIn(r), cash = pay.reduce((s,p) => s + p.net, 0);
+  const first = pay.filter(p => p.kind === "first"), inst = pay.filter(p => p.kind === "installment");
+  const dealIds = new Set(won.map(b => b.dealId)); const dealsWon = S.D.deals.filter(d => dealIds.has(d.id));
+  const cashOnWon = dealsWon.reduce((s,d) => s + d.paid, 0), revenueWon = dealsWon.reduce((s,d) => s + (d.contract != null ? d.contract : d.paid), 0);
+  return { B, showed, noshow, owed, cancelled, upcoming, resched, unknown, won, qualified, happened, pay, cash, first, inst,
+    firstWon: first.filter(p => !p.deposit), firstDep: first.filter(p => p.deposit), dealsWon, cashOnWon, revenueWon,
+    showRate: happened ? showed.length / happened : null, closeRate: showed.length ? won.length / showed.length : null,
+    closeBooked: B.length ? won.length / B.length : null, aov: won.length ? cashOnWon / won.length : null,
+    dps: showed.length ? revenueWon / showed.length : null, cashPerCall: showed.length ? cashOnWon / showed.length : null };
+}
+
+/* ======================= RENDER ======================= */
+function render(){
+  const D = S.D; if (!D) return;
+  const r = range(), m = metrics(r), pm = r.prior ? metrics(r.prior) : null;
+  const delta = (a, b, fmt, invert) => { if (pm == null || b == null || a == null) return ""; const d = b ? (a - b) / Math.abs(b) : (a ? 1 : 0); const cls = Math.abs(d) < .005 ? "flat" : ((d > 0) !== !!invert ? "up" : "dn"); return `<span class="delta ${cls}">${d > 0 ? "▲" : d < 0 ? "▼" : "•"} ${Math.abs(100 * d).toFixed(0)}%</span><span class="muted">vs ${fmt(b)}</span>`; };
+  const srcPills = Object.entries(D.sources).map(([k,v]) => `<span class="pill"><i class="dot ${v.ok ? "" : "bad"}"></i>${k} ${v.ok ? ago(v.asOf) : "failed"}</span>`).join("");
+  const fails = D.checks.filter(c => !c.ok && c.level !== "warn"), warns = D.checks.filter(c => !c.ok && c.level === "warn");
+  const roadWon = D.deals.filter(d => !d.deposit).length, roadDep = D.deals.filter(d => d.deposit).length, N = D.config.roadToN || 250;
+  const cohortOpts = D.cohorts.slice().reverse().map(c => `<option value="${c.date}" ${S.cohort === c.date ? "selected" : ""}>${fmtD(c.start)}${c.zoom ? "" : " (no Zoom)"}</option>`).join("");
+  const recon = (lhs, parts) => { const sum = parts.reduce((s,p) => s + p[1], 0); return `<div><span class="${sum === lhs ? "ok" : "bad"}">${sum === lhs ? "✓" : "✗"}</span> ${parts.map(p => `${p[0]} ${p[1]}`).join(" + ")} = ${sum}${sum === lhs ? "" : " ≠ " + lhs}</div>`; };
+
+  $("#app").innerHTML = `
+  <div class="topbar">
+    <div><h1>She Creates Academy · Sales</h1><div class="sub">${esc(r.label)}${pm ? " · ▲▼ vs prior period " + fmtD(new Date(r.prior.from).toISOString()) + " → " + fmtD(new Date(r.prior.to - 1).toISOString()) : ""} · built ${ago(D.builtAt)} in ${Math.round((D.buildMs||0)/1000)}s</div>
+      <div class="pills" style="margin-top:6px">${srcPills}</div></div>
+    <div class="ctl">
+      <label>Webinar</label><select id="cohort"><option value="all">All webinars</option>${cohortOpts}</select>
+      <label>Period</label><select id="period" ${S.cohort !== "all" ? "disabled" : ""}>
+        ${[["7","Last 7 days"],["30","Last 30 days"],["60","Last 60 days"],["90","Last 90 days"],["dispo","Since Dispo form (10/15)"],["custom","Custom"]].map(o => `<option value="${o[0]}" ${S.period === o[0] ? "selected" : ""}>${o[1]}</option>`).join("")}</select>
+      <span id="custom" ${S.period === "custom" ? "" : "hidden"}><input type="date" id="from" value="${S.from || ""}"> <input type="date" id="to" value="${S.to || ""}"></span>
+      <label>Calls</label><select id="cal"><option value="all" ${S.cal === "all" ? "selected" : ""}>All sales calendars</option><option value="main" ${S.cal === "main" ? "selected" : ""}>Strategy only</option></select>
+      <button class="btn" id="howto">How to read this</button><button class="btn primary" id="refresh">Refresh data</button>
+    </div>
+  </div>
+  ${fails.length ? `<div class="banner crit"><b>Something is broken. These numbers are not trusted until it clears.</b><ul>${fails.map(c => `<li>${esc(c.msg)}</li>`).join("")}</ul></div>` : ""}
+  ${warns.length ? `<div class="banner warn"><b>Needs a human:</b><ul>${warns.map(c => `<li>${esc(c.msg)}</li>`).join("")}</ul></div>` : ""}
+  <div id="howtoBox" class="card howto" hidden>${HOWTO}</div>
+
+  <div class="card road" style="margin-top:6px">
+    <div><div class="tile k" style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)">Road to ${N} · students all-time (paid in full + payment plans started)</div>
+      <div class="big">${roadWon + roadDep} <span class="muted" style="font-size:16px">/ ${N} · ${Math.max(N - roadWon - roadDep, 0)} to go</span></div></div>
+    <div class="bar" title="won ${roadWon}, plans ${roadDep}"><i class="w" style="width:${Math.min(100, 100 * roadWon / N)}%"></i><i class="dep" style="width:${Math.min(100 - Math.min(100, 100 * roadWon / N), 100 * roadDep / N)}%"></i></div>
+    <div class="small"><span class="mono" style="cursor:pointer" data-list="deals-pif">${roadWon} paid in full</span> · <span class="mono" style="cursor:pointer" data-list="deals-plan">${roadDep} on plans</span> · every SCA deal on Whop${D.config.dealsSince ? " since " + fmtD(D.config.dealsSince + "T12:00:00-07:00") : ""}, $0 and refunded excluded</div>
+  </div>
+
+  <div class="sec"><div class="sec-h"><h2>Cash collected</h2><span class="tag">${esc(r.label)}</span><span class="note">Every SCA payment that landed on Whop in the period, net of refunds. Kora and other products excluded.</span></div>
+  <div class="grid g4">
+    ${tile("Total cash collected", money(m.cash), m.pay.length, delta(m.cash, pm && pm.cash, money) + " Whop, SCA offer only", "pay-all")}
+    ${tile("From first-time sales", money(m.first.reduce((s,p)=>s+p.net,0)), m.first.length, `PAID IN FULL ${money(m.firstWon.reduce((s,p)=>s+p.net,0))} (${m.firstWon.length}) · PLAN START ${money(m.firstDep.reduce((s,p)=>s+p.net,0))} (${m.firstDep.length})`, "pay-first")}
+    ${tile("From existing students", money(m.inst.reduce((s,p)=>s+p.net,0)), m.inst.length, "installments on deals started earlier", "pay-inst")}
+    ${tile("Plan pipeline · still to collect", money(D.deals.filter(d => d.remaining > 0).reduce((s,d)=>s+d.remaining,0)), D.deals.filter(d => d.remaining > 0).length, `${D.deals.filter(d => d.remaining > 0 && d.contractFrom === "dispo").length} from the dispo contract value · ${D.deals.filter(d => d.remaining > 0 && d.contractFrom === "plan").length} from the Whop plan · plans with no schedule are not counted`, "deals-open")}
+  </div></div>
+
+  <div class="sec grid g2">
+    <div class="card flow"><div class="sec-h" style="margin-bottom:4px"><h2>The flow</h2><span class="note">booked → showed → won · click a bar for its people</span></div>
+      ${flowRow("Booked", m.B.length, m.B.length, "var(--ink)", "booking date", delta(m.B.length, pm && pm.B.length, num), "b-all")}
+      ${flowRow("Showed", m.showed.length, m.B.length, "var(--s1)", "held and showed", delta(m.showed.length, pm && pm.showed.length, num), "b-showed")}
+      ${flowRow("Won", m.won.length, m.B.length, "var(--good)", "banked on Whop", delta(m.won.length, pm && pm.won.length, num), "b-won")}
+      <div class="states">
+        ${state("Qualified booked", m.qualified.length, "application says can invest", "b-qualified")}
+        ${state("Upcoming", m.upcoming.length, "call is in the future", "b-upcoming")}
+        ${state("Cancelled", m.cancelled.length, "a reschedule is not a cancel", "b-cancelled")}
+        ${state("No-show", m.noshow.length, "marked by the closer", "b-noshow")}
+        ${state("Owed", m.owed.length, "held, no dispo filed", "b-owed", m.owed.length ? "warnrow" : "")}
+        ${state("Unknown", m.unknown.length, "before the Dispo form", "b-unknown")}
+      </div>
+      <div class="recon" style="margin-top:12px">
+        ${recon(m.B.length, [["cancelled", m.cancelled.length], ["upcoming", m.upcoming.length], ["rescheduled", m.resched.length], ["showed", m.showed.length], ["no-show", m.noshow.length], ["owed", m.owed.length], ["unknown", m.unknown.length]])}
+        <div class="muted">Show rate = showed ÷ (showed + no-show + owed). Won = the person started an SCA deal on Whop within ${30} days of the call. A dispo "Closed - Won" with no Whop money is listed under <span style="cursor:pointer;color:var(--accent)" data-list="b-reported">reported, not banked (${m.B.filter(b => b.reportedNotBanked).length})</span>.</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${tile("Revenue generated · sold", money(m.revenueWon), m.won.length, delta(m.revenueWon, pm && pm.revenueWon, money) + " contract value of won calls (dispo, else plan, else cash)", "b-won", "sm")}
+      ${tile("Cash collected on won calls", money(m.cashOnWon), m.won.length, delta(m.cashOnWon, pm && pm.cashOnWon, money) + " Whop cash to date on those deals", "b-won", "sm")}
+    </div>
+  </div>
+
+  <div class="sec"><div class="sec-h"><h2>Rates</h2><span class="note">how efficient were we${r.from < ptMidnight(D.config.dispoFrom) ? ' · <b>this window starts before the Dispo form (10/15)</b>: older calls count as showed only when Whop proves a sale, so show rate and close rate there lean high. Pick "Since Dispo form" for clean numbers.' : ""}</span></div>
+  <div class="grid g6">
+    ${rate("Show rate", m.showRate, "showed ÷ happened", delta(m.showRate, pm && pm.showRate, v => pct(v,1)))}
+    ${rate("Close rate (shows)", m.closeRate, "won ÷ showed", delta(m.closeRate, pm && pm.closeRate, v => pct(v,1)))}
+    ${rate("Close ÷ booked", m.closeBooked, "won ÷ booked", delta(m.closeBooked, pm && pm.closeBooked, v => pct(v,1)))}
+    ${rate("AOV", m.aov, "cash on won ÷ won", delta(m.aov, pm && pm.aov, money), money)}
+    ${rate("$ per show", m.dps, "revenue ÷ showed", delta(m.dps, pm && pm.dps, money), money)}
+    ${rate("Cash per call", m.cashPerCall, "cash on won ÷ showed", delta(m.cashPerCall, pm && pm.cashPerCall, money), money)}
+  </div></div>
+
+  <div class="sec card"><div class="sec-h"><h2>Outcomes</h2><span class="note">of the calls that happened, what did the closer file? ${m.happened} calls · click a segment</span></div>
+    ${outcomes(m)}
+  </div>
+
+  <div class="sec card"><div class="sec-h"><h2>Per-closer scorecard</h2><span class="note">closer = dispo form, else the booking's assigned user · booked = cancelled + upcoming + rescheduled + showed + no-show + owed</span></div>
+    ${scorecard(m)}
+  </div>
+
+  <div class="sec card"><div class="sec-h"><h2>Webinars</h2><span class="note">one row per stream night · registered = signup form in the week before · watched = Zoom · applied/booked = after that stream until the next one</span></div>
+    ${webinars()}
+  </div>
+
+  <div class="sec card"><div class="sec-h"><h2>Funnel</h2><span class="tag">${esc(r.label)}</span><span class="note">people who registered in the window, followed through every step · grey = where they stopped</span></div>
+    <div id="sankey">${sankey(r)}</div>
+  </div>
+
+  <div class="sec card"><div class="sec-h"><h2>Text messages</h2><span class="note">every SMS / iMessage sent from GHL, last ${D.texts ? D.texts.days : 60} days · replied = the contact texted back within ${D.texts ? D.texts.replyHours : 24} h</span></div>
+    ${texts(r)}
+  </div>
+
+  <div class="sec"><details><summary>Checks that ran on this build (${D.checks.length})</summary><div class="card" style="margin-top:8px"><table><tr><th>check</th><th>result</th><th>what</th></tr>
+    ${D.checks.map(c => `<tr><td class="mono">${esc(c.id)}</td><td style="text-align:left;color:${c.ok ? "var(--good)" : c.level === "warn" ? "var(--warn)" : "var(--crit)"}">${c.ok ? "ok" : (c.level === "warn" ? "warn" : "FAIL")}</td><td style="text-align:left">${esc(c.msg)}</td></tr>`).join("")}</table>
+    <div class="muted small" style="margin-top:8px">dropped on the way in: ${esc(JSON.stringify(D.dropped))} · ${D.errors.length ? esc(D.errors.join(" · ")) : "no source errors"}</div></div></details></div>
+  `;
+  bind();
+}
+function tile(k, v, n, d, list, cls){ return `<div class="card tile" data-list="${list}"><div class="k">${k}<span class="n">${num(n)}</span></div><div class="v ${cls || ""}">${v}</div><div class="d">${d}</div></div>`; }
+function state(k, v, d, list, cls){ return `<div class="state ${cls || ""}" data-list="${list}"><div class="k">${k}</div><div class="v">${num(v)}</div><div class="d">${d}</div></div>`; }
+function flowRow(k, v, max, color, note, d, list){ return `<div class="row"><div class="lbl">${k}</div><div class="bar" data-list="${list}"><i style="background:${color};width:${max ? Math.max(8, 100 * v / max) : 0}%">${num(v)}</i></div><div class="meta">${note}<br>${d}</div></div>`; }
+function rate(k, v, f, d, fmt){ const show = v == null ? "—" : (fmt ? fmt(v) : pct(v, 1)); return `<div class="card tile" style="cursor:default"><div class="k">${k}</div><div class="v sm">${show}</div><div class="d">${d}<br><span class="mono muted">${f}</span></div></div>`; }
+
+const OUT = [["won","Won","#9AD9B3"],["deposit","Deposit","#C9EBD6"],["followup","Follow-up","#A9C8F2"],["lost","Lost","#F6D97A"],["dq","DQ","#F3A6A2"],["noshow","No-show","#D9D4D1"],["owedx","Owed (no dispo)","#F1C4B5"]];
+function outcomeClass(b){ if (b.outcome === "owed") return "owedx"; if (b.outcome === "noshow") return "noshow"; if (b.won) return b.dealDeposit ? "deposit" : "won"; const c = b.dispoClass; return ["followup","lost","dq","deposit"].includes(c) ? c : (c === "won" ? "won" : "followup"); }
+function outcomes(m){
+  const held = m.B.filter(b => ["showed","noshow","owed"].includes(b.outcome)); const cnt = {}; held.forEach(b => { const k = outcomeClass(b); cnt[k] = (cnt[k] || 0) + 1; });
+  const tot = held.length || 1;
+  return `<div class="outbar">${OUT.filter(o => cnt[o[0]]).map(o => `<i style="background:${o[2]};flex:${cnt[o[0]]}" data-list="o-${o[0]}" title="${o[1]} ${cnt[o[0]]}">${cnt[o[0]]}</i>`).join("")}</div>
+  <div class="legend">${OUT.map(o => `<span data-list="o-${o[0]}"><b style="background:${o[2]}"></b>${o[1]} ${cnt[o[0]] || 0}</span>`).join("")}</div>
+  <div class="muted small" style="margin-top:6px">Won / Deposit come from Whop (paid in full vs payment plan started). Follow-up, Lost and DQ come from the dispo form on calls that showed but have no Whop deal yet. Sums to ${held.length}.</div>`;
+}
+function scorecard(m){
+  const rows = {}; m.B.forEach(b => { const k = b.closer || "(no closer)"; const r = rows[k] = rows[k] || { closer:k, onRoster:b.onRoster, B:[] }; r.B.push(b); if (b.onRoster) r.onRoster = true; });
+  const line = (r, total) => { const B = r.B, c = k => B.filter(b => b.outcome === k).length, showed = c("showed"), happened = showed + c("noshow") + c("owed"), won = B.filter(b => b.won), ids = new Set(won.map(b => b.dealId)), deals = S.D.deals.filter(d => ids.has(d.id));
+    const cash = deals.reduce((s,d)=>s+d.paid,0), rev = deals.reduce((s,d)=>s+(d.contract != null ? d.contract : d.paid),0), q = B.filter(b => b.qualified && b.outcome !== "cancelled").length;
+    const key = total ? "all" : r.closer;
+    return `<tr class="${total ? "total" : ""} ${!total && !r.onRoster ? "warnrow" : ""}"><td>${esc(r.closer)}${!total && !r.onRoster ? ' <span class="small">(not on roster)</span>' : ""}</td>
+      <td class="c" data-list="c-all|${esc(key)}">${B.length}</td><td class="c" data-list="c-showed|${esc(key)}">${showed}</td><td>${pct(showed, happened)}</td><td class="c" data-list="c-qualified|${esc(key)}">${q}</td><td class="c" data-list="c-won|${esc(key)}">${won.length}</td>
+      <td>${pct(won.length, showed)}</td><td>${showed ? money(rev / showed) : "—"}</td><td>${showed ? money(cash / showed) : "—"}</td><td>${won.length ? money(cash / won.length) : "—"}</td><td>${money(rev)}</td><td>${money(cash)}</td><td class="c" data-list="c-owed|${esc(key)}">${c("owed")}</td></tr>`; };
+  const list = Object.values(rows).sort((a,b) => b.B.length - a.B.length);
+  return `<table><tr><th>Closer</th><th>Booked</th><th>Showed</th><th>Show rate</th><th>Qualified</th><th>Won</th><th>Close rate</th><th>$ / show</th><th>Cash / call</th><th>AOV</th><th>Revenue</th><th>Cash banked</th><th>Owed</th></tr>
+    ${list.map(r => line(r, false)).join("")}${line({ closer:"Total", B:m.B, onRoster:true }, true)}</table>
+    <div class="muted small" style="margin-top:6px">Setter credit is only what the dispo form says (SELF-BOOKED = none). Dials, answers and texts per rep are in the Text messages section. GHL cannot prove who set a booking, so there is no appointments-set column.</div>`;
+}
+function webinars(){
+  const D = S.D, rows = D.cohorts.slice().reverse().slice(0, 12).map(c => {
+    const regs = D.registrations.filter(x => x.cohort === c.date), regP = new Set(regs.map(x => x.pid));
+    const att = D.attendance[c.date], apps = D.applications.filter(a => a.cohort === c.date), appP = new Set(apps.map(a => a.pid));
+    const qual = new Set(apps.filter(a => a.qualification === "Qualified").map(a => a.pid));
+    const bk = D.bookings.filter(b => b.cohort === c.date && calOk(b)), bkP = new Set(bk.map(b => b.pid));
+    const showed = bk.filter(b => b.outcome === "showed"), won = bk.filter(b => b.won);
+    return { c, regs:regP.size, att: att ? att.attended : null, attM: att ? att.matched.length : 0, apps: appP.size, qual: qual.size, booked: bkP.size, showed: showed.length, won: won.length, noZoom: !att };
   });
+  return `<table><tr><th>Webinar</th><th>Registered</th><th>Watched live</th><th>Show %</th><th>Applied</th><th>Can invest</th><th>Booked</th><th>Showed</th><th>Won</th></tr>
+  ${rows.map(r => `<tr><td>${fmtD(r.c.start)}${r.noZoom ? ' <span class="small muted">(no Zoom report)</span>' : ""}</td><td class="c" data-list="w-reg|${r.c.date}">${r.regs}</td><td class="c" data-list="w-att|${r.c.date}">${r.att == null ? "—" : r.att}</td><td>${r.att == null ? "—" : pct(r.att, r.regs)}</td><td class="c" data-list="w-app|${r.c.date}">${r.apps}</td><td class="c" data-list="w-qual|${r.c.date}">${r.qual}</td><td class="c" data-list="w-book|${r.c.date}">${r.booked}</td><td class="c" data-list="w-showed|${r.c.date}">${r.showed}</td><td class="c" data-list="w-won|${r.c.date}">${r.won}</td></tr>`).join("")}</table>
+  <div class="muted small" style="margin-top:6px">Watched live counts everyone Zoom saw minus staff and bots; names that match no known person are still counted here but cannot be followed into the funnel below. ${S.D.capacity ? `<b>Calendar capacity:</b> ${num(S.D.capacity.openSlots)} open Strategy slots in the next 7 days (${Object.entries(S.D.capacity.byDay).map(([d,n]) => fmtD(d + "T12:00:00-07:00") + " " + n).join(", ") || "none"}). ${num(S.D.bookings.filter(b => b.kind === "main" && b.outcome === "upcoming").length)} calls already on the calendar.` : "Calendar capacity not pulled."}</div>`;
 }
-const n = v => (typeof v === "number" && isFinite(v)) ? v : 0;
-/* Feed tabs written as ISO text come back from Sheets as real date cells
-   ("Date(2026,7,13)"). Normalise the named columns so string compares work. */
-const DATE_COLS = ["Week (Thu)","Start Date","Booked Date","Date","Registered","First Booking","First Paid","Call Date","Whop Paid Date","Date Paid"];
-function isoRows(rows){
-  rows.forEach(r => DATE_COLS.forEach(k => { if(k in r && r[k] !== null && r[k] !== "") r[k] = gvDate(r[k]); }));
-  return rows;
+/* ---- Sankey: people who registered in the range, followed step by step ---- */
+function funnelPeople(r){
+  const D = S.D; const regs = D.registrations.filter(x => r.cohort ? x.cohort === r.cohort : inR(x.at, { from: r.from - 7 * 864e5, to: r.to }));
+  const people = new Map(); regs.forEach(x => { if (!people.has(x.pid)) people.set(x.pid, { pid: x.pid, cohort: x.cohort }); });
+  const attended = new Set(); Object.entries(D.attendance).forEach(([d, a]) => { if (r.cohort ? d === r.cohort : true) a.matched.forEach(x => attended.add(x.pid + "|" + d)); });
+  const appsBy = {}; D.applications.forEach(a => { (appsBy[a.pid] = appsBy[a.pid] || []).push(a); });
+  const bkBy = {}; D.bookings.forEach(b => { if (calOk(b)) (bkBy[b.pid] = bkBy[b.pid] || []).push(b); });
+  const out = [];
+  people.forEach(p => {
+    const c = D.cohorts.find(x => x.date === p.cohort), cs = c ? Date.parse(c.start) : r.from;
+    p.attended = c ? attended.has(p.pid + "|" + c.date) : false;
+    const apps = (appsBy[p.pid] || []).filter(a => Date.parse(a.at) >= cs - 864e5).sort((a,b) => Date.parse(a.at) - Date.parse(b.at));
+    p.applied = apps.length > 0; p.qualified = apps.length ? apps[apps.length - 1].qualification === "Qualified" : false;
+    const bks = (bkBy[p.pid] || []).filter(b => Date.parse(b.bookedAt) >= cs - 864e5).sort((a,b) => Date.parse(a.bookedAt) - Date.parse(b.bookedAt));
+    p.booked = bks.length > 0; p.showed = bks.some(b => b.outcome === "showed"); p.won = bks.some(b => b.won); p.b = bks;
+    out.push(p);
+  });
+  return out;
 }
-const softFail = e => (e instanceof Error) ? e : e;
-const has = v => v !== null && v !== undefined && v !== "";
-
-/* ---------------- format ---------------- */
-const money = v => (v === null || v === undefined || !isFinite(v)) ? "—" : "$" + Math.round(v).toLocaleString("en-US");
-const num   = v => (v === null || v === undefined || !isFinite(v)) ? "—" : Math.round(v).toLocaleString("en-US");
-const pct   = v => (v === null || v === undefined || !isFinite(v)) ? "—" : (v*100).toFixed(1) + "%";
-const pct0  = v => (v === null || v === undefined || !isFinite(v)) ? "—" : Math.round(v*100) + "%";
-const wkShort = w => { const p = String(w).split("-"); if(p.length !== 3) return w;
-  return MON[+p[1]-1] + " " + (+p[2]); };
-/* gviz returns real date cells as "Date(2026,7,21)" (month 0-based). */
-const gvDate = v => { const m = /^Date\((\d+),(\d+),(\d+)/.exec(String(v));
-  return m ? m[1]+"-"+String(+m[2]+1).padStart(2,"0")+"-"+String(+m[3]).padStart(2,"0") : String(v); };
-const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-/* Full label for the range pickers: "Thu Aug 13 – Wed Aug 19" */
-const wkRange = w => { const p = String(w).split("-"); if(p.length !== 3) return w;
-  const e = weekEnd(w).split("-");
-  return "Thu " + MON[+p[1]-1] + " " + (+p[2]) + " – Wed " + MON[+e[1]-1] + " " + (+e[2]); };
-const moLabel = m => { const p = String(m).split("-"); return p.length === 2 ? MON[+p[1]-1] + " " + p[0] : m; };
-const esc = s => String(s === null || s === undefined ? "" : s)
-  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-
-/* ---------------- math ---------------- */
-const sum = (rows, f) => rows.reduce((s,r) => s + n(f(r)), 0);
-const div = (a,b) => (b > 0 ? a/b : null);
-/* The pickers select calendar DATES; the data is Thursday-anchored WEEKS.
-   A week is in range when its Thu–Wed span overlaps the selected dates. */
-const inRange = w => weekEnd(w) >= S.fromD && String(w) <= S.toD;
-const wsRows = () => S.ws.filter(r => inRange(r["Week (Thu)"]));
-const csRows = () => S.cs.filter(r => inRange(r["Week (Thu)"]));
-const ssRows = () => S.ss.filter(r => inRange(r["Week (Thu)"]));
-
-/* Comparison period: the same number of weeks immediately before the selection. */
-function prevRows(){
-  const sel = wsRows().map(r => r["Week (Thu)"]);
-  if(!sel.length) return [];
-  const i = S.weeks.indexOf(sel[0]);
-  if(i <= 0) return [];
-  const prevWeeks = S.weeks.slice(Math.max(0, i - sel.length), i);
-  return S.ws.filter(r => prevWeeks.indexOf(r["Week (Thu)"]) > -1);
-}
-
-/* Speed to Dial is a rolling 28-day window in the Apps Script, so appointment
-   metrics vanish for older weeks. Printing 0% there would read as "nobody
-   dialed fast" instead of "the data aged out". */
-const STD_WINDOW_DAYS = 28;
-function isoShift(days){
-  const d = new Date(Date.now() + days*86400000);
-  return d.getUTCFullYear() + "-" + String(d.getUTCMonth()+1).padStart(2,"0") + "-" + String(d.getUTCDate()).padStart(2,"0");
-}
-function weekEnd(w){
-  const p = String(w).split("-"); if(p.length !== 3) return w;
-  const d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2] + 6));
-  return d.getUTCFullYear() + "-" + String(d.getUTCMonth()+1).padStart(2,"0") + "-" + String(d.getUTCDate()).padStart(2,"0");
-}
-const agedOut = w => weekEnd(w) < isoShift(-STD_WINDOW_DAYS);
-
-/* ---------------- cells ---------------- */
-function cell(label, val, opt){
-  opt = opt || {};
-  const cls = opt.na ? " na" : (opt.tone ? " " + opt.tone : "");
-  return '<div class="cell'+cls+'">'
-    + '<div class="cell-label" title="'+esc(label)+'">'+esc(label)+'</div>'
-    + '<div class="cell-body">'
-    + '<span class="cell-val'+(opt.sm?" sm":"")+'">'+val+'</span>'
-    + (opt.sub ? '<span class="cell-sub">'+opt.sub+'</span>' : "")
-    + (opt.meter !== undefined && opt.meter !== null
-        ? '<div class="meter"><span style="width:'+Math.max(0,Math.min(100,opt.meter*100)).toFixed(1)+'%"></span></div>' : "")
-    + '</div></div>';
-}
-function panel(title, cells, cols){
-  return '<div class="panel"><div class="panel-head">'+esc(title)+'</div>'
-    + '<div class="panel-body pb'+(cols||2)+'">'+cells.join("")+'</div></div>';
-}
-function delta(cur, prev, fmt, invert){
-  if(prev === null || prev === undefined || !isFinite(prev) || prev === 0) return "";
-  if(cur === null || !isFinite(cur)) return "";
-  const change = (cur - prev)/Math.abs(prev);
-  if(Math.abs(change) < 0.005) return '<span class="delta flat">no change vs prior</span>';
-  const better = invert ? change < 0 : change > 0;
-  return '<span class="delta '+(better?"up":"down")+'">'+(change>0?"▲":"▼")+' '
-    + Math.abs(change*100).toFixed(1) + '% vs prior</span>';
-}
-function naCell(label, why){
-  return cell(label, "Not tracked", {na:true, sub:why});
-}
-
-/* ---------------- OVERVIEW ---------------- */
-function renderOverview(){
-  const R = wsRows(), P = prevRows(), cats = R.map(r => r["Week (Thu)"]);
-
-  const cash    = sum(R,r=>r["Cash Collected"]),      pCash  = sum(P,r=>r["Cash Collected"]);
-  const rev     = sum(R,r=>r["Revenue Contracted"]),  pRev   = sum(P,r=>r["Revenue Contracted"]);
-  const closes  = sum(R,r=>r["Closes"]),              pCloses= sum(P,r=>r["Closes"]);
-  const held    = sum(R,r=>r["Calls Held"]),          pHeld  = sum(P,r=>r["Calls Held"]);
-  const due     = sum(R,r=>r["Calls Due"]),           pDue   = sum(P,r=>r["Calls Due"]);
-  const reg     = sum(R,r=>r["Registered"]),          pReg   = sum(P,r=>r["Registered"]);
-  const att     = sum(R,r=>r["Attended Live"]),       pAtt   = sum(P,r=>r["Attended Live"]);
-  const apps    = sum(R,r=>r["Applications"]),        pApps  = sum(P,r=>r["Applications"]);
-  const booked  = sum(R,r=>r["Calls Booked (stream day)"]), pBooked = sum(P,r=>r["Calls Booked (stream day)"]);
-  const offers  = sum(R,r=>r["Offers Pitched"]);
-  const pif     = sum(R,r=>r["PIF Deals"]), plan = sum(R,r=>r["Plan Deals"]);
-  const canc    = sum(R,r=>r["Cancelled Calls"]), cancTracked = sum(R,r=>r["Cancel Tracked Calls"]);
-  const resch   = sum(R,r=>r["Rescheduled Calls"]);
-
-  /* current calendar month from the Monthly tab */
-  const mo = S.mo.filter(r => has(r["Month"]));
-  const cur = mo[0] || null;                       /* sorted newest first */
-  const target = cur && has(cur["Target"]) ? n(cur["Target"]) : null;
-  const moCash = cur ? n(cur["Cash Collected"]) : null;
-
-  /* straight-line pace projection, only for the real current month, and not
-     in the first two days when one deal makes the line meaningless */
-  const nowD = new Date();
-  const curKey = nowD.getFullYear() + "-" + String(nowD.getMonth()+1).padStart(2,"0");
-  let pace = null;
-  if(cur && String(cur["Month"]) === curKey && moCash !== null && nowD.getDate() >= 3){
-    const dim = new Date(nowD.getFullYear(), nowD.getMonth()+1, 0).getDate();
-    pace = moCash / nowD.getDate() * dim;
+function sankey(r){
+  const P = funnelPeople(r), n = 7;
+  const names = ["Registered", "Watched live", "Applied", "Can invest", "Booked a call", "Showed", "Closed"];
+  const test = [p => true, p => p.attended, p => p.applied, p => p.qualified, p => p.booked, p => p.showed, p => p.won];
+  // two lanes: dark = watched live and kept going; blue = did not watch live (replay / later) and kept going
+  const dark = [], blue = []; let d = P, b = [];
+  for (let k = 0; k < n; k++) {
+    if (k === 0) { dark.push(P.length); blue.push(0); continue; }
+    if (k === 1) { d = P.filter(p => p.attended); b = P.filter(p => !p.attended); dark.push(d.length); blue.push(b.length); continue; }
+    d = d.filter(test[k]); b = b.filter(test[k]); dark.push(d.length); blue.push(b.length);
   }
-
-  let h = "";
-
-  /* ---- row 1: revenue / webinar funnel / sales calls ---- */
-  h += '<div class="row r3">';
-
-  h += panel("Revenue", [
-    cell("Monthly revenue target", target === null ? "Not set" : money(target),
-      target === null ? {na:true, sub:"Set it on the Targets and Spend tab"} : {sub:"cash collected, per calendar month"}),
-    cell("Current month revenue", moCash === null ? "—" : money(moCash),
-      {sub: (cur ? esc(moLabel(cur["Month"])) + " &middot; " + num(cur["Closes"]) + " closes" : "")
-            + (pace !== null ? " &middot; on pace for " + money(pace) : ""),
-       meter: (target && moCash !== null) ? moCash/target : null,
-       tone: (target && moCash >= target) ? "good" : (pace !== null && target && pace >= target ? "good" : "")}),
-    cell("Cash collected", money(cash), {sub: delta(cash, pCash) || "selected weeks"}),
-    cell("Revenue contracted", money(rev), {sub: (rev-cash) > 0 ? money(rev-cash) + " outstanding" : "fully collected"}),
-    cell("Average cash collected", money(div(cash,closes)), {sub:"per closed deal"}),
-    cell("Cash per live call", money(div(cash,held)), {sub:"benchmark $800–$2,000"})
-  ], 2);
-
-  h += panel("Webinar Funnel", [
-    cell("Registrations", num(reg), {sub: delta(reg, pReg) || "selected weeks"}),
-    cell("Attendance %", pct(div(att,reg)), {sub: num(att) + " attended live"}),
-    cell("Applications", num(apps), {sub: delta(apps, pApps) || ""}),
-    cell("Application %", pct(div(apps,att)), {sub:"of live attendees"}),
-    naCell("Qualified %", "No qualified-application count exists in GHL or Typeform yet"),
-    cell("Booking %", pct(div(booked,apps)), {sub: num(booked) + " calls booked"})
-  ], 2);
-
-  h += panel("Sales Calls", [
-    cell("Calls due", num(due), {sub: delta(due, pDue) || ""}),
-    cell("Calls held", num(held), {sub: delta(held, pHeld) || ""}),
-    cell("Show %", pct(div(held,due)), {sub:"target " + pct0(tgt("Call show rate target",0.7)), tone: div(held,due) >= tgt("Call show rate target",0.7) ? "good" : ""}),
-    cell("Offers pitched", num(offers), {sub: (div(offers,held) > 1)
-      ? "more than calls held — see Data Health"
-      : pct(div(offers,held)) + " of calls held"}),
-    cell("Closes", num(closes), {sub: delta(closes, pCloses) || ""}),
-    cell("Close %", pct(div(closes,held)), {sub:"of calls held &middot; target " + pct0(tgt("Close rate target",0.3)), tone: div(closes,held) >= tgt("Close rate target",0.3) ? "good" : ""})
-  ], 2);
-
-  h += '</div>';
-
-  /* ---- row 2: deal structure / cancellations ---- */
-  h += '<div class="row r2">';
-
-  h += panel("Payment Plan Structure", [
-    cell("Paid in full", num(pif), {sub: pct(div(pif, pif+plan)) + " of deals"}),
-    cell("Payment plan", num(plan), {sub: pct(div(plan, pif+plan)) + " of deals"}),
-    cell("Average contract", money(div(rev,closes)), {sub:"revenue per close"}),
-    cell("Collected %", pct(div(cash,rev)), {sub: money(rev-cash) + " still owed on contracts"})
-  ], 4);
-
-  /* Cancel / no-show / confirmation now come from the GHL calendar itself
-     (GHL Appointments feed), not the closers' self-reported EOC forms, which
-     were catching 0-3 cancels a week against 20+ on the calendar. */
-  const A = apRows(), Apast = A.filter(r => n(r["Past-dated"]) === 1);
-  const aCanc = Apast.filter(r => n(r["Cancelled"]) === 1).length;
-  const aNS = Apast.filter(r => n(r["No-show"]) === 1).length;
-  const aYes = A.filter(r => String(r["Replied YES"]).toUpperCase() === "YES").length;
-  const aAsked = A.filter(r => has(r["Replied YES"])).length;
-  const nsSince = Apast.filter(r => String(r["Start Date"]) >= "2026-08-14");
-  const nsRate = nsSince.length ? div(nsSince.filter(r => n(r["No-show"]) === 1).length, nsSince.length) : null;
-  const refunds = Array.isArray(S.wr) ? sum(S.wr.filter(r => inRange(r["Week (Thu)"])), r => r["Whop Refunded"]) : null;
-  h += panel("Cancellations & No-Shows — from the GHL calendar", [
-    cell("Cancel rate", Apast.length ? pct(div(aCanc, Apast.length)) : "—",
-      {sub: num(aCanc) + " of " + num(Apast.length) + " past-dated bookings", tone: div(aCanc, Apast.length) > 0.4 ? "bad" : ""}),
-    cell("No-show rate", nsRate === null ? "—" : pct(nsRate),
-      {sub: nsRate === null ? "no-shows only marked since Aug 14" : num(nsSince.filter(r => n(r["No-show"]) === 1).length) + " of " + num(nsSince.length) + " since Aug 14, when marking began", tone: nsRate > 0.25 ? "bad" : ""}),
-    cell("Confirmation rate", aAsked ? pct(div(aYes, aAsked)) : "—",
-      {sub: aAsked ? num(aYes) + " of " + num(aAsked) + " replied YES after booking" : "reply sweep not run for this range"}),
-    cell("Rescheduled calls", num(resch), {sub: pct(div(resch,due)) + " of calls due (EOC-reported)"}),
-    refunds === null ? naCell("Refunds", "Whop Recon tab unavailable") : cell("Refunds", money(refunds), {sub:"Whop, selected weeks", tone: refunds > 0 ? "bad" : ""}),
-    cell("Never dialed", num(sum(R.filter(r=>!agedOut(r["Week (Thu)"])),r=>r["Never Dialed"])), {sub:"appointments, last 28 days"})
-  ], 3);
-  if(Array.isArray(S.ap) && A.length){
-    h += '<div class="note"><p><strong>Cancel rate reads the GHL calendar, not the EOC forms.</strong> '
-      + 'The forms reported ' + num(canc) + ' cancel' + (canc===1?"":"s") + ' in this range; the calendar shows ' + num(aCanc)
-      + '. A booking that texts back YES cancels far less often than a silent one (24% vs 67% on the Strategy calendar, Aug 13–26), so the confirmation rate is the number to push.</p></div>';
+  const W = 1180, H = 320, top = 40, colW = (W - 80) / (n - 1), nodeW = 14, max = Math.max(P.length, 1), sc = (H - top - 24) / max;
+  const x = k => 30 + k * colW, parts = [], labels = [];
+  const band = (x1, y1, x2, y2, h, color, title, list) => h <= 0 ? "" : `<path d="M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2} L${x2},${y2 + h} C${(x1 + x2) / 2},${y2 + h} ${(x1 + x2) / 2},${y1 + h} ${x1},${y1 + h} Z" fill="${color}" data-list="${list}" style="cursor:pointer"><title>${title}</title></path>`;
+  const wedge = (x1, y1, h, title, list) => h <= 0 ? "" : `<path d="M${x1},${y1} C${x1 + 40},${y1} ${x1 + 60},${y1 + h / 2} ${x1 + 90},${y1 + h / 2} C${x1 + 60},${y1 + h / 2} ${x1 + 40},${y1 + h} ${x1},${y1 + h} Z" fill="#D9D4D1" data-list="${list}" style="cursor:pointer"><title>${title}</title></path>`;
+  for (let k = 0; k < n; k++) {
+    const hd = dark[k] * sc, hb = blue[k] * sc, tot = dark[k] + blue[k];
+    parts.push(`<rect x="${x(k)}" y="${top}" width="${nodeW}" height="${Math.max(2, hd)}" rx="2" fill="#7A1420" data-list="s-${k}" style="cursor:pointer"/>`);
+    if (hb > 0) parts.push(`<rect x="${x(k)}" y="${top + hd + 2}" width="${nodeW}" height="${Math.max(2, hb)}" rx="2" fill="#A9C8F2" data-list="s-skip-${k}" style="cursor:pointer"/>`);
+    labels.push(`<text x="${x(k)}" y="${top - 20}" ${k === n - 1 ? 'text-anchor="end" dx="14"' : ""}>${names[k]}</text><text x="${x(k)}" y="${top - 7}" class="lbl2" ${k === n - 1 ? 'text-anchor="end" dx="14"' : ""}>${num(tot)}${k ? " · " + pct(tot, P.length) : ""}</text>`);
+    if (k === n - 1) continue;
+    const x1 = x(k) + nodeW, x2 = x(k + 1);
+    // dark lane: continue + stop
+    parts.push(band(x1, top, x2, top, dark[k + 1] * sc, "#7A1420", `${num(dark[k + 1])} ${k === 0 ? "watched live" : "went on to " + names[k + 1].toLowerCase()}`, `s-${k + 1}`));
+    if (k === 0) parts.push(band(x1, top + dark[1] * sc, x2, top + dark[1] * sc + 2, blue[1] * sc, "#A9C8F2", `${num(blue[1])} did not watch live`, `s-skip-1`));
+    else {
+      parts.push(wedge(x1, top + dark[k + 1] * sc, (dark[k] - dark[k + 1]) * sc, `${num(dark[k] - dark[k + 1])} stopped: did not ${names[k + 1].toLowerCase()}`, `s-drop-${k}`));
+      parts.push(band(x1, top + hd + 2, x2, top + dark[k + 1] * sc + 2, blue[k + 1] * sc, "#A9C8F2", `${num(blue[k + 1])} (never watched live) went on to ${names[k + 1].toLowerCase()}`, `s-skip-${k + 1}`));
+      parts.push(wedge(x1, top + hd + 2 + blue[k + 1] * sc, (blue[k] - blue[k + 1]) * sc, `${num(blue[k] - blue[k + 1])} who never watched stopped here`, `s-bdrop-${k}`));
+    }
   }
-
-  h += '</div>';
-
-  /* ---- charts ---- */
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">Cash collected by week</span>'
-    + '<span class="chart-note">Dated on the call, from the closer EOC report</span></div>'
-    + barChart(cats, R.map(r=>n(r["Cash Collected"])), {clip:"cf1", fmt:money, alt:"Cash collected by week"})
-    + '</div>';
-
-  h += '<div class="row r2">';
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">Registered vs attended live</span>'
-    + '<span class="chart-note">Same unit, one axis</span></div>'
-    + groupedBar(cats,
-        {name:"Registered", color:"var(--c1)", vals:R.map(r=>n(r["Registered"]))},
-        {name:"Attended live", color:"var(--c2)", vals:R.map(r=>n(r["Attended Live"]))},
-        {clip:"cf2", alt:"Registered versus attended live by week"})
-    + legend([{name:"Registered",color:"var(--c1)"},{name:"Attended live",color:"var(--c2)"}])
-    + '</div>';
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">Conversion rates by week</span>'
-    + '<span class="chart-note">All three share a percentage axis</span></div>'
-    + lineChart(cats, [
-        {name:"Attendance %", color:"var(--c1)", vals:R.map(r=>has(r["Show %"])?r["Show %"]:null)},
-        {name:"Application %", color:"var(--c2)", vals:R.map(r=>has(r["App Rate % (of attendees)"])?r["App Rate % (of attendees)"]:null)},
-        {name:"Close %", color:"var(--c3)", vals:R.map(r=>has(r["Close Rate %"])?r["Close Rate %"]:null)}
-      ], {max:1, fmt:pct, alt:"Attendance, application and close rates by week"})
-    + legend([{name:"Attendance %",color:"var(--c1)",line:1},{name:"Application %",color:"var(--c2)",line:1},{name:"Close %",color:"var(--c3)",line:1}])
-    + '</div>';
-  h += '</div>';
-
-  /* ---- weekly table ---- */
-  h += '<div class="panel"><div class="panel-head">Week by week</div><div class="tw">'
-    + tableInner(["Week","Reg.","Attended","Att. %","Apps","App %","Booked","Due","Held","Show %","Closes","Close %","Cash","Source"],
-      R.map(r => [
-        esc(wkShort(r["Week (Thu)"])), num(r["Registered"]), num(r["Attended Live"]),
-        has(r["Show %"])?pct(r["Show %"]):null, num(r["Applications"]),
-        has(r["App Rate % (of attendees)"])?pct(r["App Rate % (of attendees)"]):null,
-        num(r["Calls Booked (stream day)"]), num(r["Calls Due"]), num(r["Calls Held"]),
-        has(r["Call Show %"])?pct(r["Call Show %"]):null, num(r["Closes"]),
-        has(r["Close Rate %"])?pct(r["Close Rate %"]):null, money(r["Cash Collected"]), sourcePill(r)
-      ]), {left:[13]}) + '</div></div>';
-
-  const methods = Array.from(new Set(R.filter(r=>has(r["Attended Live"])).map(r=>sourceMethod(r["Attendance Source"])).filter(has)));
-  const unverified = R.filter(r => String(r["Verified"]).toUpperCase() === "NO").length;
-  if(methods.length > 1 || unverified){
-    h += '<div class="note warn"><p><strong>Attendance % is only comparable within one measurement method.</strong> '
-      + 'This range mixes ' + methods.length + ' ways of counting attendance (' + esc(methods.join(", ")) + ')'
-      + (unverified ? ', and ' + unverified + ' week' + (unverified===1?" is":"s are") + ' still on the GHL click proxy, which ran 22% low against Zoom' : '')
-      + '. The YouTube weeks counted channel traffic that never registered, so their attendance rate is a ceiling, not a floor.</p></div>';
-  }
-
-  document.getElementById("page-overview").innerHTML = h;
+  return `<svg class="sankey" viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible">${parts.join("")}${labels.join("")}</svg>
+  <div class="legend"><span><b style="background:#7A1420"></b>watched live and went on</span><span><b style="background:#A9C8F2"></b>did not watch live, went on anyway (replay, later)</span><span><b style="background:#D9D4D1"></b>stopped</span></div>
+  <div class="muted small" style="margin-top:6px">${num(P.length)} people registered${r.cohort ? "" : " in the window (plus the 7 days before, so a Thursday cohort is whole)"}. Watched live is matched by email or name against the Zoom report, so it is a floor. Applied = an application after that person's webinar; Booked = a call booked after it; Closed = an SCA deal on Whop. Click any block or band for its people.</div>`;
+}
+function texts(r){
+  const T = S.D.texts; if (!T) return `<div class="muted">No text data yet.</div>`;
+  const rows = T.rows.filter(x => inR(ptMidnight(x.day), { from: r.from - 864e5, to: r.to }));
+  const grp = (keyFn, label) => { const g = {}; rows.forEach(x => { const k = keyFn(x); const a = g[k] = g[k] || { k, sent:0, delivered:0, failed:0, replied:0, med:[] }; a.sent += x.sent; a.delivered += x.delivered; a.failed += x.failed; a.replied += x.replied; if (x.replyMedianMin != null) a.med.push(x.replyMedianMin); });
+    return Object.values(g).sort((a,b) => b.sent - a.sent).map(a => `<tr><td>${esc(label(a.k))}</td><td>${num(a.sent)}</td><td>${pct(a.delivered, a.sent)}</td><td>${pct(a.failed, a.sent)}</td><td>${pct(a.replied, a.sent)}</td><td>${a.med.length ? Math.round(a.med.sort((x,y)=>x-y)[Math.floor(a.med.length/2)]) + " min" : "—"}</td></tr>`).join(""); };
+  const users = Object.assign({}, S.D.config.users || {}, S.D.config.setters || {}, S.D.config.roster || {});
+  const who = x => x.source === "workflow" ? "Automation (workflows)" : (users[x.userId] || (x.userId ? "former user " + x.userId.slice(0,6) : "Human (no user id)"));
+  return `<div class="grid g2"><div><table><tr><th>By provider × sender</th><th>Sent</th><th>Delivered</th><th>Failed</th><th>Replied</th><th>Median reply</th></tr>
+    ${grp(x => x.provider + "|" + (x.source === "workflow" ? "automation" : "human"), k => ({ lc:"LC Phone", sendblue:"SendBlue iMessage", custom:"Custom provider" }[k.split("|")[0]] || k.split("|")[0]) + " · " + k.split("|")[1])}</table></div>
+    <div><table><tr><th>By rep</th><th>Sent</th><th>Delivered</th><th>Failed</th><th>Replied</th><th>Median reply</th></tr>${grp(who, k => k)}</table></div></div>
+  <div class="muted small" style="margin-top:6px">${num(T.count)} messages stored${T.backfillDone ? "" : " (history still backfilling)"}. Delivered / failed is the status GHL reports; pending statuses count as neither. Automation = sent by a workflow; everything else was a person.</div>`;
 }
 
-/* ---------------- TEAM ---------------- */
-function renderTeam(){
-  const R = wsRows(), C = csRows(), T = ssRows(), cats = R.map(r=>r["Week (Thu)"]);
-  const Rlive = R.filter(r => !agedOut(r["Week (Thu)"]));
-  const agedWeeks = R.filter(r => agedOut(r["Week (Thu)"])).map(r => wkShort(r["Week (Thu)"]));
-  const appts = sum(Rlive,r=>r["Appts Booked (system)"]);
-  const never = sum(Rlive,r=>r["Never Dialed"]);
-  const dialedW = div(sum(Rlive,r=>n(r["Dialed <=20m %"])*n(r["Appts Booked (system)"])), appts);
-
-  const byC = {}, byS = {};
-  C.forEach(r => { const k=r["Closer"]; if(!k) return;
-    byC[k] = byC[k] || {cash:0,rev:0,held:0,due:0,closes:0,pif:0};
-    byC[k].cash+=n(r["Cash Collected"]); byC[k].rev+=n(r["Revenue Contracted"]);
-    byC[k].held+=n(r["Calls Held"]); byC[k].due+=n(r["Calls Due"]); byC[k].closes+=n(r["Closes"]); });
-  T.forEach(r => { const k=r["Setter"]; if(!k) return;
-    byS[k] = byS[k] || {appts:0,held:0,cash:0,closes:0,eod:0,dialSum:0,dialN:0};
-    byS[k].appts+=n(r["Appts Booked (system)"]); byS[k].held+=n(r["Calls Held"]);
-    byS[k].cash+=n(r["Cash Collected"]); byS[k].closes+=n(r["Closes"]); byS[k].eod+=n(r["EOD Forms Filed"]);
-    if(has(r["Avg Mins to Dial"])){ byS[k].dialSum += n(r["Avg Mins to Dial"]); byS[k].dialN++; } });
-
-  const closers = Object.keys(byC).sort((a,b)=>byC[b].cash-byC[a].cash);
-  /* Panels are for real people. "(UNASSIGNED)" and "NONE" are blank-field artifacts,
-     and a closer occasionally gets typed into the setter box. They stay in the table
-     below, where being visible is the point, but they don't get a scorecard. */
-  const ARTIFACT = /^\(UNASSIGNED\)$|^NONE$/i;
-  const setters = Object.keys(byS)
-    .filter(k => !ARTIFACT.test(k) && byS[k].appts > 0 && !byC[k])
-    .sort((a,b)=>byS[b].appts-byS[a].appts);
-
-  let h = "";
-
-  /* Scoreboards: one row per person, scored against the targets set on the
-     Targets and Spend tab. Green = at or above target, red = below. */
-  const closeT = tgt("Close rate target", 0.3), showT = tgt("Call show rate target", 0.7),
-        dialT = tgt("Speed-to-lead target (mins)", 20);
-  const scoreHi = (v,t) => v === null ? null : '<span class="pill '+(v >= t ? "ok" : "bad")+'">'+pct(v)+'</span>';
-  const scoreLo = (v,t) => v === null ? null : '<span class="pill '+(v <= t ? "ok" : "bad")+'">'+num(v)+' min</span>';
-
-  h += '<div class="panel"><div class="panel-head">Closer scoreboard &middot; close target '+pct0(closeT)+', show target '+pct0(showT)+'</div><div class="tw">'
-    + tableInner(["Closer","Cash","Closes","Close %","Due","Held","Show %","Avg deal","Cash / call"],
-      closers.map(k => { const c = byC[k]; return [
-        esc(title(k)), money(c.cash), num(c.closes),
-        scoreHi(div(c.closes,c.held), closeT),
-        num(c.due), num(c.held),
-        scoreHi(div(c.held,c.due), showT),
-        money(div(c.cash,c.closes)), money(div(c.cash,c.held))
-      ];})) + '</div></div>';
-
-  h += '<div class="panel"><div class="panel-head">Setter scoreboard &middot; dial target '+num(dialT)+' min &middot; appointments cover the last 28 days only</div><div class="tw">'
-    + tableInner(["Setter","Appts booked","Avg mins to dial","Dialed ≤20m","Held","Cash from sets","EOD filed"],
-      setters.map(k => { const s = byS[k]; return [
-        esc(title(k)), num(s.appts),
-        scoreLo(s.dialN ? s.dialSum/s.dialN : null, dialT),
-        s.appts > 0 ? pct(div(sum(T.filter(r=>r["Setter"]===k && !agedOut(r["Week (Thu)"])), r=>n(r["Dialed <=20m %"])*n(r["Appts Booked (system)"])), s.appts)) : null,
-        num(s.held), money(s.cash), num(s.eod)
-      ];})) + '</div></div>';
-
-  /* ---- Pick-up rate + activity, from the Dial Activity feed ---- */
-  const D = daRows();
-  if(Array.isArray(S.da)){
-    const byR = {};
-    D.forEach(r => { const k = String(r["Rep"]||""); if(!k || /^\(no user\)$/.test(k) || /^[A-Za-z0-9]{20}$/.test(k)) return;
-      byR[k] = byR[k] || {dials:0, ans:0, talk:0, texts:0, days:new Set()};
-      byR[k].dials += n(r["Dials"]); byR[k].ans += n(r["Answered (>=30s)"]); byR[k].talk += n(r["Talk secs"]); byR[k].texts += n(r["Texts"]);
-      byR[k].days.add(String(r["Date"])); });
-    const reps = Object.keys(byR).sort((a,b) => (byR[b].dials + byR[b].texts) - (byR[a].dials + byR[a].texts));
-    const tD = reps.reduce((s,k)=>s+byR[k].dials,0), tA = reps.reduce((s,k)=>s+byR[k].ans,0), tT = reps.reduce((s,k)=>s+byR[k].texts,0);
-    h += panel("Dial activity — from the GHL dialer, selected dates", [
-      cell("Dials", num(tD), {sub:"outbound calls placed by a person"}),
-      cell("Pick-up rate", tD ? pct(div(tA,tD)) : "—", {sub: num(tA) + " answered, 30 seconds or longer", tone: div(tA,tD) >= 0.3 ? "good" : ""}),
-      cell("Texts sent", num(tT), {sub:"manual SMS, not automations"}),
-      cell("Talk time", tA ? (Math.round(reps.reduce((s,k)=>s+byR[k].talk,0)/60)) + " min" : "—", {sub:"total across answered calls"})
-    ], 4);
-    h += '<div class="panel"><div class="panel-head">Pick-up rate by rep &middot; a dial counts once, an answer needs 30+ seconds</div><div class="tw">'
-      + tableInner(["Rep","Dials","Answered","Pick-up %","Texts","Talk min","Active days"],
-        reps.map(k => { const r = byR[k]; return [esc(k), num(r.dials), num(r.ans),
-          r.dials ? '<span class="pill '+(div(r.ans,r.dials) >= 0.3 ? "ok" : "bad")+'">'+pct(div(r.ans,r.dials))+'</span>' : null,
-          num(r.texts), r.ans ? num(r.talk/60) : null, num(r.days.size)]; }), {left:[0]}) + '</div></div>';
-    h += '<div class="note"><p><strong>Amanda dialed from her own phone until Aug 27.</strong> Dials before that date only show the calls she placed inside GHL, so her early numbers are a floor, not her real activity. From Aug 27 everything is on the GHL line.</p></div>';
-  } else {
-    h += '<div class="note warn"><p><strong>Dial activity unavailable.</strong> ' + esc(S.da && S.da.message ? S.da.message : "Dial Activity tab missing") + '</p></div>';
-  }
-
-  /* ---- Cancel rate by calendar, from the GHL Appointments feed ---- */
-  const AP = apRows().filter(r => n(r["Past-dated"]) === 1);
-  if(Array.isArray(S.ap) && AP.length){
-    const byCal = {};
-    AP.forEach(r => { const k = String(r["Calendar"]||"").replace("Book a ","").replace(" Personal Calendar","").replace("'s","");
-      byCal[k] = byCal[k] || {n:0,c:0,ns:0,yes:0};
-      byCal[k].n++; byCal[k].c += n(r["Cancelled"]); byCal[k].ns += n(r["No-show"]); byCal[k].yes += String(r["Replied YES"]).toUpperCase()==="YES" ? 1 : 0; });
-    const cals = Object.keys(byCal).sort((a,b)=>byCal[b].n-byCal[a].n);
-    h += '<div class="panel"><div class="panel-head">Cancel and no-show rate by calendar &middot; past-dated bookings in range</div><div class="tw">'
-      + tableInner(["Calendar","Booked","Cancelled","Cancel %","No-show","No-show %","Replied YES"],
-        cals.map(k => { const c = byCal[k]; return [esc(k), num(c.n), num(c.c),
-          '<span class="pill '+(div(c.c,c.n) > 0.4 ? "bad" : "ok")+'">'+pct(div(c.c,c.n))+'</span>',
-          num(c.ns), c.ns ? '<span class="pill '+(div(c.ns,c.n) > 0.25 ? "bad" : "ok")+'">'+pct(div(c.ns,c.n))+'</span>' : pct(0),
-          pct(div(c.yes,c.n))]; }), {left:[0]}) + '</div></div>';
-  }
-
-  /* Commissions moved to their own tab 2026-08-27 (renderCommissions). */
-  h += '<div class="row r2">';
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">Speed to lead</span>'
-    + '<span class="chart-note">Share of bookings dialed within 20 minutes</span></div>'
-    + lineChart(cats, [{name:"Dialed ≤20m", color:"var(--c2)",
-        vals:R.map(r => (!agedOut(r["Week (Thu)"]) && n(r["Appts Booked (system)"]) > 0) ? n(r["Dialed <=20m %"]) : null)}],
-        {fmt:pct, alt:"Share of bookings dialed within twenty minutes, by week"})
-    + '<p class="chart-note" style="margin:10px 0 0">Average across weeks still in the window '+pct(dialedW)
-    + '. '+num(never)+' of '+num(appts)+' appointments were never dialed at all.</p></div>';
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">Cash collected by closer</span>'
-    + '<span class="chart-note">Whole selected range</span></div>' + closerBars(closers, byC) + '</div>';
-  h += '</div>';
-
-  h += '<div class="panel"><div class="panel-head">Closers, week by week</div><div class="tw">'
-    + tableInner(["Week","Closer","Due","Held","Show %","Closes","Close %","Cash","Avg deal"],
-      C.map(r => [
-        esc(wkShort(r["Week (Thu)"])), esc(title(r["Closer"])), num(r["Calls Due"]), num(r["Calls Held"]),
-        has(r["Call Show %"])?pct(r["Call Show %"]):null, num(r["Closes"]),
-        has(r["Close Rate %"])?pct(r["Close Rate %"]):null, money(r["Cash Collected"]),
-        has(r["Cash AOV"])?money(r["Cash AOV"]):null
-      ]), {left:[1]}) + '</div></div>';
-
-  h += '<div class="panel"><div class="panel-head">Setters, week by week</div><div class="tw">'
-    + tableInner(["Week","Setter","Appts booked","Dialed ≤20m","Avg mins to dial","Held","Cash","EOD filed"],
-      T.map(r => [
-        esc(wkShort(r["Week (Thu)"])), esc(title(r["Setter"])), num(r["Appts Booked (system)"]),
-        has(r["Dialed <=20m %"])?pct(r["Dialed <=20m %"]):null,
-        has(r["Avg Mins to Dial"])?num(r["Avg Mins to Dial"]):null,
-        num(r["Calls Held"]), money(r["Cash Collected"]), num(r["EOD Forms Filed"])
-      ]), {left:[1]}) + '</div></div>';
-
-  if(agedWeeks.length){
-    h += '<div class="note warn"><p><strong>Appointment data only covers the last 28 days.</strong> '
-      + 'Speed to lead, never-dialed and dial times come from a rolling window that drops older bookings, so '
-      + esc(agedWeeks.join(", ")) + ' no longer have any. Those weeks are left off the line rather than drawn at zero. '
-      + 'Cash, closes and show rates are unaffected and go back to the beginning.</p></div>';
-  }
-  h += '<div class="note"><p><strong>Read &ldquo;EOD forms filed&rdquo; before trusting any self-reported number.</strong> '
-    + 'It counts the days a setter actually filed, out of seven per week. Appointment counts and dial times come from the '
-    + 'system and do not depend on anyone filing anything.</p>'
-    + '<p style="color:var(--ink-3)">Per-setter appointment counts run about 12% below the team total, because the Setter Stats tab is '
-    + 'built from the closer call log rather than the appointment log.</p></div>';
-
-  document.getElementById("page-team").innerHTML = h;
-}
-
-/* ---------------- shared feed filters ---------------- */
-const apRows = () => Array.isArray(S.ap) ? S.ap.filter(r => inRange(r["Week (Thu)"])) : [];
-const daRows = () => Array.isArray(S.da) ? S.da.filter(r => String(r["Date"]) >= S.fromD && String(r["Date"]) <= S.toD) : [];
-const normName = s => String(s||"").trim().toUpperCase();
-
-/* ---------------- COMMISSIONS ----------------
-   Model decided at the 2026-08-26 ops meeting:
-     closers  10% of cash collected (Cash Log col J, rate on Targets and Spend)
-     setters  flat $30 per held call + $50 per close they set, from the week of
-              Aug 27. Before that, 5% of cash (Cash Log col K).
-     Kaia     10% on $497 closes is covered by the closer rate; the $150/week
-              DM-setting retainer is listed as an assumed line until Maya's brief.
-   Paid = the Payouts tab. Whop-verified = the Whop Recon tab. */
-const SETTER_FLAT_FROM = "2026-08-27";
-const SETTER_SHOW = 30, SETTER_CLOSE = 50, KAIA_WEEKLY = 150;
-function renderCommissions(){
-  const page = document.getElementById("page-comm");
-  if(!Array.isArray(S.cl)){
-    page.innerHTML = '<div class="note warn"><p><strong>Commission data unavailable.</strong> ' + esc(S.cl && S.cl.message ? S.cl.message : String(S.cl)) + '</p></div>';
-    return;
-  }
-  const cRate = tgt("Closer commission rate", 0.10), sRate = tgt("Setter commission rate", 0.05);
-  const ARTIFACT = /^\(UNASSIGNED\)$|^NONE$/i;
-  const calls = Array.isArray(S.calls) ? S.calls : [];
-  const wr = Array.isArray(S.wr) ? S.wr : [];
-
-  /* Whop verification per Cash Log deal: match on prospect + call date */
-  /* Join on prospect + call date, tolerating a one-day drift either side: the
-     recon tab is written by Apps Script and sheet-timezone rounding can move a
-     date by a day. */
-  const dayShift = (iso, d) => { const p = String(iso).split("-"); if(p.length !== 3) return iso;
-    const t = new Date(Date.UTC(+p[0], +p[1]-1, +p[2] + d)); return t.toISOString().slice(0,10); };
-  const wmap = {};
-  wr.forEach(r => { const nm = normName(r["Prospect"]), cd = String(r["Call Date"]); if(!nm) return;
-    [0, -1, 1].forEach((d, i) => { const k = nm + "|" + dayShift(cd, d); if(i === 0 || !wmap[k]) wmap[k] = String(r["Recon Status"]||""); }); });
-  const wkey = r => normName(r["Prospect"]) + "|" + String(r["Call Date"]);
-  const whopPill = st => {
-    if(!wr.length) return '<span class="pill">no recon</span>';
-    if(!st) return '<span class="pill bad">not on Whop</span>';
-    if(/^MATCHED/.test(st)) return '<span class="pill ok">Whop ✓</span>';
-    if(/^PROBABLE/.test(st)) return '<span class="pill chk">probable</span>';
-    if(/^EOC ONLY/.test(st)) return '<span class="pill bad">no payment</span>';
-    return '<span class="pill">'+esc(st.slice(0,14))+'</span>';
+/* ======================= DRILL-DOWN LISTS ======================= */
+function listFor(key){
+  const D = S.D, r = range(), m = metrics(r), P = D.people, name = pid => (P[pid] && P[pid].name) || "(no name)";
+  const ghl = pid => P[pid] && P[pid].contactId && CFG.GHL_LOC ? `https://app.gohighlevel.com/v2/location/${CFG.GHL_LOC}/contacts/detail/${P[pid].contactId}` : "";
+  const bRow = b => ({ name: name(b.pid), when: fmtDT(b.startAt), booked: fmtDT(b.bookedAt), calendar: b.cal, closer: b.closer, outcome: b.outcome + (b.showedBy === "whop" ? " (proven by Whop)" : "") + (b.dispoOutcome ? " · " + b.dispoOutcome : ""), qualified: b.qualified ? "yes" : "", won: b.won ? (b.dealDeposit ? "plan " : "PIF ") + money(b.dealPaid) : (b.reportedNotBanked ? "reported, not banked" : ""), link: ghl(b.pid) });
+  const pRow = p => ({ name: p.name || name(p.pid), when: fmtDT(p.at), amount: money(p.net), kind: p.kind + (p.deposit ? " (plan)" : ""), product: p.productName, method: p.method || "", link: ghl(p.pid) });
+  const dRow = d => ({ name: d.name || name(d.pid), started: fmtDT(d.anchorAt), paid: money(d.paid), contract: d.contract != null ? money(d.contract) : "—", remaining: d.remaining != null ? money(d.remaining) : "no schedule", type: d.deposit ? "plan" : "paid in full", link: ghl(d.pid) });
+  const [k, arg] = key.split("|");
+  const B = m.B;
+  const byO = o => B.filter(b => b.outcome === o);
+  const map = {
+    "b-all": ["Booked", B, bRow], "b-showed": ["Showed", byO("showed"), bRow], "b-won": ["Won (banked)", B.filter(b => b.won), bRow], "b-qualified": ["Qualified booked", m.qualified, bRow],
+    "b-upcoming": ["Upcoming", byO("upcoming"), bRow], "b-cancelled": ["Cancelled", byO("cancelled"), bRow], "b-noshow": ["No-show", byO("noshow"), bRow], "b-owed": ["Owed: held, no dispo filed", byO("owed"), bRow],
+    "b-unknown": ["Unknown (before the Dispo form)", byO("unknown"), bRow], "b-reported": ["Reported won on the dispo form, no Whop money", B.filter(b => b.reportedNotBanked), bRow],
+    "pay-all": ["SCA payments in the period", m.pay, pRow], "pay-first": ["First payments (new deals)", m.first, pRow], "pay-inst": ["Installments on earlier deals", m.inst, pRow],
+    "deals-open": ["Plans with money still to collect", D.deals.filter(d => d.remaining > 0), dRow], "deals-pif": ["Paid in full, all-time", D.deals.filter(d => !d.deposit), dRow], "deals-plan": ["Payment plans started, all-time", D.deals.filter(d => d.deposit), dRow],
   };
-
-  /* Per-deal ledger from the Cash Log */
-  const deals = S.cl.map(r => {
-    const wk = String(r["Week (Thu)"]), flat = wk >= SETTER_FLAT_FROM;
-    const setter = normName(r["Setter"]), closer = normName(r["Closer"]);
-    const cash = n(r["Cash Collected"]);
-    /* setter under the flat model: $30 if the call was held (it was — it's on the Cash Log), $50 if closed */
-    const setterComm = flat ? (ARTIFACT.test(setter) || !setter ? 0 : SETTER_SHOW + SETTER_CLOSE) : n(r["Setter Commission"]);
-    return { wk, date: String(r["Call Date"]), prospect: String(r["Prospect"]||""), cash, pay: String(r["Pay Type"]||""),
-             offer: String(r["Offer"]||""), closer, setter, closerComm: n(r["Closer Commission"]), setterComm, flat,
-             whop: wmap[wkey(r)] || "" };
-  });
-  /* Setter shows without a close: held calls from _calls where Closed = 0 (flat model only) */
-  const shows = calls.filter(r => String(r["Week (Thu)"]) >= SETTER_FLAT_FROM && n(r["Held"]) === 1 && n(r["Closed"]) === 0 && r["Setter"] && !ARTIFACT.test(normName(r["Setter"])))
-    .map(r => ({ wk:String(r["Week (Thu)"]), date:String(r["Call Date"]), prospect:String(r["Prospect"]||""), setter: normName(r["Setter"]), comm: SETTER_SHOW }));
-
-  /* People */
-  const PP = {};
-  const P = k => (PP[k] = PP[k] || {roles:{}, sel:0, all:0, selC:0, selS:0, paid:0, deals:0});
-  deals.forEach(d => {
-    const sel = inRange(d.wk);
-    if(d.closer && !ARTIFACT.test(d.closer)){ const p = P(d.closer); p.roles.Closer = 1; p.all += d.closerComm; if(sel){ p.sel += d.closerComm; p.selC += d.closerComm; p.deals++; } }
-    if(d.setter && !ARTIFACT.test(d.setter)){ const p = P(d.setter); p.roles.Setter = 1; p.all += d.setterComm; if(sel){ p.sel += d.setterComm; p.selS += d.setterComm; } }
-  });
-  shows.forEach(x => { const p = P(x.setter); p.roles.Setter = 1; p.all += x.comm; if(inRange(x.wk)){ p.sel += x.comm; p.selS += x.comm; } });
-  /* Kaia weekly DM retainer, assumed from the flat-model start */
-  const weeksSince = S.weeks.filter(w => w >= SETTER_FLAT_FROM);
-  if(PP["KAIA"] || weeksSince.length){ const p = P("KAIA"); p.roles["DM setter"] = 1;
-    p.all += KAIA_WEEKLY * weeksSince.length; p.sel += KAIA_WEEKLY * weeksSince.filter(w => inRange(w)).length; }
-  S.po.forEach(r => { const k = normName(r["Person"]); if(!k) return; P(k).paid += n(r["Amount Paid"]); });
-
-  const people = Object.keys(PP).sort((a,b) => PP[b].sel - PP[a].sel);
-  const totalSel = people.reduce((s,k)=>s+PP[k].sel,0), totalAll = people.reduce((s,k)=>s+PP[k].all,0), totalPaid = people.reduce((s,k)=>s+PP[k].paid,0);
-  const verified = deals.filter(d => inRange(d.wk) && /^MATCHED/.test(d.whop)).length, inRangeDeals = deals.filter(d => inRange(d.wk));
-
-  let h = "";
-  h += panel("Commissions — closer " + pct0(cRate) + " of cash · setter $" + SETTER_SHOW + " per show + $" + SETTER_CLOSE + " per close (from Aug 27)", [
-    cell("Earned, selected range", money(totalSel), {sub: num(inRangeDeals.length) + " deals on the Cash Log"}),
-    cell("Earned, all time", money(totalAll), {sub:"every deal, both models"}),
-    cell("Paid out, all time", money(totalPaid), {sub: S.po.length ? num(S.po.length) + " payouts logged on the Payouts tab" : "Payouts tab is empty — nothing logged yet", tone: S.po.length ? "" : "bad"}),
-    cell("Owed now", money(totalAll - totalPaid), {sub:"earned all time minus paid all time"}),
-    cell("Whop-verified deals", inRangeDeals.length ? pct(div(verified, inRangeDeals.length)) : "—", {sub: num(verified) + " of " + num(inRangeDeals.length) + " in range match a Whop payment", tone: div(verified, inRangeDeals.length) >= 0.9 ? "good" : "bad"}),
-    cell("Setter model switch", fmtD(SETTER_FLAT_FROM), {sub:"5% of cash before, flat $30 / $50 after", sm:true})
-  ], 3);
-
-  h += '<div class="panel"><div class="panel-head">By person &middot; tick Paid on the Payouts tab of the Master Tracker, it shows here</div><div class="tw">'
-    + tableInner(["Person","Role","Earned (range)","Earned (all time)","Paid (all time)","Owed","Status"],
-      people.map(k => { const p = PP[k]; const owed = p.all - p.paid;
-        return [esc(title(k)), esc(Object.keys(p.roles).join(" + ")), '<span class="pill chk">'+money(p.sel)+'</span>', money(p.all), money(p.paid), money(owed),
-          owed <= 0 ? '<span class="pill ok">Paid up</span>' : '<span class="pill bad">' + money(owed) + ' owed</span>']; }), {left:[0,1]}) + '</div></div>';
-
-  /* Deal ledger with paid + whop columns. Paid is FIFO per person: oldest deals are covered first by that person's payouts. */
-  const remaining = {}; people.forEach(k => remaining[k] = PP[k].paid);
-  const ledger = deals.slice().sort((a,b) => a.date < b.date ? -1 : 1);
-  ledger.forEach(d => {
-    d.closerPaid = false; d.setterPaid = false;
-    if(d.closer && remaining[d.closer] !== undefined && remaining[d.closer] >= d.closerComm && d.closerComm > 0){ remaining[d.closer] -= d.closerComm; d.closerPaid = true; }
-    if(d.setter && remaining[d.setter] !== undefined && remaining[d.setter] >= d.setterComm && d.setterComm > 0){ remaining[d.setter] -= d.setterComm; d.setterPaid = true; }
-  });
-  const show = ledger.filter(d => inRange(d.wk)).reverse();
-  const paidPill = (ok, amt) => amt > 0 ? (ok ? '<span class="pill ok">paid</span>' : '<span class="pill bad">owed</span>') : null;
-  h += '<div class="panel"><div class="panel-head">Deal ledger &middot; selected range &middot; newest first</div><div class="tw">'
-    + tableInner(["Date","Prospect","Offer","Cash","Whop","Closer","Closer comm","Paid?","Setter","Setter comm","Paid?"],
-      show.map(d => [esc(fmtD(d.date)), esc(d.prospect), esc(d.offer), money(d.cash), whopPill(d.whop),
-        esc(title(d.closer)), money(d.closerComm), paidPill(d.closerPaid, d.closerComm),
-        d.setter && !ARTIFACT.test(d.setter) ? esc(title(d.setter)) : null, d.setterComm ? money(d.setterComm) : null, paidPill(d.setterPaid, d.setterComm)]),
-      {left:[1,2,5,8]}) + '</div></div>';
-
-  const showsSel = shows.filter(x => inRange(x.wk));
-  if(showsSel.length){
-    h += '<div class="panel"><div class="panel-head">Setter shows without a close &middot; $' + SETTER_SHOW + ' each &middot; selected range</div><div class="tw">'
-      + tableInner(["Date","Prospect","Setter","Earned"], showsSel.map(x => [esc(fmtD(x.date)), esc(x.prospect), esc(title(x.setter)), money(x.comm)]), {left:[1,2]}) + '</div></div>';
-  }
-
-  /* Link closes: Whop payments with no EOC form */
-  const linkCloses = wr.filter(r => /^WHOP ONLY/.test(String(r["Recon Status"])) && inRange(r["Week (Thu)"]) || (/^WHOP ONLY/.test(String(r["Recon Status"])) && !has(r["Week (Thu)"]) && String(r["Whop Paid Date"]) >= S.fromD && String(r["Whop Paid Date"]) <= S.toD));
-  if(linkCloses.length){
-    h += '<div class="panel"><div class="panel-head">Paid on Whop, no EOC form &middot; link closes to attribute by hand</div><div class="tw">'
-      + tableInner(["Paid","Name","Email","Amount","Type"], linkCloses.map(r => [esc(fmtD(String(r["Whop Paid Date"]))), esc(r["Whop Billing Name"]), esc(r["Whop Email"]), money(n(r["Whop Amount"])), esc(r["Whop Billing Reason"])]), {left:[1,2]}) + '</div></div>';
-  }
-
-  h += '<div class="note"><p><strong>How to read this.</strong> Deals land from the closers’ EOC forms via the Cash Log. '
-    + '<strong>Whop ✓</strong> means the deal matched a real Whop payment on amount, date and name; <strong>probable</strong> means amount and date matched but the name on the card differs; <strong>no payment</strong> means a form was filed and no money landed. '
-    + '<strong>Paid</strong> comes from the Payouts tab, oldest deals covered first, so log every payout there or everything reads as owed.</p>'
-    + '<p style="color:var(--ink-3)">Setter pay switched from 5% of cash to a flat $' + SETTER_SHOW + ' per held call and $' + SETTER_CLOSE + ' per close on ' + esc(fmtD(SETTER_FLAT_FROM)) + '. '
-    + 'Kaia’s $' + KAIA_WEEKLY + '/week DM-setting line is an assumed rule from the Aug 26 meeting, pending Maya’s brief. Patrick’s replay commission is not on this page.</p></div>';
-  page.innerHTML = h;
+  if (map[k]) return [map[k][0], map[k][1].map(map[k][2])];
+  if (k.startsWith("o-")) { const o = k.slice(2); const held = B.filter(b => ["showed","noshow","owed"].includes(b.outcome) && outcomeClass(b) === o); return ["Outcome: " + (OUT.find(x => x[0] === o) || [o,o])[1], held.map(bRow)]; }
+  if (k.startsWith("c-")) { const what = k.slice(2); let L = B.filter(b => arg === "all" || (b.closer || "(no closer)") === arg); if (what === "showed") L = L.filter(b => b.outcome === "showed"); if (what === "won") L = L.filter(b => b.won); if (what === "qualified") L = L.filter(b => b.qualified && b.outcome !== "cancelled"); if (what === "owed") L = L.filter(b => b.outcome === "owed"); return [arg + " · " + what, L.map(bRow)]; }
+  if (k.startsWith("w-")) { const what = k.slice(2), c = arg;
+    if (what === "reg") { const seen = new Set(); return ["Registered · " + c, D.registrations.filter(x => x.cohort === c && !seen.has(x.pid) && seen.add(x.pid)).map(x => ({ name: name(x.pid), when: fmtDT(x.at), source: x.source, first: x.first ? "first time" : "repeat", link: ghl(x.pid) }))]; }
+    if (what === "att") { const a = D.attendance[c]; return ["Watched live · " + c + " (" + a.unmatched + " unmatched names not listed)", a.matched.map(x => ({ name: name(x.pid), minutes: x.minutes, matched: x.by, link: ghl(x.pid) }))]; }
+    if (what === "app" || what === "qual") { const seen = new Set(); return [(what === "qual" ? "Can invest · " : "Applied · ") + c, D.applications.filter(a => a.cohort === c && (what === "app" || a.qualification === "Qualified")).sort((a,b) => Date.parse(b.at) - Date.parse(a.at)).filter(a => !seen.has(a.pid) && seen.add(a.pid)).map(a => ({ name: name(a.pid), when: fmtDT(a.at), qualification: a.qualification, source: a.source, link: ghl(a.pid) }))]; }
+    const L = D.bookings.filter(b => b.cohort === c && calOk(b)); return [what + " · " + c, (what === "showed" ? L.filter(b => b.outcome === "showed") : what === "won" ? L.filter(b => b.won) : L).map(bRow)]; }
+  if (k.startsWith("s-")) { const P2 = funnelPeople(r), parts = k.split("-"); const test = [p => true, p => p.attended, p => p.applied, p => p.qualified, p => p.booked, p => p.showed, p => p.won];
+    const names = ["Registered", "Watched live", "Applied", "Can invest", "Booked a call", "Showed", "Closed"];
+    const darkTo = (p, n) => { for (let i = 1; i <= n; i++) if (!test[i](p)) return false; return true; };
+    const blueTo = (p, n) => { if (n < 1 || p.attended) return false; for (let i = 2; i <= n; i++) if (!test[i](p)) return false; return true; };
+    const row = p => ({ name: name(p.pid), cohort: p.cohort, watched: p.attended ? "yes" : "", applied: p.applied ? "yes" : "", canInvest: p.qualified ? "yes" : "", booked: p.booked ? "yes" : "", showed: p.showed ? "yes" : "", closed: p.won ? "yes" : "", link: ghl(p.pid) });
+    if (parts[1] === "drop") { const n = Number(parts[2]); return ["Watched live, stopped before: " + names[n + 1], P2.filter(p => darkTo(p, n) && !test[n + 1](p)).map(row)]; }
+    if (parts[1] === "bdrop") { const n = Number(parts[2]); return ["Did not watch live, stopped before: " + names[n + 1], P2.filter(p => blueTo(p, n) && !test[n + 1](p)).map(row)]; }
+    if (parts[1] === "skip") { const n = Number(parts[2]); return ["Did not watch live, reached: " + names[n], P2.filter(p => blueTo(p, n)).map(row)]; }
+    const n = Number(parts[1]); return [names[n] + (n ? " (watched live)" : ""), P2.filter(p => darkTo(p, n)).map(row)]; }
+  return [key, []];
+}
+function showList(key){
+  const [title, rows] = listFor(key);
+  const cols = rows.length ? Object.keys(rows[0]).filter(c => c !== "link") : [];
+  const csv = () => { const lines = [cols.join(",")].concat(rows.map(r => cols.map(c => '"' + String(r[c] == null ? "" : r[c]).replace(/"/g, '""') + '"').join(","))); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([lines.join("\n")], { type:"text/csv" })); a.download = title.replace(/[^a-z0-9]+/gi, "-") + ".csv"; a.click(); };
+  const el = document.createElement("div"); el.innerHTML = `<div class="scrim" id="scrim"></div><div class="panel" id="panel"><header><h3>${esc(title)} <span class="muted" style="font-size:13px">${rows.length}</span></h3><div><button class="btn" id="csv">CSV</button> <button class="btn" id="close">Close</button></div></header>
+    <div class="body">${rows.length ? `<table><tr>${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr>${rows.map(r => `<tr>${cols.map(c => `<td>${c === "name" && r.link ? `<a href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r[c])}</a>` : esc(r[c])}</td>`).join("")}</tr>`).join("")}</table>` : `<div class="muted">Nothing in this list.</div>`}</div></div>`;
+  document.body.appendChild(el);
+  const close = () => el.remove(); el.querySelector("#scrim").onclick = close; el.querySelector("#close").onclick = close; el.querySelector("#csv").onclick = csv;
 }
 
-/* ---------------- REPLAY ----------------
-   Replay-attributed = the contact carried webinar-no-show or watched-replay
-   and their first Whop payment landed within 30 days (Exhibit A rule). The
-   tag date is proxied by registration, since GHL keeps no per-tag timestamp. */
-function renderReplay(){
-  const page = document.getElementById("page-replay");
-  if(!Array.isArray(S.rr) || !Array.isArray(S.ra)){
-    page.innerHTML = '<div class="note warn"><p><strong>Replay data unavailable.</strong> ' + esc((S.rr && S.rr.message) || (S.ra && S.ra.message) || "Replay tabs missing") + '</p></div>';
-    return;
-  }
-  const RR = S.rr.filter(r => inRange(r["Week (Thu)"])), cats = RR.map(r => r["Week (Thu)"]);
-  const tagged = sum(RR, r=>r["Replay-tagged"]), qual = sum(RR, r=>r["Qualify"]), applied = sum(RR, r=>r["Applied"]),
-        booked = sum(RR, r=>r["Booked"]), paid = sum(RR, r=>r["Paid (any)"]), attr = sum(RR, r=>r["Attributed"]), cash = sum(RR, r=>r["Attributed Cash"]);
-  const RA = S.ra.filter(r => inRange(r["Week (Thu)"]));
-  const review = RA.filter(r => /^REVIEW/.test(String(r["Status"])));
+/* ======================= HOW TO READ ======================= */
+const HOWTO = `<dl>
+<dt>Where every number comes from</dt><dd>Bookings and call outcomes: GHL calendars + the Call Disposition form. Cash: Whop, SCA products only (Kora, Español and the old low-ticket offer are excluded). Applications: Typeform. Registrations: the GHL signup form. Watched live: Zoom participant reports. Texts: GHL conversations (LC Phone and SendBlue both land there).</dd>
+<dt>Period</dt><dd>Booked = calls booked in the period, and showed / won follow those bookings wherever the call lands. Cash = payments that landed in the period, whoever they came from. Picking a webinar replaces the period with that night's cohort.</dd>
+<dt>Won</dt><dd>The person started an SCA deal on Whop between booking and 30 days after the call. A dispo "Closed - Won" with no Whop money is listed as "reported, not banked" and does not count.</dd>
+<dt>Owed vs Unknown</dt><dd>Owed = a call since 10/15 that happened with no status and no dispo form. Unknown = the same before 10/15, when nobody marked calls; that history is shown, not judged.</dd>
+<dt>Click anything</dt><dd>Every tile, bar, segment and scorecard number opens the list of people behind it, with GHL links and a CSV button. If a number looks wrong, open its list.</dd>
+<dt>Refresh</dt><dd>Data refreshes itself every 5 minutes. "Refresh data" pulls right now. Zoom reports exist only after a stream ends.</dd>
+</dl>`;
 
-  let h = "";
-  h += panel("Replay funnel — registrants who missed the live stream or watched the replay", [
-    cell("Reached by replay", num(qual), {sub: num(tagged) + " replay-tagged, " + num(qual) + " qualify (no-show or watched)"}),
-    cell("Applied", num(applied), {sub: pct(div(applied, qual)) + " of reached"}),
-    cell("Booked a call", num(booked), {sub: pct(div(booked, qual)) + " of reached"}),
-    cell("Closed, attributed", num(attr), {sub: num(paid) + " paid at any point; " + num(attr) + " inside the 30-day window"}),
-    cell("Attributed cash", money(cash), {sub:"Whop-verified, first payment within 30 days"}),
-    cell("Needs review", num(review.length), {sub: review.length ? money(sum(review, r=>r["Cash (all)"])) + " where the sale came >30 days after registration" : "nothing flagged", tone: review.length ? "bad" : ""})
-  ], 3);
-
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">Replay reach → bookings → attributed closes, by week</span>'
-    + '<span class="chart-note">Registration week</span></div>'
-    + groupedBar(cats,
-        {name:"Reached", color:"var(--c1)", vals:RR.map(r=>n(r["Qualify"]))},
-        {name:"Booked", color:"var(--c2)", vals:RR.map(r=>n(r["Booked"]))},
-        {clip:"cf9", alt:"Replay reach and bookings by week"})
-    + legend([{name:"Reached",color:"var(--c1)"},{name:"Booked",color:"var(--c2)"}]) + '</div>';
-
-  h += '<div class="panel"><div class="panel-head">Week by week</div><div class="tw">'
-    + tableInner(["Week","Tagged","Reached","Applied","App %","Booked","Book %","Paid","Attributed","Cash"],
-      RR.slice().reverse().map(r => [esc(wkShort(r["Week (Thu)"])), num(r["Replay-tagged"]), num(r["Qualify"]), num(r["Applied"]),
-        pct(div(n(r["Applied"]), n(r["Qualify"]))), num(r["Booked"]), pct(div(n(r["Booked"]), n(r["Qualify"]))), num(r["Paid (any)"]), num(r["Attributed"]), money(n(r["Attributed Cash"]))])) + '</div></div>';
-
-  const statusPill = st => /^ATTRIBUTED/.test(st) ? '<span class="pill ok">attributed</span>' : /^REVIEW/.test(st) ? '<span class="pill bad">review</span>' : /attended live/.test(st) ? '<span class="pill">live close</span>' : '<span class="pill chk">' + esc(st) + '</span>';
-  const detail = RA.filter(r => /^(ATTRIBUTED|REVIEW)/.test(String(r["Status"])) || has(r["First Booking"]) || has(r["First Paid"]));
-  h += '<div class="panel"><div class="panel-head">Contacts behind the numbers &middot; booked or paid &middot; selected range</div><div class="tw">'
-    + tableInner(["Registered","Name","Replay tag","Applied","Booked","Held","Paid","Cash","Status"],
-      detail.map(r => [esc(fmtD(String(r["Registered"]))), esc(title(String(r["Name"]||""))), esc(String(r["Replay Entry Tag"]||"").replace("+"," + ")),
-        n(r["Applied"]) ? "yes" : null, has(r["First Booking"]) ? esc(fmtD(String(r["First Booking"]))) : null, n(r["Held"]) ? "yes" : (n(r["Cancelled"]) ? "cancelled" : null),
-        has(r["First Paid"]) ? esc(fmtD(String(r["First Paid"]))) : null, has(r["Cash (all)"]) ? money(n(r["Cash (all)"])) : null, statusPill(String(r["Status"]||""))]),
-      {left:[1,2]}) + '</div></div>';
-
-  h += '<div class="note"><p><strong>What counts.</strong> A sale is replay-attributed when the contact carried <code>webinar-no-show</code> or <code>watched-replay</code> and her first Whop payment landed within 30 days. '
-    + 'People who attended live and closed are listed as <em>live close</em> and are deliberately not counted, per the attribution rule. '
-    + '<strong>Review</strong> rows qualify on the tag but bought more than 30 days after they registered; GHL does not record when a tag was applied, so those need a human to confirm which webinar pulled them back in.</p>'
-    + '<p style="color:var(--ink-3)">Silent no-shows are counted in the weekly reach numbers but not listed individually. Refreshes with the Whop reconciliation.</p></div>';
-  page.innerHTML = h;
+/* ======================= BIND ======================= */
+function bind(){
+  document.querySelectorAll("[data-list]").forEach(el => el.addEventListener("click", e => { e.stopPropagation(); showList(el.getAttribute("data-list")); }));
+  $("#cohort").onchange = e => { S.cohort = e.target.value; render(); };
+  $("#period").onchange = e => { S.period = e.target.value; if (S.period !== "custom") render(); else $("#custom").hidden = false; };
+  const custom = () => { S.from = $("#from").value; S.to = $("#to").value; if (S.from && S.to) render(); }; $("#from").onchange = custom; $("#to").onchange = custom;
+  $("#cal").onchange = e => { S.cal = e.target.value; render(); };
+  $("#howto").onclick = () => { $("#howtoBox").hidden = !$("#howtoBox").hidden; };
+  $("#refresh").onclick = async () => { $("#refresh").textContent = "Refreshing…"; try { await load(true); } catch (err) { showError(err); } };
 }
-function title(s){ s = String(s||""); return s.charAt(0) + s.slice(1).toLowerCase(); }
-
-/* ---------------- WEBINARS (per-webinar drill-down) ---------------- */
-function wdFor(date){
-  const o = {meta:{}, curve:[], calendar:[], capacity:[], goal:[], blocker:[]};
-  S.wd.forEach(r => {
-    if(String(r["Date"]) !== date) return;
-    const kind = String(r["Kind"]), k = r["Key"], v = r["Value"];
-    if(kind === "meta") o.meta[String(k)] = v;
-    else if(kind === "curve") o.curve.push([parseFloat(k), parseFloat(v)]);
-    else if(o[kind]) o[kind].push([String(k), parseFloat(v)]);
-  });
-  o.curve.sort((a,b) => a[0]-b[0]);
-  ["calendar","capacity","goal","blocker"].forEach(k => o[k].sort((a,b) => b[1]-a[1]));
-  return o;
+function showError(err){ const d = document.createElement("div"); d.className = "err"; d.textContent = String(err.message || err); $("#app").prepend(d); }
+function loginView(msg){
+  $("#app").innerHTML = `<div class="login card"><h1 style="font-size:22px">SCA Sales Dashboard</h1><div class="sub">Enter the team password</div><input type="password" id="pw" autofocus><button class="btn primary" id="go">Open</button>${msg ? `<div class="err">${esc(msg)}</div>` : ""}</div>`;
+  const go = async () => { S.token = $("#pw").value.trim(); try { $("#go").textContent = "Loading…"; await load(false); } catch (err) { loginView(err.message); } };
+  $("#go").onclick = go; $("#pw").onkeydown = e => { if (e.key === "Enter") go(); };
 }
-function shortLabel(s){
-  s = String(s);
-  if(/^Under \$500/.test(s)) return "Under $500";
-  if(/^\$500/.test(s)) return "$500–$2,000";
-  if(/^\$2,000/.test(s)) return "$2,000–$3,000";
-  if(/^\$3,000/.test(s)) return "$3,000+";
-  if(/10k\/month or more/.test(s)) return "$10k+/mo";
-  if(/\$3k-\$9k/.test(s)) return "$3k–$9k/mo (replace job)";
-  if(/\$1k-\$3k/.test(s)) return "$1k–$3k/mo (side hustle)";
-  return s.length > 30 ? s.slice(0,29) + "…" : s;
-}
-function hbars(items, opt){
-  opt = opt || {};
-  if(!items.length) return '<p class="chart-note">No data for this webinar.</p>';
-  const max = Math.max.apply(null, items.map(i => i[1]).concat([1]));
-  const rowH = 34, H = items.length*rowH + 6;
-  let out = '<svg viewBox="0 0 570 '+H+'" role="img" aria-label="'+esc(opt.alt||"")+'">';
-  items.forEach((it,i) => {
-    const y = i*rowH + 4, w = Math.max(it[1]/max*280, 2);
-    out += '<text x="218" y="'+(y+16)+'" text-anchor="end" font-size="11" fill="var(--ink-2)" font-family="var(--ui)">'+esc(shortLabel(it[0]))+'</text>'
-        + '<rect class="bar" x="226" y="'+y+'" width="'+w.toFixed(1)+'" height="22" rx="3" fill="'+(opt.color||"var(--c2)")+'"><title>'+esc(it[0])+' — '+num(it[1])+'</title></rect>'
-        + '<text class="dlabel" x="'+(226+w+7).toFixed(1)+'" y="'+(y+16)+'">'+num(it[1])
-        + (opt.total ? ' <tspan fill="var(--ink-3)">· '+pct0(it[1]/opt.total)+'</tspan>' : '') + '</text>';
-  });
-  return out + '</svg>';
-}
-/* Sankey-style funnel: a strict left-to-right chain where the main flow stays
-   top-aligned (so it reads as a straight river) and the people lost at each
-   step split off as a grey stream that falls to a stub below the next stage.
-   Hand-rolled SVG like every other chart here — no library. */
-function sankeyFunnel(stages){
-  stages = stages.filter(s => s.value !== null && s.value !== undefined && isFinite(s.value));
-  if(stages.length < 2) return '<p class="chart-note">Not enough data for the funnel — this webinar is missing its registered or attended counts.</p>';
-  const v0 = Math.max(stages[0].value, 1);
-  const W = 1140, NW = 16, x0 = 8, xEnd = W - 250;
-  const colW = (xEnd - x0)/(stages.length - 1);
-  const yTop = 50, maxH = 160, scale = maxH/v0;
-  const hOf = v => v > 0 ? Math.max(v*scale, 3) : 0;
-  const X = i => x0 + i*colW;
-  let ribbons = "", nodes = "", labels = "", bottom = yTop + maxH;
-
-  stages.forEach((s, i) => {
-    const h = hOf(s.value), x = X(i);
-    /* node */
-    nodes += '<rect x="'+x+'" y="'+yTop+'" width="'+NW+'" height="'+h.toFixed(1)+'" rx="3" fill="'+s.color+'">'
-          +  '<title>'+esc(s.label)+' — '+num(s.value)+'</title></rect>';
-    /* label above the node */
-    labels += '<text x="'+x+'" y="18" font-family="var(--ui)" font-size="11" font-weight="700" letter-spacing=".06em" fill="var(--ink-3)">'+esc(s.label.toUpperCase())+'</text>'
-           +  '<text x="'+x+'" y="38" font-family="var(--mono)" font-size="16" font-weight="600" fill="var(--ink)">'+num(s.value)
-           +  (i > 0 ? ' <tspan font-size="11" fill="var(--ink-3)">· '+pct0(s.value/v0)+' of reg.</tspan>' : '') + '</text>';
-
-    if(i === stages.length - 1) return;
-    const nxt = stages[i+1];
-    const flow = Math.min(s.value, nxt.value), drop = Math.max(0, s.value - nxt.value);
-    const fh = hOf(flow), sx = x + NW, tx = X(i+1), mx = (sx + tx)/2;
-    /* main ribbon: tops are aligned, so it's a straight band */
-    if(flow > 0){
-      ribbons += '<rect x="'+sx+'" y="'+yTop+'" width="'+(tx-sx).toFixed(1)+'" height="'+fh.toFixed(1)+'" fill="'+nxt.color+'" opacity="0.22">'
-              +  '<title>'+num(flow)+' of '+num(s.value)+' ('+pct(div(flow, s.value))+') → '+esc(nxt.label)+'</title></rect>';
-      labels += '<text x="'+mx.toFixed(1)+'" y="'+(yTop + Math.max(fh/2, 7) + 4).toFixed(1)+'" text-anchor="middle" font-family="var(--mono)" font-size="11.5" font-weight="600" fill="var(--ink-2)">'+pct0(div(flow, s.value))+'</text>';
-    }
-    /* dropout stream: falls to a grey stub below the next stage */
-    if(drop > 0){
-      const dh = hOf(drop), sy = yTop + fh, yD = yTop + hOf(nxt.value) + 34;
-      ribbons += '<path d="M '+sx+','+sy.toFixed(1)
-              +  ' C '+mx.toFixed(1)+','+sy.toFixed(1)+' '+mx.toFixed(1)+','+yD.toFixed(1)+' '+tx+','+yD.toFixed(1)
-              +  ' l 0,'+dh.toFixed(1)
-              +  ' C '+mx.toFixed(1)+','+(yD+dh).toFixed(1)+' '+mx.toFixed(1)+','+(sy+dh).toFixed(1)+' '+sx+','+(sy+dh).toFixed(1)
-              +  ' Z" fill="var(--ink-3)" opacity="0.16"><title>'+esc(s.drop||"Lost")+' — '+num(drop)+' ('+pct(div(drop, s.value))+')</title></path>';
-      nodes += '<rect x="'+tx+'" y="'+yD.toFixed(1)+'" width="'+NW+'" height="'+dh.toFixed(1)+'" rx="3" fill="var(--ink-3)" opacity="0.5">'
-            +  '<title>'+esc(s.drop||"Lost")+' — '+num(drop)+'</title></rect>';
-      labels += '<text x="'+(tx+NW+8)+'" y="'+(yD + Math.max(dh/2, 6) + 4).toFixed(1)+'" font-family="var(--ui)" font-size="11" fill="var(--ink-3)">'+esc(s.drop||"Lost")+' · '+num(drop)+' <tspan font-family="var(--mono)">('+pct0(div(drop, s.value))+')</tspan></text>';
-      bottom = Math.max(bottom, yD + dh);
-    }
-  });
-
-  const H = Math.ceil(bottom + 14);
-  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Funnel from registration to a booked sales call">'
-    + ribbons + nodes + labels + '</svg>';
-}
-function retentionChart(curve, pitchMin){
-  if(!curve.length) return '<p class="chart-note">No retention data for this webinar.</p>';
-  const endX = curve[curve.length-1][0];
-  const maxY = niceMax(Math.max.apply(null, curve.map(p => p[1])));
-  const X = m => PLOT.x0 + (m/endX)*PLOT.w, Y = v => PLOT.y1 - (v/maxY)*PLOT.h;
-  let out = "";
-  if(pitchMin !== null && pitchMin > 0 && pitchMin < endX){
-    out += '<rect x="'+X(pitchMin).toFixed(1)+'" y="'+PLOT.y0+'" width="'+(X(endX)-X(pitchMin)).toFixed(1)
-        + '" height="'+(PLOT.y1-PLOT.y0)+'" fill="var(--surface-3)" opacity="0.75"/>'
-        + '<text class="axis-txt" x="'+(X(pitchMin)+5).toFixed(1)+'" y="'+(PLOT.y0+10)+'">pitch &rarr;</text>';
-  }
-  const pts = curve.map(p => X(p[0]).toFixed(1)+","+Y(p[1]).toFixed(1));
-  out += '<polygon fill="var(--c1)" opacity="0.12" points="'+X(curve[0][0]).toFixed(1)+','+PLOT.y1+' '+pts.join(" ")+' '+X(endX).toFixed(1)+','+PLOT.y1+'"/>'
-      +  '<polyline fill="none" stroke="var(--c1)" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" points="'+pts.join(" ")+'"/>';
-  curve.forEach(p => { out += '<circle cx="'+X(p[0]).toFixed(1)+'" cy="'+Y(p[1]).toFixed(1)
-    + '" r="3.4" fill="var(--c1)"><title>minute '+p[0]+' — '+num(p[1])+' watching</title></circle>'; });
-  let xl = '<g class="axis-txt" text-anchor="middle">';
-  for(let mnt = 0; mnt <= endX; mnt += 15) xl += '<text x="'+X(mnt).toFixed(1)+'" y="'+(PLOT.y1+18)+'">'+mnt+'m</text>';
-  xl += '</g>';
-  return '<svg viewBox="0 0 570 196" role="img" aria-label="How many people were watching, minute by minute">'
-    + gridSvg(maxY, num) + out + xl + '</svg>';
-}
-function renderWebinars(){
-  const page = document.getElementById("page-webinars");
-  const dates = Array.from(new Set(S.wd.map(r => String(r["Date"])))).sort().reverse();
-  if(!dates.length){
-    page.innerHTML = '<div class="note"><p><strong>No webinar detail yet.</strong> The Webinar Detail tab in the Master Tracker is empty — it fills when the weekly webinar report runs.</p></div>';
-    return;
-  }
-  if(!S.wsel || dates.indexOf(S.wsel) === -1) S.wsel = dates[0];
-  const d = wdFor(S.wsel), m = d.meta;
-  const mv = k => { const v = parseFloat(m[k]); return isFinite(v) ? v : null; };
-  const att = mv("attended"), reg = mv("registered"), apps = mv("apps"), booked = mv("booked");
-  const peak = mv("peak_viewers"), close = mv("close_viewers"), pitch = mv("pitch_min");
-  const personal = d.calendar.filter(c => /personal/i.test(c[0])).reduce((s,c) => s + c[1], 0);
-
-  let h = '<div class="card" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">'
-    + '<span class="chart-title">Webinar</span><select id="wsel" aria-label="Pick a webinar">'
-    + dates.map(dt => '<option value="'+dt+'"'+(dt === S.wsel ? " selected" : "")+'>Thu '+fmtD(dt)+'</option>').join("")
-    + '</select><span class="chart-note">Per-minute data starts with the Zoom era (Aug 13) — the YouTube weeks have no retention export.</span></div>';
-
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">The funnel, start to finish — ' + fmtD(S.wsel) + '</span>'
-    + '<span class="chart-note">Every registrant, from sign-up to a booked sales call. Colored band = people who moved on; grey streams = people lost at that step. Hover anything for exact counts.</span></div>'
-    + sankeyFunnel([
-        {label:"Registered",    value:reg,    color:"var(--c2)", drop:"Didn't show up"},
-        {label:"Attended live", value:att,    color:"var(--c1)", drop:"Watched, didn't apply"},
-        {label:"Applied",       value:apps,   color:"var(--c3)", drop:"Applied, no call yet"},
-        {label:"Booked a call", value:booked, color:"var(--c4)"}
-      ])
-    + (apps !== null && att !== null && apps > att ? '<p class="chart-note" style="margin:10px 0 0">Applications count the whole day, so this week more people applied than attended live — the funnel draws the overlap.</p>' : '')
-    + '</div>';
-
-  h += panel("The Room — " + fmtD(S.wsel), [
-    cell("Attended live", num(att), {sub: reg ? pct(div(att,reg)) + " of " + num(reg) + " registered" : ""}),
-    cell("Peak viewers", num(peak), {sub: "minute " + num(mv("peak_minute"))}),
-    cell("Still there at close", num(close), {sub: "minute " + num(mv("close_minute")) + (peak ? " &middot; " + pct0(div(close,peak)) + " of peak" : "")}),
-    cell("Median minutes watched", num(mv("median_minutes")), {sub: "average " + num(mv("avg_minutes"))}),
-    cell("Stayed 60+ minutes", num(mv("stayed_60plus")), {sub: att ? pct0(div(mv("stayed_60plus"),att)) + " of attendees" : ""}),
-    cell("Left inside 10 minutes", num(mv("left_under_10")), {sub: att ? pct0(div(mv("left_under_10"),att)) + " of attendees" : ""})
-  ], 3);
-
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">Who was in the room, minute by minute</span>'
-    + '<span class="chart-note">From the Zoom attendee report &middot; first join ' + esc(m["first_join_pt"]||"—") + ', last leave ' + esc(m["last_leave_pt"]||"—") + '</span></div>'
-    + retentionChart(d.curve, pitch)
-    + (pitch === null ? '<p class="chart-note" style="margin:10px 0 0">Pitch minute not marked for this webinar — fill the <code>pitch_min</code> row on the Webinar Detail tab and the shaded region appears.</p>' : '')
-    + '</div>';
-
-  h += '<div class="row r2">';
-  h += panel("Applications & Bookings", [
-    cell("Applications", num(apps), {sub: num(mv("apps_post_stream")) + " after stream start &middot; " + num(mv("apps_unique_emails")) + " unique emails"}),
-    cell("App % of attendees", pct(div(apps,att)), {sub: "whole day"}),
-    cell("Calls booked (stream day)", num(booked), {sub: apps ? pct0(div(booked,apps)) + " of applications" : ""}),
-    cell("Personal-calendar bookings", num(personal), {sub: "should be zero — check routing", tone: personal > 0 ? "bad" : "good"})
-  ], 2);
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">Bookings by calendar</span>'
-    + '<span class="chart-note">Strategy = $3K track &middot; Discovery = $497 track</span></div>'
-    + hbars(d.calendar, {alt:"Bookings by calendar", color:"var(--c1)", total: booked}) + '</div>';
-  h += '</div>';
-
-  h += '<div class="row r3">';
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">Budget they stated</span><span class="chart-note">Application answers</span></div>'
-    + hbars(d.capacity, {alt:"Stated budget", total: apps}) + '</div>';
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">Income goal</span><span class="chart-note">Application answers</span></div>'
-    + hbars(d.goal, {alt:"Income goal", color:"var(--c3)", total: apps}) + '</div>';
-  h += '<div class="card"><div class="chart-head"><span class="chart-title">Biggest blocker</span><span class="chart-note">Application answers</span></div>'
-    + hbars(d.blocker, {alt:"Biggest blocker", color:"var(--c4)", total: apps}) + '</div>';
-  h += '</div>';
-
-  page.innerHTML = h;
-  document.getElementById("wsel").onchange = e => { S.wsel = e.target.value; renderWebinars(); };
-}
-
-/* ---------------- HEALTH ---------------- */
-const HEALTH_TILES = [
-  {re:/cash in source/i,          label:"Cash reconciliation", sub:"source vs scorecard", money:true},
-  {re:/eoc rows in/i,             label:"Rows dropped",        sub:"cleaning layer"},
-  {re:/appointments in/i,         label:"Appointments lost",   sub:"cleaning layer"},
-  {re:/days since last webinar/i, label:"Days since webinar",  sub:"alerts past 8"}
-];
-function renderHealth(){
-  const rows = S.dh.filter(r => has(r["Check"]) && has(r["Status"]));
-  const claimed = [];
-  let tiles = "";
-  HEALTH_TILES.forEach(t => {
-    const r = rows.filter(x => t.re.test(String(x["Check"])))[0];
-    if(!r){ tiles += cell(t.label, "—", {na:true, sub:"check not found in sheet"}); return; }
-    claimed.push(r);
-    const ok = String(r["Status"]).toUpperCase() === "OK";
-    const v = typeof r["Count"] === "number" ? (t.money ? money(r["Count"]) : num(r["Count"])) : esc(r["Count"]);
-    tiles += cell(t.label, v, {sub:t.sub, tone: ok ? "good" : "bad"});
-  });
-  let h = panel("Reconciliation — these must stay at zero", [tiles], 4);
-
-  const issues = rows.filter(r => claimed.indexOf(r) === -1);
-  const bad = issues.filter(r => String(r["Status"]).toUpperCase() !== "OK").length;
-
-  h += '<div class="panel"><div class="panel-head">Open data issues</div><div class="tw">'
-    + tableInner(["Check","Count","Status","What it means"],
-      issues.map(r => [
-        esc(r["Check"]), num(r["Count"]),
-        '<span class="pill '+(String(r["Status"]).toUpperCase()==="OK"?"ok":"chk")+'">'+esc(String(r["Status"]).toLowerCase())+'</span>',
-        esc(r["What it means / what to do"])
-      ]), {left:[3]}) + '</div></div>';
-
-  h += '<div class="note"><p><strong>Why this page exists.</strong> Every number on the other pages inherits whatever is wrong here. '
-    + 'The reconciliation tiles must never move off zero — if one does, a call or a payment stopped flowing through the pipeline '
-    + 'and the cash figure is wrong.</p>'
-    + (bad ? '<p style="color:var(--ink-3)">'+bad+' check'+(bad===1?"":"s")+' currently need attention. None of them affect the cash total.</p>' : "")
-    + '</div>';
-
-  h += '<div class="panel"><div class="panel-head">KPIs we cannot calculate yet</div><div class="panel-body pb2">'
-    + cell("Qualified %", "Not tracked", {na:true, sub:"Nothing counts a qualified application. Typeform routes under-$500, male and under-18 away, but no count is written back to the sheet. Needs a GHL tag count or a Typeform outcome field."})
-    + cell("Refunds", "Not tracked", {na:true, sub:"The SCA Whop key has zero permissions enabled, and SCA pays by ACH so Stripe holds nothing. Needs Maya to enable Payments-read on the Whop key."})
-    + '</div></div>';
-
-  document.getElementById("health-pop").innerHTML = h;
-
-  /* header pill: at-a-glance data quality, click to expand the details */
-  const allBad = rows.filter(r => String(r["Status"]).toUpperCase() !== "OK").length;
-  const pill = document.getElementById("health-pill");
-  pill.hidden = false;
-  pill.className = "ghost " + (allBad ? "warn" : "ok");
-  pill.innerHTML = allBad ? "Data: " + allBad + " check" + (allBad === 1 ? "" : "s") + " &#9662;" : "Data &#10003;";
-}
-
-/* ---------------- svg ---------------- */
-const PLOT = { x0:52, x1:552, y0:14, y1:170, w:500, h:156 };
-function gridSvg(max, fmt, count){
-  count = count || 4;
-  let g = '<g class="gridline">', t = '<g class="axis-txt" text-anchor="end">';
-  for(let i=0;i<=count;i++){
-    const v = max*i/count, y = PLOT.y1 - (max ? v/max : 0)*PLOT.h;
-    g += '<line x1="'+PLOT.x0+'" y1="'+y.toFixed(1)+'" x2="'+PLOT.x1+'" y2="'+y.toFixed(1)+'"/>';
-    t += '<text x="'+(PLOT.x0-7)+'" y="'+(y+3.4).toFixed(1)+'">'+fmt(v)+'</text>';
-  }
-  return g + "</g>" + t + "</g>";
-}
-function xLabels(cats){
-  const band = PLOT.w / cats.length;
-  let t = '<g class="axis-txt" text-anchor="middle">';
-  cats.forEach((c,i) => { t += '<text x="'+(PLOT.x0 + band*(i+0.5)).toFixed(1)+'" y="'+(PLOT.y1+18)+'">'+esc(wkShort(c))+'</text>'; });
-  return t + "</g>";
-}
-function niceMax(v){ if(!(v > 0)) return 1;
-  const mag = Math.pow(10, Math.floor(Math.log10(v))); return Math.ceil(v/mag*2)/2*mag; }
-function barChart(cats, vals, opt){
-  const max = niceMax(Math.max.apply(null, vals.concat([0])));
-  const band = PLOT.w / cats.length, bw = Math.min(46, band*0.62);
-  let bars = '<g clip-path="url(#'+opt.clip+')" fill="var(--c1)">';
-  vals.forEach((v,i) => {
-    const hh = max ? n(v)/max*PLOT.h : 0, x = PLOT.x0 + band*(i+0.5) - bw/2;
-    bars += '<rect class="bar" x="'+x.toFixed(1)+'" y="'+(PLOT.y1-hh).toFixed(1)+'" width="'+bw.toFixed(1)+
-            '" height="'+Math.max(hh,0.8).toFixed(1)+'" rx="4"><title>'+esc(wkShort(cats[i]))+' — '+esc(opt.fmt(v))+'</title></rect>';
-  });
-  return '<svg viewBox="0 0 570 196" role="img" aria-label="'+esc(opt.alt||"")+'">'
-    + '<defs><clipPath id="'+opt.clip+'"><rect x="'+(PLOT.x0-2)+'" y="0" width="'+(PLOT.w+4)+'" height="'+PLOT.y1+'"/></clipPath></defs>'
-    + gridSvg(max, opt.fmt) + bars + "</g>" + xLabels(cats) + '</svg>';
-}
-function groupedBar(cats, A, B, opt){
-  const max = niceMax(Math.max.apply(null, A.vals.concat(B.vals, [0])));
-  const band = PLOT.w / cats.length, bw = Math.min(19, band*0.27);
-  let g = '<g clip-path="url(#'+opt.clip+')">';
-  [A,B].forEach((s, si) => {
-    g += '<g fill="'+s.color+'">';
-    s.vals.forEach((v,i) => {
-      const hh = max ? n(v)/max*PLOT.h : 0, cx = PLOT.x0 + band*(i+0.5), x = cx + (si === 0 ? -bw-1 : 1);
-      g += '<rect class="bar" x="'+x.toFixed(1)+'" y="'+(PLOT.y1-hh).toFixed(1)+'" width="'+bw.toFixed(1)+
-           '" height="'+Math.max(hh,0.8).toFixed(1)+'" rx="3"><title>'+esc(wkShort(cats[i]))+' — '+esc(s.name)+' '+num(v)+'</title></rect>';
-    });
-    g += "</g>";
-  });
-  return '<svg viewBox="0 0 570 196" role="img" aria-label="'+esc(opt.alt||"")+'">'
-    + '<defs><clipPath id="'+opt.clip+'"><rect x="'+(PLOT.x0-2)+'" y="0" width="'+(PLOT.w+4)+'" height="'+PLOT.y1+'"/></clipPath></defs>'
-    + gridSvg(max, num) + g + "</g>" + xLabels(cats) + '</svg>';
-}
-function lineChart(cats, series, opt){
-  let all = [];
-  series.forEach(s => s.vals.forEach(v => { if(v !== null && isFinite(v)) all.push(v); }));
-  const max = opt.max || niceMax(Math.max.apply(null, all.concat([0]))) || 1;
-  const band = PLOT.w / cats.length;
-  let out = "";
-  series.forEach(s => {
-    const pts = [];
-    s.vals.forEach((v,i) => { if(v === null || !isFinite(v)) return;
-      pts.push((PLOT.x0 + band*(i+0.5)).toFixed(1)+","+(PLOT.y1 - (v/max)*PLOT.h).toFixed(1)); });
-    if(pts.length) out += '<polyline fill="none" stroke="'+s.color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="'+pts.join(" ")+'"/>';
-    s.vals.forEach((v,i) => { if(v === null || !isFinite(v)) return;
-      out += '<circle cx="'+(PLOT.x0 + band*(i+0.5)).toFixed(1)+'" cy="'+(PLOT.y1 - (v/max)*PLOT.h).toFixed(1)+
-             '" r="4.2" fill="'+s.color+'"><title>'+esc(wkShort(cats[i]))+' — '+esc(s.name)+' '+esc(opt.fmt(v))+'</title></circle>'; });
-  });
-  return '<svg viewBox="0 0 570 196" role="img" aria-label="'+esc(opt.alt||"")+'">'
-    + gridSvg(max, opt.fmt) + out + xLabels(cats) + '</svg>';
-}
-function closerBars(closers, by){
-  if(!closers.length) return '<p class="chart-note">No closer rows in this range.</p>';
-  const max = Math.max.apply(null, closers.map(k => by[k].cash).concat([1]));
-  const rowH = 44, H = closers.length*rowH + 8;
-  let out = '<svg viewBox="0 0 570 '+H+'" role="img" aria-label="Cash collected by closer">';
-  closers.forEach((k,i) => {
-    const y = i*rowH + 6, w = Math.max(by[k].cash/max*330, 2);
-    out += '<text x="82" y="'+(y+22)+'" text-anchor="end" font-family="var(--ui)" font-size="12.5" font-weight="600" fill="var(--ink)">'+esc(title(k))+'</text>'
-        +  '<rect class="bar" x="92" y="'+y+'" width="'+w.toFixed(1)+'" height="30" rx="4" fill="var(--c1)"'
-        +  (i ? ' opacity="'+Math.max(0.45, 1-i*0.28).toFixed(2)+'"' : "") + '><title>'+esc(title(k))+' — '+money(by[k].cash)+'</title></rect>'
-        +  '<text class="dlabel" x="'+(92+w+9).toFixed(1)+'" y="'+(y+20)+'" font-size="11">'+esc(money(by[k].cash))+'</text>'
-        +  '<text class="axis-txt" x="'+(92+w+9).toFixed(1)+'" y="'+(y+31)+'" font-size="9">'
-        +  esc(num(by[k].held)) + ' held · ' + esc(pct(div(by[k].closes, by[k].held))) + ' close</text>';
-  });
-  return out + "</svg>";
-}
-function legend(items){
-  return '<div class="legend">' + items.map(i =>
-    '<span class="lg"><span class="sw'+(i.line?" line":"")+'" style="background:'+i.color+'"></span>'+esc(i.name)+'</span>').join("") + '</div>';
-}
-function tableInner(headers, rows, opts){
-  opts = opts || {};
-  const th = headers.map((hh,i) => '<th'+(opts.left && opts.left.indexOf(i)>-1 ? ' class="l"' : "")+'>'+esc(hh)+'</th>').join("");
-  const tb = rows.map(r => '<tr>' + r.map((c,i) =>
-    '<td'+(opts.left && opts.left.indexOf(i)>-1 ? ' class="l"' : "")+'>'+(c === null || c === undefined ? "—" : c)+'</td>').join("") + '</tr>').join("");
-  return '<table><thead><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody></table>';
-}
-function sourceMethod(s){
-  s = String(s || ""); if(!s) return "";
-  if(/proxy/i.test(s)) return "click proxy";
-  if(/zoom/i.test(s)) return "Zoom";
-  if(/youtube/i.test(s)) return "YouTube";
-  if(/pre-?tracking/i.test(s)) return "pre-tracking";
-  return s;
-}
-function sourcePill(r){
-  const s = String(r["Attendance Source"] || ""); if(!s) return "—";
-  const m = sourceMethod(s), v = String(r["Verified"] || "").toUpperCase();
-  let cls = m === "Zoom" ? "ok" : (m === "click proxy" ? "bad" : "chk");
-  if(v === "NO") cls = "bad";
-  return '<span class="pill '+cls+'" title="'+esc(s)+'">'+esc(m)+'</span>';
-}
-function daysSince(wk){
-  const p = String(wk).split("-"); if(p.length !== 3) return null;
-  return Math.floor((Date.now() - Date.UTC(+p[0], +p[1]-1, +p[2])) / 86400000);
-}
-
-/* ---------------- chrome ---------------- */
-const fmtD = d => { const p = String(d).split("-"); return p.length === 3 ? MON[+p[1]-1] + " " + (+p[2]) : d; };
-const tgt = (name, fb) => { const v = parseFloat(S.tg[name]); return isFinite(v) ? v : fb; };
-function renderAll(){
-  if(!wsRows().length){
-    const msg = '<div class="note warn"><p><strong>No webinar weeks between '+esc(fmtD(S.fromD))+' and '+esc(fmtD(S.toD))+'.</strong> '
-      + 'Webinars run Thursdays; widen the range or pick a preset above.</p></div>';
-    ["page-overview","page-team","page-comm","page-replay"].forEach(id => { document.getElementById(id).innerHTML = msg; });
-  } else {
-    renderOverview(); renderTeam(); renderCommissions(); renderReplay();
-  }
-  renderWebinars();   /* the drill-down has its own webinar selector, independent of the date range */
-  renderHealth();
-}
-/* Presets are the primary control; the calendar pickers are the escape hatch.
-   Picking a date by hand flips the preset to Custom so the label never lies. */
-function applyPreset(p){
-  if(p === "custom") return;
-  S.toD = isoShift(0);
-  S.fromD = p === "all" ? S.weeks[0] : isoShift(-(+p - 1));
-  document.getElementById("from").value = S.fromD;
-  document.getElementById("to").value = S.toD;
-}
-function buildRange(){
-  const from = document.getElementById("from"), to = document.getElementById("to"),
-        preset = document.getElementById("preset");
-  from.min = S.weeks[0]; to.min = S.weeks[0];
-  from.max = isoShift(0); to.max = isoShift(0);
-  if(S.fromD){ from.value = S.fromD; to.value = S.toD; }
-  preset.onchange = () => { applyPreset(preset.value); renderAll(); };
-  from.onchange = () => { if(!from.value) return; preset.value = "custom"; S.fromD = from.value;
-    if(S.fromD > S.toD){ S.toD = S.fromD; to.value = S.toD; } renderAll(); };
-  to.onchange   = () => { if(!to.value) return; preset.value = "custom"; S.toD = to.value;
-    if(S.toD < S.fromD){ S.fromD = S.toD; from.value = S.fromD; } renderAll(); };
-}
-function wireTabs(){
-  const tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
-  function sel(t, push){
-    tabs.forEach(x => { const on = x === t;
-      x.setAttribute("aria-selected", on ? "true" : "false");
-      document.getElementById(x.getAttribute("aria-controls")).hidden = !on; });
-    if(push !== false) location.hash = t.id.replace("tab-","");
-  }
-  const wanted = tabs.filter(t => t.id === "tab-" + location.hash.replace("#",""))[0];
-  if(wanted) sel(wanted, false);
-  tabs.forEach(t => {
-    t.addEventListener("click", () => sel(t));
-    t.addEventListener("keydown", e => {
-      const i = tabs.indexOf(t); let x = null;
-      if(e.key === "ArrowRight") x = tabs[(i+1) % tabs.length];
-      if(e.key === "ArrowLeft")  x = tabs[(i-1+tabs.length) % tabs.length];
-      if(x){ e.preventDefault(); x.focus(); sel(x); }
-    });
-  });
-}
-function fail(err){
-  document.getElementById("boot").hidden = true;
-  const el = document.getElementById("fail"); el.hidden = false;
-  el.innerHTML = '<div class="banner"><strong>The dashboard could not read the Master Tracker.</strong>'
-    + esc(err && err.message ? err.message : String(err))
-    + '<div style="margin-top:12px"><a class="ghost" href="'+SHEET_URL+'" target="_blank" rel="noopener">Open the sheet</a></div></div>';
-  document.getElementById("dot").className = "dot bad";
-  document.getElementById("status-txt").textContent = "Failed to load";
-  throw err;
-}
-async function load(preserveRange){
-  let out;
-  try{
-    /* Cash Log and Payouts feed the commissions section only, so a failure
-       there degrades that one section instead of killing the whole page. */
-    out = await Promise.all([gviz("Weekly Scorecard"), gviz("Closer Stats"),
-                             gviz("Setter Stats"), gviz("Data Health"), gviz("Monthly"),
-                             gviz("Webinar Detail"), gviz("Targets and Spend"),
-                             gviz("Cash Log").catch(e => e), gviz("Payouts").catch(e => e),
-                             /* feeds added 2026-08-27; each degrades its own section only */
-                             gviz("GHL Appointments").catch(e => e), gviz("Dial Activity").catch(e => e),
-                             gviz("Replay Rollup").catch(e => e), gviz("Replay Attribution").catch(e => e),
-                             gviz("Whop Recon", "A10:Q1000").catch(e => e), gviz("_calls").catch(e => e)]);
-  }catch(e){ if(preserveRange){ return; } fail(e); return; }
-
-  S.ws = out[0].filter(r => has(r["Week (Thu)"]));
-  S.cs = out[1].filter(r => has(r["Week (Thu)"]));
-  S.ss = out[2].filter(r => has(r["Week (Thu)"]));
-  S.dh = out[3];
-  S.mo = out[4].filter(r => has(r["Month"]));
-  S.wd = out[5].filter(r => has(r["Date"]) && has(r["Kind"]));
-  S.tg = {};
-  out[6].forEach(r => { if(has(r["Setting"]) && has(r["Value"])) S.tg[r["Setting"]] = r["Value"]; });
-  S.cl = Array.isArray(out[7]) ? out[7].filter(r => has(r["Week (Thu)"]) && has(r["Closer"])) : out[7];
-  S.po = Array.isArray(out[8]) ? isoRows(out[8].filter(r => has(r["Person"]) && has(r["Amount Paid"]))) : [];
-  S.ap = Array.isArray(out[9])  ? isoRows(out[9].filter(r => has(r["Appt ID"]))) : out[9];
-  S.da = Array.isArray(out[10]) ? isoRows(out[10].filter(r => has(r["Rep"]))) : out[10];
-  S.rr = Array.isArray(out[11]) ? isoRows(out[11].filter(r => has(r["Week (Thu)"]))) : out[11];
-  S.ra = Array.isArray(out[12]) ? isoRows(out[12].filter(r => has(r["Contact ID"]))) : out[12];
-  S.wr = Array.isArray(out[13]) ? isoRows(out[13].filter(r => has(r["Recon Status"]))) : out[13];
-  S.calls = Array.isArray(out[14]) ? isoRows(out[14].filter(r => has(r["Week (Thu)"]) && has(r["Closer"]))) : out[14];
-  if(Array.isArray(S.cl)) isoRows(S.cl);
-  if(!S.ws.length){ if(!preserveRange) fail(new Error("The Weekly Scorecard tab returned no populated weeks. Check the Apps Script is still writing to this sheet.")); return; }
-
-  S.weeks = S.ws.map(r => r["Week (Thu)"]).sort();
-  const preset = document.getElementById("preset");
-  const keep = preserveRange && preset.value === "custom" && S.fromD && S.toD;
-  S.fetched = new Date();
-
-  buildRange();
-  if(!keep) applyPreset(preset.value);
-  renderAll();
-
-  /* Freshness: weeks are Thursday-anchored, so if the newest row is more than
-     7 days old a webinar Thursday has passed without the Apps Script writing
-     its row. That is a pipeline failure, not "no news" — say so loudly. */
-  const latest = S.weeks[S.weeks.length-1];
-  const stale = daysSince(latest);
-  const staleEl = document.getElementById("stale");
-  if(stale > 7){
-    staleEl.hidden = false;
-    staleEl.innerHTML = '<div class="banner"><strong>Data stopped on ' + esc(wkRange(latest)) + '.</strong>'
-      + 'The Thursday webinar after that has no row, which means the Apps Script trigger in the '
-      + 'Master Tracker did not fire (it also silently failed on 7/30 and 8/6). Everything below is '
-      + 'accurate through ' + esc(wkShort(latest)) + ' but blind after it. Fix: open the Apps Script on the '
-      + 'Master Tracker and run <code>diagnoseTriggers()</code>, then <code>setupTriggers()</code>.</div>';
-  } else { staleEl.hidden = true; }
-
-  document.getElementById("dot").className = "dot" + (stale > 7 ? " warn" : "");
-  document.getElementById("status-txt").textContent =
-    "Live · " + S.fetched.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) +
-    (stale > 7 ? " · data ends " + wkShort(latest) : "");
-  document.getElementById("foot-fetch").textContent =
-    "Data through " + wkRange(latest) + " · fetched " + S.fetched.toLocaleString() +
-    " · refreshes every 10 min while open";
-  document.getElementById("boot").hidden = true;
-  document.getElementById("app").hidden = false;
-}
-async function boot(){
-  document.getElementById("sheet-link").href = SHEET_URL;
-  document.getElementById("foot-sheet").href = SHEET_URL;
-  wireTabs();
-  const pill = document.getElementById("health-pill"), pop = document.getElementById("health-pop");
-  pill.addEventListener("click", () => {
-    pop.hidden = !pop.hidden;
-    pill.setAttribute("aria-expanded", String(!pop.hidden));
-  });
-  await load(false);
-  /* Keep the page current without a manual reload: re-pull every 10 minutes,
-     and immediately when the tab regains focus after 10+ minutes away. */
-  setInterval(() => load(true), 10*60*1000);
-  document.addEventListener("visibilitychange", () => {
-    if(!document.hidden && S.fetched && (Date.now() - S.fetched.getTime()) > 10*60*1000) load(true);
-  });
-}
-boot();
+(async () => {
+  if (location.hash.startsWith("#local")) { /* harness preview: python3 -m http.server in sales-dashboard/, open index.html#local */
+    try { const r = await fetch("api/.data/dash-data.json"); S.D = await r.json(); CFG.GHL_LOC = S.D.config.loc || ""; render(); } catch (e) { showError(e); } return; }
+  if (!S.token) return loginView("");
+  try { await load(false); } catch (err) { loginView(err.message); }
+  setInterval(() => { if (document.visibilityState === "visible" && S.D) load(false).catch(() => {}); }, 5 * 60 * 1000);
+})();
 </script>
 </body>
 </html>
