@@ -93,11 +93,22 @@ tr.total td{font-weight:700;border-top:2px solid var(--hair);color:var(--ink)}
 .sankey path{opacity:.55} .sankey path:hover{opacity:.85}
 .howto{font-size:12.5px;color:var(--ink-2);line-height:1.55} .howto dt{font-weight:700;color:var(--ink);margin-top:8px} .howto dd{margin-left:0}
 details summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--ink)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--hair);margin:14px 0 4px;flex-wrap:wrap}
+.tabs button{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:9px 14px;font-size:14px;font-weight:600;color:var(--ink-3);cursor:pointer;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs button .cnt{font-family:var(--mono);font-size:11px;background:var(--warn-bg);color:var(--warn);border-radius:9px;padding:0 6px;margin-left:6px}
+.needs{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--warn);background:var(--warn-bg);border:1px solid #E7D3A5;border-radius:8px;padding:8px 12px;margin:10px 0}
+.needs span{cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.sk-wrap{width:100%;overflow-x:auto} .sk-wrap svg{display:block;min-width:760px}
+.sk-node{cursor:pointer} .sk-link{fill:none;cursor:pointer} .sk-link:hover{stroke-opacity:.6}
+.sk-lbl{font-family:var(--ui);font-size:12.5px;fill:var(--ink);font-weight:600} .sk-sub{font-family:var(--ui);font-size:11.5px;fill:var(--ink-3)}
 .err{background:var(--crit-bg);color:var(--crit);padding:12px;border-radius:8px;margin:20px 0;font-family:var(--mono);font-size:12.5px;white-space:pre-wrap}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-sankey/0.12.3/d3-sankey.min.js"></script>
 <script>
 /* ======================= CONFIG ======================= */
 const CFG = {
@@ -105,13 +116,14 @@ const CFG = {
   GHL_LOC: "",   /* filled from the API (config.loc) */
 };
 /* ======================= STATE ======================= */
-const S = { D:null, token:sessionStorage.getItem("dash_token") || "", period:"30", from:null, to:null, cohort:"all", cal:"all", fetched:null };
+const S = { D:null, token:sessionStorage.getItem("dash_token") || "", period:"30", from:null, to:null, cohort:"all", cal:"all", fetched:null, tab:(()=>{ try { return localStorage.getItem("dash_tab") || "sales"; } catch(e){ return "sales"; } })() };
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money = n => (n < 0 ? "-$" : "$") + Math.round(Math.abs(n || 0)).toLocaleString("en-US");
 const pct = (n, d) => d ? (100 * n / d).toFixed(1) + "%" : "—";
 const num = n => (n || 0).toLocaleString("en-US");
 const PT = "America/Los_Angeles";
+const TRACKED_FROM = "2026-08-13";   // first webinar with the signup form, Typeform and Zoom all in place
 const dayPT = ms => { const p = new Intl.DateTimeFormat("en-CA", { timeZone: PT, year:"numeric", month:"2-digit", day:"2-digit" }).format(new Date(ms)); return p; };
 const ptMidnight = day => { const guess = Date.parse(day + "T00:00:00-07:00"); const off = new Intl.DateTimeFormat("en-US",{timeZone:PT,timeZoneName:"longOffset"}).formatToParts(new Date(guess)).find(p=>p.type==="timeZoneName").value; const m = /GMT([+-]\d{2}):(\d{2})/.exec(off); return Date.parse(day + "T00:00:00" + (m ? m[1] + ":" + m[2] : "-07:00")); };
 const fmtD = iso => { const d = new Date(iso); return new Intl.DateTimeFormat("en-US",{timeZone:PT,month:"short",day:"numeric"}).format(d); };
@@ -159,13 +171,21 @@ function metrics(r){
   const first = pay.filter(p => p.kind === "first"), inst = pay.filter(p => p.kind === "installment");
   const dealIds = new Set(won.map(b => b.dealId)); const dealsWon = S.D.deals.filter(d => dealIds.has(d.id));
   const cashOnWon = dealsWon.reduce((s,d) => s + d.paid, 0), revenueWon = dealsWon.reduce((s,d) => s + (d.contract != null ? d.contract : d.paid), 0);
+  // Rates that divide by shows use only calls on or after the Dispo form go-live, where every result is recorded.
+  // Before it, a call only counts as a show when Whop proves a sale, which would inflate close rate.
+  const T = trustedStats(B);
   return { B, showed, noshow, owed, cancelled, upcoming, resched, unknown, won, qualified, happened, pay, cash, first, inst,
-    firstWon: first.filter(p => !p.deposit), firstDep: first.filter(p => p.deposit), dealsWon, cashOnWon, revenueWon,
-    showRate: happened ? showed.length / happened : null, closeRate: showed.length ? won.length / showed.length : null,
+    firstWon: first.filter(p => !p.deposit), firstDep: first.filter(p => p.deposit), dealsWon, cashOnWon, revenueWon, T,
+    showRate: T.happened ? T.showed / T.happened : null, closeRate: T.showed ? T.won / T.showed : null,
     closeBooked: B.length ? won.length / B.length : null, aov: won.length ? cashOnWon / won.length : null,
-    dps: showed.length ? revenueWon / showed.length : null, cashPerCall: showed.length ? cashOnWon / showed.length : null };
+    dps: T.showed ? T.revenue / T.showed : null, cashPerCall: T.showed ? T.cash / T.showed : null };
 }
 
+function trustedStats(B){
+  const t = B.filter(b => b.trusted && ["showed","noshow","owed"].includes(b.outcome));
+  const sh = t.filter(b => b.outcome === "showed"), w = sh.filter(b => b.won), ids = new Set(w.map(b => b.dealId)), ds = S.D.deals.filter(d => ids.has(d.id));
+  return { happened: t.length, showed: sh.length, won: w.length, cash: ds.reduce((s,d) => s + d.paid, 0), revenue: ds.reduce((s,d) => s + (d.contract != null ? d.contract : d.paid), 0) };
+}
 /* ======================= RENDER ======================= */
 function render(){
   const D = S.D; if (!D) return;
@@ -174,130 +194,149 @@ function render(){
   const srcPills = Object.entries(D.sources).map(([k,v]) => `<span class="pill"><i class="dot ${v.ok ? "" : "bad"}"></i>${k} ${v.ok ? ago(v.asOf) : "failed"}</span>`).join("");
   const fails = D.checks.filter(c => !c.ok && c.level !== "warn"), warns = D.checks.filter(c => !c.ok && c.level === "warn");
   const roadWon = D.deals.filter(d => !d.deposit).length, roadDep = D.deals.filter(d => d.deposit).length, N = D.config.roadToN || 250;
-  const cohortOpts = D.cohorts.slice().reverse().map(c => `<option value="${c.date}" ${S.cohort === c.date ? "selected" : ""}>${fmtD(c.start)}${c.zoom ? "" : " (no Zoom)"}</option>`).join("");
+  const cohortOpts = D.cohorts.filter(c => c.zoom && c.date >= TRACKED_FROM).slice().reverse().map(c => `<option value="${c.date}" ${S.cohort === c.date ? "selected" : ""}>${fmtD(c.start)}${c.zoom ? "" : " (no Zoom)"}</option>`).join("");
   const recon = (lhs, parts) => { const sum = parts.reduce((s,p) => s + p[1], 0); return `<div><span class="${sum === lhs ? "ok" : "bad"}">${sum === lhs ? "✓" : "✗"}</span> ${parts.map(p => `${p[0]} ${p[1]}`).join(" + ")} = ${sum}${sum === lhs ? "" : " ≠ " + lhs}</div>`; };
+
+  const needs = [];
+  const owedN = m.owed.length; if (owedN) needs.push(`<span data-list="b-owed">${owedN} held call${owedN === 1 ? "" : "s"} with no dispo</span>`);
+  const offR = D.bookings.filter(b => !b.onRoster && b.outcome !== "cancelled" && Date.parse(b.startAt) >= Date.now() - 7 * 864e5 && Date.parse(b.startAt) <= Date.now() + 30 * 864e5);
+  if (offR.length) needs.push(`<span data-list="offroster">${offR.length} booking${offR.length === 1 ? "" : "s"} with someone not on the roster</span>`);
+  const unm = D.dispos.filter(x => !x.matched).length; if (unm) needs.push(`<span data-list="dispo-unmatched">${unm} dispo${unm === 1 ? "" : "s"} that match no booking</span>`);
+  const tab = (id, label, extra) => `<button role="tab" data-tab="${id}" aria-selected="${S.tab === id}">${label}${extra || ""}</button>`;
+  const lensNote = `<div class="muted small" style="margin:-2px 0 8px">Show rate, close rate, $ per show and cash per call use only calls since Oct 15, when the Dispo form started recording every result.</div>`;
+  const trustedDelta = (a, b, n) => n ? delta(a, b, v => pct(v, 1)) : "";
 
   $("#app").innerHTML = `
   <div class="topbar">
-    <div><h1>She Creates Academy · Sales</h1><div class="sub">${esc(r.label)}${pm ? " · ▲▼ vs prior period " + fmtD(new Date(r.prior.from).toISOString()) + " → " + fmtD(new Date(r.prior.to - 1).toISOString()) : ""} · built ${ago(D.builtAt)} in ${Math.round((D.buildMs||0)/1000)}s</div>
-      <div class="pills" style="margin-top:6px">${srcPills}</div></div>
+    <div><h1>She Creates Academy · Sales</h1><div class="sub">${esc(r.label)}${pm ? " · ▲▼ vs the " + (S.period === "custom" ? "same length before" : "period before") : ""} · updated ${ago(D.builtAt)}</div>
+      <div class="pills" style="margin-top:6px">${Object.values(D.sources).every(v => v.ok) ? `<span class="pill"><i class="dot"></i>all ${Object.keys(D.sources).length} sources live</span>` : srcPills}</div></div>
     <div class="ctl">
       <label>Webinar</label><select id="cohort"><option value="all">All webinars</option>${cohortOpts}</select>
       <label>Period</label><select id="period" ${S.cohort !== "all" ? "disabled" : ""}>
         ${[["7","Last 7 days"],["30","Last 30 days"],["60","Last 60 days"],["90","Last 90 days"],["dispo","Since Dispo form (10/15)"],["custom","Custom"]].map(o => `<option value="${o[0]}" ${S.period === o[0] ? "selected" : ""}>${o[1]}</option>`).join("")}</select>
       <span id="custom" ${S.period === "custom" ? "" : "hidden"}><input type="date" id="from" value="${S.from || ""}"> <input type="date" id="to" value="${S.to || ""}"></span>
-      <label>Calls</label><select id="cal"><option value="all" ${S.cal === "all" ? "selected" : ""}>All sales calendars</option><option value="main" ${S.cal === "main" ? "selected" : ""}>Strategy only</option></select>
       <button class="btn" id="howto">How to read this</button><button class="btn primary" id="refresh">Refresh data</button>
     </div>
   </div>
   ${fails.length ? `<div class="banner crit"><b>Something is broken. These numbers are not trusted until it clears.</b><ul>${fails.map(c => `<li>${esc(c.msg)}</li>`).join("")}</ul></div>` : ""}
-  ${warns.length ? `<div class="banner warn"><b>Needs a human:</b><ul>${warns.map(c => `<li>${esc(c.msg)}</li>`).join("")}</ul></div>` : ""}
+  ${needs.length ? `<div class="needs"><b>Needs a human:</b>${needs.join(" · ")}</div>` : ""}
   <div id="howtoBox" class="card howto" hidden>${HOWTO}</div>
+  <div class="tabs" role="tablist">${tab("sales","Sales")}${tab("webinars","Webinars")}${tab("texts","Text messages")}${tab("checks","Data checks")}</div>
 
-  <div class="card road" style="margin-top:6px">
-    <div><div class="tile k" style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)">Road to ${N} · students all-time (paid in full + payment plans started)</div>
+  <div data-pane="sales" ${S.tab === "sales" ? "" : "hidden"}>
+  <div class="card road" style="margin-top:10px">
+    <div><div class="k" style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)">Road to ${N} students</div>
       <div class="big">${roadWon + roadDep} <span class="muted" style="font-size:16px">/ ${N} · ${Math.max(N - roadWon - roadDep, 0)} to go</span></div></div>
-    <div class="bar" title="won ${roadWon}, plans ${roadDep}"><i class="w" style="width:${Math.min(100, 100 * roadWon / N)}%"></i><i class="dep" style="width:${Math.min(100 - Math.min(100, 100 * roadWon / N), 100 * roadDep / N)}%"></i></div>
-    <div class="small"><span class="mono" style="cursor:pointer" data-list="deals-pif">${roadWon} paid in full</span> · <span class="mono" style="cursor:pointer" data-list="deals-plan">${roadDep} on plans</span> · every SCA deal on Whop${D.config.dealsSince ? " since " + fmtD(D.config.dealsSince + "T12:00:00-07:00") : ""}, $0 and refunded excluded</div>
+    <div class="bar" title="paid in full ${roadWon}, payment plans ${roadDep}"><i class="w" style="width:${Math.min(100, 100 * roadWon / N)}%"></i><i class="dep" style="width:${Math.min(100 - Math.min(100, 100 * roadWon / N), 100 * roadDep / N)}%"></i></div>
+    <div class="small"><span class="mono" style="cursor:pointer" data-list="deals-pif">${roadWon} paid in full</span> · <span class="mono" style="cursor:pointer" data-list="deals-plan">${roadDep} on plans</span>${D.config.dealsSince ? " · since " + fmtD(D.config.dealsSince + "T12:00:00-07:00") : ""}</div>
   </div>
 
-  <div class="sec"><div class="sec-h"><h2>Cash collected</h2><span class="tag">${esc(r.label)}</span><span class="note">Every SCA payment that landed on Whop in the period, net of refunds. Kora and other products excluded.</span></div>
+  <div class="sec"><div class="sec-h"><h2>Cash collected</h2><span class="tag">${esc(r.label)}</span></div>
   <div class="grid g4">
-    ${tile("Total cash collected", money(m.cash), m.pay.length, delta(m.cash, pm && pm.cash, money) + " Whop, SCA offer only", "pay-all")}
-    ${tile("From first-time sales", money(m.first.reduce((s,p)=>s+p.net,0)), m.first.length, `PAID IN FULL ${money(m.firstWon.reduce((s,p)=>s+p.net,0))} (${m.firstWon.length}) · PLAN START ${money(m.firstDep.reduce((s,p)=>s+p.net,0))} (${m.firstDep.length})`, "pay-first")}
-    ${tile("From existing students", money(m.inst.reduce((s,p)=>s+p.net,0)), m.inst.length, "installments on deals started earlier", "pay-inst")}
-    ${tile("Plan pipeline · still to collect", money(D.deals.filter(d => d.remaining > 0).reduce((s,d)=>s+d.remaining,0)), D.deals.filter(d => d.remaining > 0).length, `${D.deals.filter(d => d.remaining > 0 && d.contractFrom === "dispo").length} from the dispo contract value · ${D.deals.filter(d => d.remaining > 0 && d.contractFrom === "plan").length} from the Whop plan · plans with no schedule are not counted`, "deals-open")}
+    ${tile("Total cash collected", money(m.cash), m.pay.length, delta(m.cash, pm && pm.cash, money), "pay-all")}
+    ${tile("New deals", money(m.first.reduce((s,p)=>s+p.net,0)), m.first.length, `paid in full ${money(m.firstWon.reduce((s,p)=>s+p.net,0))} · plan starts ${money(m.firstDep.reduce((s,p)=>s+p.net,0))}`, "pay-first")}
+    ${tile("Installments", money(m.inst.reduce((s,p)=>s+p.net,0)), m.inst.length, "payments on earlier deals", "pay-inst")}
+    ${tile("Still to collect on plans", money(D.deals.filter(d => d.remaining > 0).reduce((s,d)=>s+d.remaining,0)), D.deals.filter(d => d.remaining > 0).length, "plans with a known balance", "deals-open")}
   </div></div>
 
   <div class="sec grid g2">
-    <div class="card flow"><div class="sec-h" style="margin-bottom:4px"><h2>The flow</h2><span class="note">booked → showed → won · click a bar for its people</span></div>
-      ${flowRow("Booked", m.B.length, m.B.length, "var(--ink)", "booking date", delta(m.B.length, pm && pm.B.length, num), "b-all")}
-      ${flowRow("Showed", m.showed.length, m.B.length, "var(--s1)", "held and showed", delta(m.showed.length, pm && pm.showed.length, num), "b-showed")}
-      ${flowRow("Won", m.won.length, m.B.length, "var(--good)", "banked on Whop", delta(m.won.length, pm && pm.won.length, num), "b-won")}
+    <div class="card flow"><div class="sec-h" style="margin-bottom:4px"><h2>Booked → showed → won</h2><span class="note">calls booked in the period</span></div>
+      ${flowRow("Booked", m.B.length, m.B.length, "var(--ink)", "", delta(m.B.length, pm && pm.B.length, num), "b-all")}
+      ${flowRow("Showed", m.showed.length, m.B.length, "var(--s1)", "", delta(m.showed.length, pm && pm.showed.length, num), "b-showed")}
+      ${flowRow("Won", m.won.length, m.B.length, "var(--good)", "", delta(m.won.length, pm && pm.won.length, num), "b-won")}
       <div class="states">
-        ${state("Qualified booked", m.qualified.length, "application says can invest", "b-qualified")}
-        ${state("Upcoming", m.upcoming.length, "call is in the future", "b-upcoming")}
-        ${state("Cancelled", m.cancelled.length, "a reschedule is not a cancel", "b-cancelled")}
-        ${state("No-show", m.noshow.length, "marked by the closer", "b-noshow")}
-        ${state("Owed", m.owed.length, "held, no dispo filed", "b-owed", m.owed.length ? "warnrow" : "")}
-        ${state("Unknown", m.unknown.length, "before the Dispo form", "b-unknown")}
+        ${state("Qualified", m.qualified.length, "can invest", "b-qualified")}
+        ${state("Upcoming", m.upcoming.length, "", "b-upcoming")}
+        ${state("Cancelled", m.cancelled.length, "", "b-cancelled")}
+        ${state("No-show", m.noshow.length, "", "b-noshow")}
+        ${state("Owed", m.owed.length, "no dispo yet", "b-owed", m.owed.length ? "warnrow" : "")}
+        ${state("Unknown", m.unknown.length, "before 10/15", "b-unknown")}
       </div>
-      <div class="recon" style="margin-top:12px">
+      <details style="margin-top:10px"><summary class="small muted" style="font-weight:500">How these add up</summary><div class="recon" style="margin-top:6px">
         ${recon(m.B.length, [["cancelled", m.cancelled.length], ["upcoming", m.upcoming.length], ["rescheduled", m.resched.length], ["showed", m.showed.length], ["no-show", m.noshow.length], ["owed", m.owed.length], ["unknown", m.unknown.length]])}
-        <div class="muted">Show rate = showed ÷ (showed + no-show + owed). Won = the person started an SCA deal on Whop within ${30} days of the call. A dispo "Closed - Won" with no Whop money is listed under <span style="cursor:pointer;color:var(--accent)" data-list="b-reported">reported, not banked (${m.B.filter(b => b.reportedNotBanked).length})</span>.</div>
-      </div>
+        <div class="muted">Won = an SCA deal started on Whop within 30 days of the call. Dispo says won but no Whop money: <span style="cursor:pointer;color:var(--accent)" data-list="b-reported">${m.B.filter(b => b.reportedNotBanked).length}</span>.</div></div></details>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px">
-      ${tile("Revenue generated · sold", money(m.revenueWon), m.won.length, delta(m.revenueWon, pm && pm.revenueWon, money) + " contract value of won calls (dispo, else plan, else cash)", "b-won", "sm")}
-      ${tile("Cash collected on won calls", money(m.cashOnWon), m.won.length, delta(m.cashOnWon, pm && pm.cashOnWon, money) + " Whop cash to date on those deals", "b-won", "sm")}
+      ${tile("Revenue sold", money(m.revenueWon), m.won.length, delta(m.revenueWon, pm && pm.revenueWon, money), "b-won", "sm")}
+      ${tile("Cash on those deals", money(m.cashOnWon), m.won.length, delta(m.cashOnWon, pm && pm.cashOnWon, money), "b-won", "sm")}
     </div>
   </div>
 
-  <div class="sec"><div class="sec-h"><h2>Rates</h2><span class="note">how efficient were we${r.from < ptMidnight(D.config.dispoFrom) ? ' · <b>this window starts before the Dispo form (10/15)</b>: older calls count as showed only when Whop proves a sale, so show rate and close rate there lean high. Pick "Since Dispo form" for clean numbers.' : ""}</span></div>
+  <div class="sec"><div class="sec-h"><h2>Rates</h2></div>${lensNote}
   <div class="grid g6">
-    ${rate("Show rate", m.showRate, "showed ÷ happened", delta(m.showRate, pm && pm.showRate, v => pct(v,1)))}
-    ${rate("Close rate (shows)", m.closeRate, "won ÷ showed", delta(m.closeRate, pm && pm.closeRate, v => pct(v,1)))}
-    ${rate("Close ÷ booked", m.closeBooked, "won ÷ booked", delta(m.closeBooked, pm && pm.closeBooked, v => pct(v,1)))}
-    ${rate("AOV", m.aov, "cash on won ÷ won", delta(m.aov, pm && pm.aov, money), money)}
-    ${rate("$ per show", m.dps, "revenue ÷ showed", delta(m.dps, pm && pm.dps, money), money)}
-    ${rate("Cash per call", m.cashPerCall, "cash on won ÷ showed", delta(m.cashPerCall, pm && pm.cashPerCall, money), money)}
+    ${rate("Show rate", m.showRate, `${m.T.showed} of ${m.T.happened} calls`, trustedDelta(m.showRate, pm && pm.showRate, pm && pm.T.happened))}
+    ${rate("Close rate", m.closeRate, `${m.T.won} of ${m.T.showed} shows`, trustedDelta(m.closeRate, pm && pm.closeRate, pm && pm.T.showed))}
+    ${rate("Close ÷ booked", m.closeBooked, `${m.won.length} of ${m.B.length} booked`, delta(m.closeBooked, pm && pm.closeBooked, v => pct(v,1)))}
+    ${rate("AOV", m.aov, "cash ÷ deals won", delta(m.aov, pm && pm.aov, money), money)}
+    ${rate("$ per show", m.dps, `revenue ÷ ${m.T.showed} shows`, "", money)}
+    ${rate("Cash per call", m.cashPerCall, `cash ÷ ${m.T.showed} shows`, "", money)}
   </div></div>
 
-  <div class="sec card"><div class="sec-h"><h2>Outcomes</h2><span class="note">of the calls that happened, what did the closer file? ${m.happened} calls · click a segment</span></div>
+  <div class="sec card"><div class="sec-h"><h2>Outcomes</h2><span class="note">${m.happened} calls that happened · click a segment</span></div>
     ${outcomes(m)}
   </div>
 
-  <div class="sec card"><div class="sec-h"><h2>Per-closer scorecard</h2><span class="note">closer = dispo form, else the booking's assigned user · booked = cancelled + upcoming + rescheduled + showed + no-show + owed</span></div>
+  <div class="sec card"><div class="sec-h"><h2>Closers</h2><span class="note">click any number for the calls behind it</span></div>
     ${scorecard(m)}
   </div>
+  </div>
 
-  <div class="sec card"><div class="sec-h"><h2>Webinars</h2><span class="note">one row per stream night · registered = signup form in the week before · watched = Zoom · applied/booked = after that stream until the next one</span></div>
+  <div data-pane="webinars" ${S.tab === "webinars" ? "" : "hidden"}>
+  <div class="sec card"><div class="sec-h"><h2>Funnel</h2><span class="tag">${esc(r.label)}</span><span class="note">everyone who registered, step by step · click any block or flow</span></div>
+    ${sankeyShell(r)}
+  </div>
+  <div class="sec card"><div class="sec-h"><h2>Webinar by webinar</h2></div>
     ${webinars()}
   </div>
-
-  <div class="sec card"><div class="sec-h"><h2>Funnel</h2><span class="tag">${esc(r.label)}</span><span class="note">people who registered in the window, followed through every step · grey = where they stopped</span></div>
-    <div id="sankey">${sankey(r)}</div>
   </div>
 
-  <div class="sec card"><div class="sec-h"><h2>Text messages</h2><span class="note">every SMS / iMessage sent from GHL, last ${D.texts ? D.texts.days : 60} days · replied = the contact texted back within ${D.texts ? D.texts.replyHours : 24} h</span></div>
+  <div data-pane="texts" ${S.tab === "texts" ? "" : "hidden"}>
+  <div class="sec card"><div class="sec-h"><h2>Text messages</h2><span class="note">sent from GHL in the period · replied = texted back within ${D.texts ? D.texts.replyHours : 24} h</span></div>
     ${texts(r)}
   </div>
+  </div>
 
-  <div class="sec"><details><summary>Checks that ran on this build (${D.checks.length})</summary><div class="card" style="margin-top:8px"><table><tr><th>check</th><th>result</th><th>what</th></tr>
+  <div data-pane="checks" ${S.tab === "checks" ? "" : "hidden"}>
+  <div class="sec card"><div class="sec-h"><h2>Data checks</h2><span class="note">run on every refresh · built in ${Math.round((D.buildMs||0)/1000)}s</span></div>
+    <div class="pills" style="margin-bottom:10px">${srcPills}</div>
+    <table><tr><th>check</th><th>result</th><th>what</th></tr>
     ${D.checks.map(c => `<tr><td class="mono">${esc(c.id)}</td><td style="text-align:left;color:${c.ok ? "var(--good)" : c.level === "warn" ? "var(--warn)" : "var(--crit)"}">${c.ok ? "ok" : (c.level === "warn" ? "warn" : "FAIL")}</td><td style="text-align:left">${esc(c.msg)}</td></tr>`).join("")}</table>
-    <div class="muted small" style="margin-top:8px">dropped on the way in: ${esc(JSON.stringify(D.dropped))} · ${D.errors.length ? esc(D.errors.join(" · ")) : "no source errors"}</div></div></details></div>
+    <div class="muted small" style="margin-top:8px">Left out on the way in: ${Object.entries(D.dropped).filter(([k,v]) => v).map(([k,v]) => v + " " + ({test:"test bookings",gcal:"Google Calendar sync rows",dupe:"duplicate rows",kora:"Kora calls",noContact:"bookings waiting on a contact read"}[k] || k)).join(" · ") || "nothing"}.</div>
+  </div>
+  </div>
   `;
+  if (S.tab === "webinars") drawSankey(r);
   bind();
 }
 function tile(k, v, n, d, list, cls){ return `<div class="card tile" data-list="${list}"><div class="k">${k}<span class="n">${num(n)}</span></div><div class="v ${cls || ""}">${v}</div><div class="d">${d}</div></div>`; }
 function state(k, v, d, list, cls){ return `<div class="state ${cls || ""}" data-list="${list}"><div class="k">${k}</div><div class="v">${num(v)}</div><div class="d">${d}</div></div>`; }
-function flowRow(k, v, max, color, note, d, list){ return `<div class="row"><div class="lbl">${k}</div><div class="bar" data-list="${list}"><i style="background:${color};width:${max ? Math.max(8, 100 * v / max) : 0}%">${num(v)}</i></div><div class="meta">${note}<br>${d}</div></div>`; }
-function rate(k, v, f, d, fmt){ const show = v == null ? "—" : (fmt ? fmt(v) : pct(v, 1)); return `<div class="card tile" style="cursor:default"><div class="k">${k}</div><div class="v sm">${show}</div><div class="d">${d}<br><span class="mono muted">${f}</span></div></div>`; }
+function flowRow(k, v, max, color, note, d, list){ return `<div class="row"><div class="lbl">${k}</div><div class="bar" data-list="${list}"><i style="background:${color};width:${max ? Math.max(8, 100 * v / max) : 0}%">${num(v)}</i></div><div class="meta">${d || ""}</div></div>`; }
+function rate(k, v, f, d, fmt){ const show = v == null ? "—" : (fmt ? fmt(v) : pct(v, 1)); return `<div class="card tile" style="cursor:default"><div class="k">${k}</div><div class="v sm">${show}</div><div class="d"><span class="muted">${f}</span>${d ? "<br>" + d : ""}</div></div>`; }
 
 const OUT = [["won","Won","#9AD9B3"],["deposit","Deposit","#C9EBD6"],["followup","Follow-up","#A9C8F2"],["lost","Lost","#F6D97A"],["dq","DQ","#F3A6A2"],["noshow","No-show","#D9D4D1"],["owedx","Owed (no dispo)","#F1C4B5"]];
-function outcomeClass(b){ if (b.outcome === "owed") return "owedx"; if (b.outcome === "noshow") return "noshow"; if (b.won) return b.dealDeposit ? "deposit" : "won"; const c = b.dispoClass; return ["followup","lost","dq","deposit"].includes(c) ? c : (c === "won" ? "won" : "followup"); }
+function outcomeClass(b){ if (b.outcome === "owed") return "owedx"; if (b.outcome === "noshow") return "noshow"; const c = b.dispoClass; if (c === "deposit") return "deposit"; if (b.won) return "won"; return ["followup","lost","dq"].includes(c) ? c : "followup"; }
 function outcomes(m){
   const held = m.B.filter(b => ["showed","noshow","owed"].includes(b.outcome)); const cnt = {}; held.forEach(b => { const k = outcomeClass(b); cnt[k] = (cnt[k] || 0) + 1; });
   const tot = held.length || 1;
   return `<div class="outbar">${OUT.filter(o => cnt[o[0]]).map(o => `<i style="background:${o[2]};flex:${cnt[o[0]]}" data-list="o-${o[0]}" title="${o[1]} ${cnt[o[0]]}">${cnt[o[0]]}</i>`).join("")}</div>
   <div class="legend">${OUT.map(o => `<span data-list="o-${o[0]}"><b style="background:${o[2]}"></b>${o[1]} ${cnt[o[0]] || 0}</span>`).join("")}</div>
-  <div class="muted small" style="margin-top:6px">Won / Deposit come from Whop (paid in full vs payment plan started). Follow-up, Lost and DQ come from the dispo form on calls that showed but have no Whop deal yet. Sums to ${held.length}.</div>`;
+`;
 }
 function scorecard(m){
-  const rows = {}; m.B.forEach(b => { const k = b.closer || "(no closer)"; const r = rows[k] = rows[k] || { closer:k, onRoster:b.onRoster, B:[] }; r.B.push(b); if (b.onRoster) r.onRoster = true; });
-  const line = (r, total) => { const B = r.B, c = k => B.filter(b => b.outcome === k).length, showed = c("showed"), happened = showed + c("noshow") + c("owed"), won = B.filter(b => b.won), ids = new Set(won.map(b => b.dealId)), deals = S.D.deals.filter(d => ids.has(d.id));
+  const rows = {}; m.B.forEach(b => { const k = b.closer || "Unassigned"; const r = rows[k] = rows[k] || { closer:k, onRoster:b.onRoster, B:[] }; r.B.push(b); if (b.onRoster) r.onRoster = true; });
+  const line = (r, total) => { const B = r.B, c = k => B.filter(b => b.outcome === k).length, showed = c("showed"), won = B.filter(b => b.won), ids = new Set(won.map(b => b.dealId)), deals = S.D.deals.filter(d => ids.has(d.id)), T = trustedStats(B);
     const cash = deals.reduce((s,d)=>s+d.paid,0), rev = deals.reduce((s,d)=>s+(d.contract != null ? d.contract : d.paid),0), q = B.filter(b => b.qualified && b.outcome !== "cancelled").length;
     const key = total ? "all" : r.closer;
-    return `<tr class="${total ? "total" : ""} ${!total && !r.onRoster ? "warnrow" : ""}"><td>${esc(r.closer)}${!total && !r.onRoster ? ' <span class="small">(not on roster)</span>' : ""}</td>
-      <td class="c" data-list="c-all|${esc(key)}">${B.length}</td><td class="c" data-list="c-showed|${esc(key)}">${showed}</td><td>${pct(showed, happened)}</td><td class="c" data-list="c-qualified|${esc(key)}">${q}</td><td class="c" data-list="c-won|${esc(key)}">${won.length}</td>
-      <td>${pct(won.length, showed)}</td><td>${showed ? money(rev / showed) : "—"}</td><td>${showed ? money(cash / showed) : "—"}</td><td>${won.length ? money(cash / won.length) : "—"}</td><td>${money(rev)}</td><td>${money(cash)}</td><td class="c" data-list="c-owed|${esc(key)}">${c("owed")}</td></tr>`; };
-  const list = Object.values(rows).sort((a,b) => b.B.length - a.B.length);
-  return `<table><tr><th>Closer</th><th>Booked</th><th>Showed</th><th>Show rate</th><th>Qualified</th><th>Won</th><th>Close rate</th><th>$ / show</th><th>Cash / call</th><th>AOV</th><th>Revenue</th><th>Cash banked</th><th>Owed</th></tr>
+    return `<tr class="${total ? "total" : ""} ${!total && !r.onRoster ? "warnrow" : ""}"><td>${esc(r.closer)}${!total && !r.onRoster && r.closer !== "Unassigned" ? ' <span class="small">(not on roster)</span>' : ""}</td>
+      <td class="c" data-list="c-all|${esc(key)}">${B.length}</td><td class="c" data-list="c-showed|${esc(key)}">${showed}</td><td>${pct(T.showed, T.happened)}<span class="muted small"> · ${T.happened}</span></td><td class="c" data-list="c-qualified|${esc(key)}">${q}</td><td class="c" data-list="c-won|${esc(key)}">${won.length}</td>
+      <td>${pct(T.won, T.showed)}</td><td>${T.showed ? money(T.revenue / T.showed) : "—"}</td><td>${T.showed ? money(T.cash / T.showed) : "—"}</td><td>${won.length ? money(cash / won.length) : "—"}</td><td>${money(rev)}</td><td>${money(cash)}</td><td class="c" data-list="c-owed|${esc(key)}">${c("owed")}</td></tr>`; };
+  const list = Object.values(rows).sort((a,b) => (b.onRoster - a.onRoster) || (b.B.length - a.B.length));
+  return `<table><tr><th>Closer</th><th>Booked</th><th>Showed</th><th>Show rate since 10/15</th><th>Qualified</th><th>Won</th><th>Close rate since 10/15</th><th>$ / show</th><th>Cash / call</th><th>AOV</th><th>Revenue</th><th>Cash banked</th><th>Owed</th></tr>
     ${list.map(r => line(r, false)).join("")}${line({ closer:"Total", B:m.B, onRoster:true }, true)}</table>
-    <div class="muted small" style="margin-top:6px">Setter credit is only what the dispo form says (SELF-BOOKED = none). Dials, answers and texts per rep are in the Text messages section. GHL cannot prove who set a booking, so there is no appointments-set column.</div>`;
+    <div class="muted small" style="margin-top:6px">Rates, $ / show and cash / call use calls since Oct 15. The small number after show rate is how many of those calls happened.</div>`;
 }
 function webinars(){
-  const D = S.D, rows = D.cohorts.slice().reverse().slice(0, 12).map(c => {
+  const D = S.D, rows = D.cohorts.filter(c => c.zoom && c.date >= TRACKED_FROM).slice().reverse().slice(0, 12).map(c => {
     const regs = D.registrations.filter(x => x.cohort === c.date), regP = new Set(regs.map(x => x.pid));
     const att = D.attendance[c.date], apps = D.applications.filter(a => a.cohort === c.date), appP = new Set(apps.map(a => a.pid));
     const qual = new Set(apps.filter(a => a.qualification === "Qualified").map(a => a.pid));
@@ -305,9 +344,9 @@ function webinars(){
     const showed = bk.filter(b => b.outcome === "showed"), won = bk.filter(b => b.won);
     return { c, regs:regP.size, att: att ? att.attended : null, attM: att ? att.matched.length : 0, apps: appP.size, qual: qual.size, booked: bkP.size, showed: showed.length, won: won.length, noZoom: !att };
   });
-  return `<table><tr><th>Webinar</th><th>Registered</th><th>Watched live</th><th>Show %</th><th>Applied</th><th>Can invest</th><th>Booked</th><th>Showed</th><th>Won</th></tr>
+  return `<table><tr><th>Webinar</th><th>Registered</th><th>Watched live</th><th>Watched %</th><th>Applied</th><th>Can invest</th><th>Booked</th><th>Showed</th><th>Won</th></tr>
   ${rows.map(r => `<tr><td>${fmtD(r.c.start)}${r.noZoom ? ' <span class="small muted">(no Zoom report)</span>' : ""}</td><td class="c" data-list="w-reg|${r.c.date}">${r.regs}</td><td class="c" data-list="w-att|${r.c.date}">${r.att == null ? "—" : r.att}</td><td>${r.att == null ? "—" : pct(r.att, r.regs)}</td><td class="c" data-list="w-app|${r.c.date}">${r.apps}</td><td class="c" data-list="w-qual|${r.c.date}">${r.qual}</td><td class="c" data-list="w-book|${r.c.date}">${r.booked}</td><td class="c" data-list="w-showed|${r.c.date}">${r.showed}</td><td class="c" data-list="w-won|${r.c.date}">${r.won}</td></tr>`).join("")}</table>
-  <div class="muted small" style="margin-top:6px">Watched live counts everyone Zoom saw minus staff and bots; names that match no known person are still counted here but cannot be followed into the funnel below. ${S.D.capacity ? `<b>Calendar capacity:</b> ${num(S.D.capacity.openSlots)} open Strategy slots in the next 7 days (${Object.entries(S.D.capacity.byDay).map(([d,n]) => fmtD(d + "T12:00:00-07:00") + " " + n).join(", ") || "none"}). ${num(S.D.bookings.filter(b => b.kind === "main" && b.outcome === "upcoming").length)} calls already on the calendar.` : "Calendar capacity not pulled."}</div>`;
+  <div class="muted small" style="margin-top:6px">Registered = the week before the stream. Applied and booked = from the stream to the next one. ${S.D.capacity ? `Open Strategy slots next 7 days: <b>${num(S.D.capacity.openSlots)}</b>.` : ""}</div>`;
 }
 /* ---- Sankey: people who registered in the range, followed step by step ---- */
 function funnelPeople(r){
@@ -328,40 +367,63 @@ function funnelPeople(r){
   });
   return out;
 }
-function sankey(r){
-  const P = funnelPeople(r), n = 7;
-  const names = ["Registered", "Watched live", "Applied", "Can invest", "Booked a call", "Showed", "Closed"];
-  const test = [p => true, p => p.attended, p => p.applied, p => p.qualified, p => p.booked, p => p.showed, p => p.won];
-  // two lanes: dark = watched live and kept going; blue = did not watch live (replay / later) and kept going
-  const dark = [], blue = []; let d = P, b = [];
-  for (let k = 0; k < n; k++) {
-    if (k === 0) { dark.push(P.length); blue.push(0); continue; }
-    if (k === 1) { d = P.filter(p => p.attended); b = P.filter(p => !p.attended); dark.push(d.length); blue.push(b.length); continue; }
-    d = d.filter(test[k]); b = b.filter(test[k]); dark.push(d.length); blue.push(b.length);
-  }
-  const W = 1180, H = 320, top = 40, colW = (W - 80) / (n - 1), nodeW = 14, max = Math.max(P.length, 1), sc = (H - top - 24) / max;
-  const x = k => 30 + k * colW, parts = [], labels = [];
-  const band = (x1, y1, x2, y2, h, color, title, list) => h <= 0 ? "" : `<path d="M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2} L${x2},${y2 + h} C${(x1 + x2) / 2},${y2 + h} ${(x1 + x2) / 2},${y1 + h} ${x1},${y1 + h} Z" fill="${color}" data-list="${list}" style="cursor:pointer"><title>${title}</title></path>`;
-  const wedge = (x1, y1, h, title, list) => h <= 0 ? "" : `<path d="M${x1},${y1} C${x1 + 40},${y1} ${x1 + 60},${y1 + h / 2} ${x1 + 90},${y1 + h / 2} C${x1 + 60},${y1 + h / 2} ${x1 + 40},${y1 + h} ${x1},${y1 + h} Z" fill="#D9D4D1" data-list="${list}" style="cursor:pointer"><title>${title}</title></path>`;
-  for (let k = 0; k < n; k++) {
-    const hd = dark[k] * sc, hb = blue[k] * sc, tot = dark[k] + blue[k];
-    parts.push(`<rect x="${x(k)}" y="${top}" width="${nodeW}" height="${Math.max(2, hd)}" rx="2" fill="#7A1420" data-list="s-${k}" style="cursor:pointer"/>`);
-    if (hb > 0) parts.push(`<rect x="${x(k)}" y="${top + hd + 2}" width="${nodeW}" height="${Math.max(2, hb)}" rx="2" fill="#A9C8F2" data-list="s-skip-${k}" style="cursor:pointer"/>`);
-    labels.push(`<text x="${x(k)}" y="${top - 20}" ${k === n - 1 ? 'text-anchor="end" dx="14"' : ""}>${names[k]}</text><text x="${x(k)}" y="${top - 7}" class="lbl2" ${k === n - 1 ? 'text-anchor="end" dx="14"' : ""}>${num(tot)}${k ? " · " + pct(tot, P.length) : ""}</text>`);
-    if (k === n - 1) continue;
-    const x1 = x(k) + nodeW, x2 = x(k + 1);
-    // dark lane: continue + stop
-    parts.push(band(x1, top, x2, top, dark[k + 1] * sc, "#7A1420", `${num(dark[k + 1])} ${k === 0 ? "watched live" : "went on to " + names[k + 1].toLowerCase()}`, `s-${k + 1}`));
-    if (k === 0) parts.push(band(x1, top + dark[1] * sc, x2, top + dark[1] * sc + 2, blue[1] * sc, "#A9C8F2", `${num(blue[1])} did not watch live`, `s-skip-1`));
-    else {
-      parts.push(wedge(x1, top + dark[k + 1] * sc, (dark[k] - dark[k + 1]) * sc, `${num(dark[k] - dark[k + 1])} stopped: did not ${names[k + 1].toLowerCase()}`, `s-drop-${k}`));
-      parts.push(band(x1, top + hd + 2, x2, top + dark[k + 1] * sc + 2, blue[k + 1] * sc, "#A9C8F2", `${num(blue[k + 1])} (never watched live) went on to ${names[k + 1].toLowerCase()}`, `s-skip-${k + 1}`));
-      parts.push(wedge(x1, top + hd + 2 + blue[k + 1] * sc, (blue[k] - blue[k + 1]) * sc, `${num(blue[k] - blue[k + 1])} who never watched stopped here`, `s-bdrop-${k}`));
-    }
-  }
-  return `<svg class="sankey" viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible">${parts.join("")}${labels.join("")}</svg>
-  <div class="legend"><span><b style="background:#7A1420"></b>watched live and went on</span><span><b style="background:#A9C8F2"></b>did not watch live, went on anyway (replay, later)</span><span><b style="background:#D9D4D1"></b>stopped</span></div>
-  <div class="muted small" style="margin-top:6px">${num(P.length)} people registered${r.cohort ? "" : " in the window (plus the 7 days before, so a Thursday cohort is whole)"}. Watched live is matched by email or name against the Zoom report, so it is a floor. Applied = an application after that person's webinar; Booked = a call booked after it; Closed = an SCA deal on Whop. Click any block or band for its people.</div>`;
+/* ---- Funnel Sankey (d3-sankey layout). Every person registered in the window is followed in order.
+   Main steps are maroon; each step's drop-off is a grey node beside it; people who applied without
+   watching live travel a blue flow so they are never hidden. ---- */
+const SK_NODES = [
+  ["reg","Registered",0,"main"], ["watch","Watched live",1,"main"], ["nowatch","Did not watch live",1,"skip"],
+  ["app","Applied",2,"main"], ["noapp","Did not apply",2,"exit"],
+  ["qual","Can invest",3,"main"], ["noqual","Can't invest yet",3,"exit"],
+  ["book","Booked a call",4,"main"], ["nobook","No call booked",4,"exit"],
+  ["show","Showed",5,"main"], ["noshow","No-show or not marked",5,"exit"],
+  ["won","Closed",6,"won"], ["nowon","Not closed yet",6,"exit"]
+];
+const SK_TEST = {
+  reg: p => true, watch: p => p.attended, nowatch: p => !p.attended,
+  app: p => p.applied, noapp: p => !p.applied,
+  qual: p => p.applied && p.qualified, noqual: p => p.applied && !p.qualified,
+  book: p => p.applied && p.qualified && p.booked, nobook: p => p.applied && p.qualified && !p.booked,
+  show: p => p.applied && p.qualified && p.booked && p.showed, noshow: p => p.applied && p.qualified && p.booked && !p.showed,
+  won: p => p.applied && p.qualified && p.booked && p.showed && p.won, nowon: p => p.applied && p.qualified && p.booked && p.showed && !p.won
+};
+function sankeyShell(r){
+  const P = funnelPeople(r);
+  return `<div class="sk-wrap" id="sk"></div>
+  <div class="legend"><span><b style="background:#7A1420"></b>kept going</span><span><b style="background:#7FA7DD"></b>did not watch live, went on anyway</span><span><b style="background:#D6CECB"></b>stopped here</span></div>
+  <div class="muted small" style="margin-top:6px">${num(P.length)} people registered${r.cohort ? " for this webinar" : " in the period"}. Watched live is matched to Zoom by email or name, so it can only undercount. Each later step counts people from the step before it.</div>`;
+}
+function drawSankey(r){
+  const host = document.getElementById("sk"); if (!host) return;
+  if (!window.d3 || !d3.sankey) { host.innerHTML = '<div class="err">The chart library did not load. Refresh the page.</div>'; return; }
+  const P = funnelPeople(r), cnt = id => P.filter(SK_TEST[id]).length;
+  const v = {}; SK_NODES.forEach(n => v[n[0]] = cnt(n[0]));
+  const L = []; const add = (a, b, val, kind) => { if (val > 0) L.push({ source:a, target:b, value:val, kind }); };
+  add("reg","watch",v.watch,"main"); add("reg","nowatch",v.nowatch,"skip");
+  add("watch","app",P.filter(p => p.attended && p.applied).length,"main"); add("watch","noapp",P.filter(p => p.attended && !p.applied).length,"exit");
+  add("nowatch","app",P.filter(p => !p.attended && p.applied).length,"skip"); add("nowatch","noapp",P.filter(p => !p.attended && !p.applied).length,"exit");
+  add("app","qual",v.qual,"main"); add("app","noqual",v.noqual,"exit");
+  add("qual","book",v.book,"main"); add("qual","nobook",v.nobook,"exit");
+  add("book","show",v.show,"main"); add("book","noshow",v.noshow,"exit");
+  add("show","won",v.won,"main"); add("show","nowon",v.nowon,"exit");
+  const used = new Set(); L.forEach(l => { used.add(l.source); used.add(l.target); });
+  const nodes = SK_NODES.filter(n => used.has(n[0]) || n[0] === "reg").map((n, i) => ({ id:n[0], name:n[1], col:n[2], kind:n[3], order:i }));
+  if (!L.length) { host.innerHTML = '<div class="muted">Nobody registered in this period.</div>'; return; }
+  const W = Math.max(760, host.clientWidth || 1100), H = 440, padR = 160;
+  const g = d3.sankey().nodeId(d => d.id).nodeAlign(d => d.col).nodeWidth(14).nodePadding(34).nodeSort((a, b) => a.order - b.order).linkSort((a, b) => (a.source.order - b.source.order) || (a.target.order - b.target.order)).extent([[4, 24], [W - padR, H - 8]]);
+  const graph = g({ nodes: nodes.map(d => Object.assign({}, d)), links: L.map(d => Object.assign({}, d)) });
+  const color = { main:"#7A1420", won:"#2F6B4F", skip:"#7FA7DD", exit:"#D6CECB" };
+  const prevOf = { watch:"reg", nowatch:"reg", app:"reg", noapp:"reg", qual:"app", noqual:"app", book:"qual", nobook:"qual", show:"book", noshow:"book", won:"show", nowon:"show" };
+  const svg = d3.select(host).html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("width", "100%").attr("role", "img").attr("aria-label", "Funnel from registered to closed");
+  svg.append("g").selectAll("path").data(graph.links).join("path").attr("class", "sk-link").attr("d", d3.sankeyLinkHorizontal())
+    .attr("stroke", d => color[d.kind]).attr("stroke-opacity", d => d.kind === "exit" ? .45 : .32).attr("stroke-width", d => Math.max(1.5, d.width))
+    .on("click", (e, d) => showList("sk|" + d.source.id + ">" + d.target.id))
+    .append("title").text(d => `${d.source.name} → ${d.target.name}: ${num(d.value)}`);
+  const nd = svg.append("g").selectAll("g").data(graph.nodes).join("g").attr("class", "sk-node").on("click", (e, d) => showList("sk|" + d.id));
+  nd.append("rect").attr("x", d => d.x0).attr("y", d => d.y0).attr("width", d => d.x1 - d.x0).attr("height", d => Math.max(2, d.y1 - d.y0)).attr("rx", 2).attr("fill", d => color[d.kind]);
+  const lx = d => d.x1 + 6;
+  nd.append("text").attr("class", "sk-lbl").attr("x", lx).attr("y", d => Math.max(d.y0, 24) + 4).attr("dy", ".35em").text(d => d.name);
+  nd.append("text").attr("class", "sk-sub").attr("x", lx).attr("y", d => Math.max(d.y0, 24) + 19).attr("dy", ".35em")
+    .text(d => { const n = v[d.id], p = prevOf[d.id]; return num(n) + (p && v[p] ? " · " + Math.round(100 * n / v[p]) + "% of " + SK_NODES.find(x => x[0] === p)[1].toLowerCase() : ""); });
 }
 function texts(r){
   const T = S.D.texts; if (!T) return `<div class="muted">No text data yet.</div>`;
@@ -401,6 +463,12 @@ function listFor(key){
     if (what === "att") { const a = D.attendance[c]; return ["Watched live · " + c + " (" + a.unmatched + " unmatched names not listed)", a.matched.map(x => ({ name: name(x.pid), minutes: x.minutes, matched: x.by, link: ghl(x.pid) }))]; }
     if (what === "app" || what === "qual") { const seen = new Set(); return [(what === "qual" ? "Can invest · " : "Applied · ") + c, D.applications.filter(a => a.cohort === c && (what === "app" || a.qualification === "Qualified")).sort((a,b) => Date.parse(b.at) - Date.parse(a.at)).filter(a => !seen.has(a.pid) && seen.add(a.pid)).map(a => ({ name: name(a.pid), when: fmtDT(a.at), qualification: a.qualification, source: a.source, link: ghl(a.pid) }))]; }
     const L = D.bookings.filter(b => b.cohort === c && calOk(b)); return [what + " · " + c, (what === "showed" ? L.filter(b => b.outcome === "showed") : what === "won" ? L.filter(b => b.won) : L).map(bRow)]; }
+  if (k === "sk") { const P2 = funnelPeople(r), row = p => ({ name: name(p.pid), webinar: p.cohort ? fmtD(p.cohort + "T12:00:00-07:00") : "", watched: p.attended ? "yes" : "", applied: p.applied ? "yes" : "", canInvest: p.qualified ? "yes" : "", booked: p.booked ? "yes" : "", showed: p.showed ? "yes" : "", closed: p.won ? "yes" : "", link: ghl(p.pid) });
+    const nm = id => SK_NODES.find(x => x[0] === id)[1];
+    if (arg.includes(">")) { const [a1, b1] = arg.split(">"); const fa = SK_TEST[a1], fb = SK_TEST[b1]; return [nm(a1) + " → " + nm(b1), P2.filter(p => fa(p) && fb(p)).map(row)]; }
+    return [nm(arg), P2.filter(SK_TEST[arg]).map(row)]; }
+  if (k === "offroster") { const L = D.bookings.filter(b => !b.onRoster && b.outcome !== "cancelled" && Date.parse(b.startAt) >= Date.now() - 7 * 864e5 && Date.parse(b.startAt) <= Date.now() + 30 * 864e5); return ["Bookings with someone not on the roster", L.map(bRow)]; }
+  if (k === "dispo-unmatched") return ["Dispos that match no booking", D.dispos.filter(x => !x.matched).map(x => ({ name: x.prospect, call: x.date, closer: x.closer, outcome: x.outcome, link: "" }))];
   if (k.startsWith("s-")) { const P2 = funnelPeople(r), parts = k.split("-"); const test = [p => true, p => p.attended, p => p.applied, p => p.qualified, p => p.booked, p => p.showed, p => p.won];
     const names = ["Registered", "Watched live", "Applied", "Can invest", "Booked a call", "Showed", "Closed"];
     const darkTo = (p, n) => { for (let i = 1; i <= n; i++) if (!test[i](p)) return false; return true; };
@@ -435,13 +503,15 @@ const HOWTO = `<dl>
 /* ======================= BIND ======================= */
 function bind(){
   document.querySelectorAll("[data-list]").forEach(el => el.addEventListener("click", e => { e.stopPropagation(); showList(el.getAttribute("data-list")); }));
+  document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => { S.tab = b.dataset.tab; try { localStorage.setItem("dash_tab", S.tab); } catch(e){} render(); }));
   $("#cohort").onchange = e => { S.cohort = e.target.value; render(); };
   $("#period").onchange = e => { S.period = e.target.value; if (S.period !== "custom") render(); else $("#custom").hidden = false; };
   const custom = () => { S.from = $("#from").value; S.to = $("#to").value; if (S.from && S.to) render(); }; $("#from").onchange = custom; $("#to").onchange = custom;
-  $("#cal").onchange = e => { S.cal = e.target.value; render(); };
+  if ($("#cal")) $("#cal").onchange = e => { S.cal = e.target.value; render(); };
   $("#howto").onclick = () => { $("#howtoBox").hidden = !$("#howtoBox").hidden; };
   $("#refresh").onclick = async () => { $("#refresh").textContent = "Refreshing…"; try { await load(true); } catch (err) { showError(err); } };
 }
+window.addEventListener("resize", () => { if (S.D && S.tab === "webinars") drawSankey(range()); });
 function showError(err){ const d = document.createElement("div"); d.className = "err"; d.textContent = String(err.message || err); $("#app").prepend(d); }
 function loginView(msg){
   $("#app").innerHTML = `<div class="login card"><h1 style="font-size:22px">SCA Sales Dashboard</h1><div class="sub">Enter the team password</div><input type="password" id="pw" autofocus><button class="btn primary" id="go">Open</button>${msg ? `<div class="err">${esc(msg)}</div>` : ""}</div>`;
@@ -449,7 +519,7 @@ function loginView(msg){
   $("#go").onclick = go; $("#pw").onkeydown = e => { if (e.key === "Enter") go(); };
 }
 (async () => {
-  if (location.hash.startsWith("#local")) { /* harness preview: python3 -m http.server in sales-dashboard/, open index.html#local */
+  if (location.hash.startsWith("#local")) { const t = location.hash.slice(6); if (t) S.tab = t; /* harness preview: python3 -m http.server in sales-dashboard/, open index.html#local */
     try { const r = await fetch("api/.data/dash-data.json"); S.D = await r.json(); CFG.GHL_LOC = S.D.config.loc || ""; render(); } catch (e) { showError(e); } return; }
   if (!S.token) return loginView("");
   try { await load(false); } catch (err) { loginView(err.message); }
