@@ -167,7 +167,7 @@ function scaPaidIn(r){ return S.D.payments.filter(p => p.sca && p.status === "pa
 function metrics(r){
   const B = bookingsIn(r), by = k => B.filter(b => b.outcome === k);
   const showed = by("showed"), noshow = by("noshow"), owed = by("owed"), cancelled = by("cancelled"), upcoming = by("upcoming"), resched = by("rescheduled"), unknown = by("unknown");
-  const won = B.filter(b => b.won), qualified = B.filter(b => b.qualified && b.outcome !== "cancelled");
+  const won = B.filter(b => b.won), qualified = B.filter(b => b.qualified && b.outcome !== "cancelled" && b.outcome !== "rescheduled");
   const happened = showed.length + noshow.length + owed.length;
   const pay = scaPaidIn(r), cash = pay.reduce((s,p) => s + p.net, 0);
   const first = pay.filter(p => p.kind === "first"), inst = pay.filter(p => p.kind === "installment");
@@ -180,6 +180,7 @@ function metrics(r){
     firstWon: first.filter(p => !p.deposit), firstDep: first.filter(p => p.deposit), dealsWon, cashOnWon, revenueWon, T,
     showRate: T.happened ? T.showed / T.happened : null, closeRate: T.showed ? T.won / T.showed : null,
     closeBooked: B.length ? won.length / B.length : null, aov: won.length ? cashOnWon / won.length : null,
+    cancelRate: B.length ? cancelled.length / B.length : null, reschedRate: B.length ? resched.length / B.length : null,
     dps: T.showed ? T.revenue / T.showed : null, cashPerCall: T.showed ? T.cash / T.showed : null };
 }
 
@@ -249,7 +250,8 @@ function render(){
       <div class="states">
         ${state("Qualified", m.qualified.length, "can invest", "b-qualified")}
         ${state("Upcoming", m.upcoming.length, "", "b-upcoming")}
-        ${state("Cancelled", m.cancelled.length, "", "b-cancelled")}
+        ${state("Cancelled", m.cancelled.length, "not rebooked", "b-cancelled")}
+        ${state("Rescheduled", m.resched.length, "booked again", "b-rescheduled")}
         ${state("No-show", m.noshow.length, "", "b-noshow")}
         ${state("Owed", m.owed.length, "no dispo yet", "b-owed", m.owed.length ? "warnrow" : "")}
         ${state("Unknown", m.unknown.length, "before 10/15", "b-unknown")}
@@ -265,10 +267,12 @@ function render(){
   </div>
 
   <div class="sec"><div class="sec-h"><h2>Rates</h2></div>${lensNote}
-  <div class="grid g6">
+  <div class="grid g4">
     ${rate("Show rate", m.showRate, `${m.T.showed} of ${m.T.happened} calls`, trustedDelta(m.showRate, pm && pm.showRate, pm && pm.T.happened))}
     ${rate("Close rate", m.closeRate, `${m.T.won} of ${m.T.showed} shows`, trustedDelta(m.closeRate, pm && pm.closeRate, pm && pm.T.showed))}
     ${rate("Close ÷ booked", m.closeBooked, `${m.won.length} of ${m.B.length} booked`, delta(m.closeBooked, pm && pm.closeBooked, v => pct(v,1)))}
+    ${rate("Cancel rate", m.cancelRate, `${m.cancelled.length} of ${m.B.length} booked · rescheduled calls not counted`, delta(m.cancelRate, pm && pm.cancelRate, v => pct(v,1)))}
+    ${rate("Reschedule rate", m.reschedRate, `${m.resched.length} of ${m.B.length} booked · cancelled, then booked again`, delta(m.reschedRate, pm && pm.reschedRate, v => pct(v,1)))}
     ${rate("AOV", m.aov, "cash ÷ deals won", delta(m.aov, pm && pm.aov, money), money)}
     ${rate("$ per show", m.dps, `revenue ÷ ${m.T.showed} shows`, "", money)}
     ${rate("Cash per call", m.cashPerCall, `cash ÷ ${m.T.showed} shows`, "", money)}
@@ -327,7 +331,7 @@ function outcomes(m){
 function scorecard(m){
   const rows = {}; m.B.forEach(b => { const k = b.closer || "Unassigned"; const r = rows[k] = rows[k] || { closer:k, onRoster:b.onRoster, B:[] }; r.B.push(b); if (b.onRoster) r.onRoster = true; });
   const line = (r, total) => { const B = r.B, c = k => B.filter(b => b.outcome === k).length, showed = c("showed"), won = B.filter(b => b.won), ids = new Set(won.map(b => b.dealId)), deals = S.D.deals.filter(d => ids.has(d.id)), T = trustedStats(B);
-    const cash = deals.reduce((s,d)=>s+d.paid,0), rev = deals.reduce((s,d)=>s+(d.contract != null ? d.contract : d.paid),0), q = B.filter(b => b.qualified && b.outcome !== "cancelled").length;
+    const cash = deals.reduce((s,d)=>s+d.paid,0), rev = deals.reduce((s,d)=>s+(d.contract != null ? d.contract : d.paid),0), q = B.filter(b => b.qualified && b.outcome !== "cancelled" && b.outcome !== "rescheduled").length;
     const key = total ? "all" : r.closer;
     return `<tr class="${total ? "total" : ""} ${!total && !r.onRoster ? "warnrow" : ""}"><td>${esc(r.closer)}${!total && !r.onRoster && r.closer !== "Unassigned" ? ' <span class="small">(not on roster)</span>' : ""}</td>
       <td class="c" data-list="c-all|${esc(key)}">${B.length}</td><td class="c" data-list="c-showed|${esc(key)}">${showed}</td><td>${pct(T.showed, T.happened)}<span class="muted small"> · ${T.happened}</span></td><td class="c" data-list="c-qualified|${esc(key)}">${q}</td><td class="c" data-list="c-won|${esc(key)}">${won.length}</td>
@@ -461,7 +465,7 @@ function texts(r){
 function listFor(key){
   const D = S.D, r = range(), m = metrics(r), P = D.people, name = pid => (P[pid] && P[pid].name) || "(no name)";
   const ghl = pid => P[pid] && P[pid].contactId && CFG.GHL_LOC ? `https://app.gohighlevel.com/v2/location/${CFG.GHL_LOC}/contacts/detail/${P[pid].contactId}` : "";
-  const bRow = b => ({ name: name(b.pid), when: fmtDT(b.startAt), booked: fmtDT(b.bookedAt), calendar: b.cal, closer: b.closer, outcome: b.outcome + (b.showedBy === "whop" ? " (proven by Whop)" : "") + (b.dispoOutcome ? " · " + b.dispoOutcome : ""), qualified: b.qualified ? "yes" : "", won: b.won ? (b.dealDeposit ? "plan " : "PIF ") + money(b.dealPaid) : (b.reportedNotBanked ? "reported, not banked" : ""), link: ghl(b.pid) });
+  const bRow = b => ({ name: name(b.pid), when: fmtDT(b.startAt), booked: fmtDT(b.bookedAt), calendar: b.cal, closer: b.closer, outcome: b.outcome + (b.rebookedFor ? " · rebooked for " + fmtDT(b.rebookedFor) : "") + (b.showedBy === "whop" ? " (proven by Whop)" : "") + (b.dispoOutcome ? " · " + b.dispoOutcome : ""), qualified: b.qualified ? "yes" : "", won: b.won ? (b.dealDeposit ? "plan " : "PIF ") + money(b.dealPaid) : (b.reportedNotBanked ? "reported, not banked" : ""), link: ghl(b.pid) });
   const pRow = p => ({ name: p.name || name(p.pid), when: fmtDT(p.at), amount: money(p.net), kind: p.kind + (p.deposit ? " (plan)" : ""), product: p.productName, method: p.method || "", link: ghl(p.pid) });
   const dRow = d => ({ name: d.name || name(d.pid), started: fmtDT(d.anchorAt), paid: money(d.paid), contract: d.contract != null ? money(d.contract) : "—", remaining: d.remaining != null ? money(d.remaining) : "no schedule", type: d.deposit ? "plan" : "paid in full", link: ghl(d.pid) });
   const [k, arg] = key.split("|");
@@ -469,7 +473,7 @@ function listFor(key){
   const byO = o => B.filter(b => b.outcome === o);
   const map = {
     "b-all": ["Booked", B, bRow], "b-showed": ["Showed", byO("showed"), bRow], "b-won": ["Won (banked)", B.filter(b => b.won), bRow], "b-qualified": ["Qualified booked", m.qualified, bRow],
-    "b-upcoming": ["Upcoming", byO("upcoming"), bRow], "b-cancelled": ["Cancelled", byO("cancelled"), bRow], "b-noshow": ["No-show", byO("noshow"), bRow], "b-owed": ["Owed: held, no dispo filed", byO("owed"), bRow],
+    "b-upcoming": ["Upcoming", byO("upcoming"), bRow], "b-cancelled": ["Cancelled (not rebooked)", byO("cancelled"), bRow], "b-rescheduled": ["Rescheduled (cancelled, then booked again)", byO("rescheduled"), bRow], "b-noshow": ["No-show", byO("noshow"), bRow], "b-owed": ["Owed: held, no dispo filed", byO("owed"), bRow],
     "b-unknown": ["Unknown (before the Dispo form)", byO("unknown"), bRow], "b-reported": ["Reported won on the dispo form, no Whop money", B.filter(b => b.reportedNotBanked), bRow],
     "pay-all": ["SCA payments in the period", m.pay, pRow], "pay-first": ["First payments (new deals)", m.first, pRow], "pay-inst": ["Installments on earlier deals", m.inst, pRow],
     "deals-open": ["Plans with money still to collect", D.deals.filter(d => d.remaining > 0), dRow], "deals-pif": ["Paid in full, all-time", D.deals.filter(d => !d.deposit), dRow], "deals-plan": ["Payment plans started, all-time", D.deals.filter(d => d.deposit), dRow],
@@ -514,6 +518,7 @@ const HOWTO = `<dl>
 <dt>Where every number comes from</dt><dd>Bookings and call outcomes: GHL calendars + the Call Disposition form. Cash: Whop, SCA products only (Kora, Español and the old low-ticket offer are excluded). Applications: Typeform. Registrations: the GHL signup form. Watched live: Zoom participant reports. Texts: GHL conversations (LC Phone and SendBlue both land there).</dd>
 <dt>Period</dt><dd>Booked = calls booked in the period, and showed / won follow those bookings wherever the call lands. Cash = payments that landed in the period, whoever they came from. Picking a webinar replaces the period with that night's cohort.</dd>
 <dt>Won</dt><dd>The person started an SCA deal on Whop between booking and 30 days after the call. A dispo "Closed - Won" with no Whop money is listed as "reported, not banked" and does not count.</dd>
+<dt>Cancelled vs Rescheduled</dt><dd>Rescheduled = a cancelled call where the same person booked again afterwards, or the dispo form said "Rescheduled". It is left out of cancel rate. Cancelled = cancelled and never rebooked. A new time set on the same GHL appointment is not a cancel and is not visible to the board.</dd>
 <dt>Owed vs Unknown</dt><dd>Owed = a call since 10/15 that happened with no status and no dispo form. Unknown = the same before 10/15, when nobody marked calls; that history is shown, not judged.</dd>
 <dt>Click anything</dt><dd>Every tile, bar, segment and scorecard number opens the list of people behind it, with GHL links and a CSV button. If a number looks wrong, open its list.</dd>
 <dt>Refresh</dt><dd>Data refreshes itself every 5 minutes. "Refresh data" pulls right now. Zoom reports exist only after a stream ends.</dd>
