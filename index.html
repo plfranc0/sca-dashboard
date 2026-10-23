@@ -100,8 +100,10 @@ details summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--ink)}
 .needs{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--warn);background:var(--warn-bg);border:1px solid #E7D3A5;border-radius:8px;padding:8px 12px;margin:10px 0}
 .needs span{cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .sk-wrap{width:100%;overflow-x:auto} .sk-wrap svg{display:block;min-width:760px}
-.sk-node{cursor:pointer} .sk-link{fill:none;cursor:pointer} .sk-link:hover{stroke-opacity:.6}
+.sk-node{cursor:pointer} .sk-link{fill:none;cursor:pointer} .sk-link:hover{stroke-opacity:.85}
 .sk-lbl{font-family:var(--ui);font-size:12.5px;fill:var(--ink);font-weight:600} .sk-sub{font-family:var(--ui);font-size:11.5px;fill:var(--ink-3)}
+.sk-lbl,.sk-sub{paint-order:stroke;stroke:var(--surface);stroke-width:3.5px;stroke-linejoin:round;pointer-events:none}   /* halo keeps labels readable where they sit over a flow */
+.sk-cap{display:flex;gap:10px;align-items:baseline;font-size:13px;margin:12px 0 2px} .sk-cap b{color:var(--ink)} .sk-cap span{color:var(--ink-3);font-size:12px} .sk-cap:first-child{margin-top:4px}
 .err{background:var(--crit-bg);color:var(--crit);padding:12px;border-radius:8px;margin:20px 0;font-family:var(--mono);font-size:12.5px;white-space:pre-wrap}
 </style>
 </head>
@@ -350,7 +352,9 @@ function webinars(){
 }
 /* ---- Sankey: people who registered in the range, followed step by step ---- */
 function funnelPeople(r){
-  const D = S.D; const regs = D.registrations.filter(x => r.cohort ? x.cohort === r.cohort : inR(x.at, { from: r.from - 7 * 864e5, to: r.to }));
+  const D = S.D;
+  // A registration with no cohort came in after the last stream: that person has not had a webinar yet, so they wait outside the funnel (counted in the footnote).
+  const regs = D.registrations.filter(x => r.cohort ? x.cohort === r.cohort : (x.cohort && inR(x.at, { from: r.from - 7 * 864e5, to: r.to })));
   const people = new Map(); regs.forEach(x => { if (!people.has(x.pid)) people.set(x.pid, { pid: x.pid, cohort: x.cohort }); });
   const attended = new Set(); Object.entries(D.attendance).forEach(([d, a]) => { if (r.cohort ? d === r.cohort : true) a.matched.forEach(x => attended.add(x.pid + "|" + d)); });
   const appsBy = {}; D.applications.forEach(a => { (appsBy[a.pid] = appsBy[a.pid] || []).push(a); });
@@ -362,68 +366,83 @@ function funnelPeople(r){
     const apps = (appsBy[p.pid] || []).filter(a => Date.parse(a.at) >= cs - 864e5).sort((a,b) => Date.parse(a.at) - Date.parse(b.at));
     p.applied = apps.length > 0; p.qualified = apps.length ? apps[apps.length - 1].qualification === "Qualified" : false;
     const bks = (bkBy[p.pid] || []).filter(b => Date.parse(b.bookedAt) >= cs - 864e5).sort((a,b) => Date.parse(a.bookedAt) - Date.parse(b.bookedAt));
-    p.booked = bks.length > 0; p.showed = bks.some(b => b.outcome === "showed"); p.won = bks.some(b => b.won); p.b = bks;
+    p.booked = bks.length > 0; p.showed = bks.some(b => b.outcome === "showed"); p.upcoming = !p.showed && bks.some(b => b.outcome === "upcoming"); p.won = bks.some(b => b.won); p.b = bks;
     out.push(p);
   });
   return out;
 }
-/* ---- Funnel Sankey (d3-sankey layout). Every person registered in the window is followed in order.
-   Main steps are maroon; each step's drop-off is a grey node beside it; people who applied without
-   watching live travel a blue flow so they are never hidden. ---- */
+/* people who registered in the window but after the last stream: no webinar yet, so not in the funnel */
+function funnelWaiting(r, P){ if (r.cohort) return 0; const inF = new Set(P.map(p => p.pid)), s = new Set(); S.D.registrations.forEach(x => { if (!x.cohort && !inF.has(x.pid) && inR(x.at, { from: r.from - 7 * 864e5, to: r.to })) s.add(x.pid); }); return s.size; }
+/* ---- Funnel Sankey (d3-sankey layout), drawn as TWO panels so every step stays readable.
+   Panel 1 is scaled to everyone who registered (Registered → watched live or not → applied or not).
+   Panel 2 is the SAME people from Applied onward, scaled to the applicants, so Can invest → Booked → Showed → Closed
+   are real bars instead of hairlines. Main steps are maroon, drop-offs grey, people who applied without watching
+   live travel a blue flow. "Did not apply" is split by whether the person watched, which is what keeps the
+   flows from crossing (two sources feeding two targets always cross; three targets in the right order never do). ---- */
 const SK_NODES = [
-  ["reg","Registered",0,"main"], ["watch","Watched live",1,"main"], ["nowatch","Did not watch live",1,"skip"],
-  ["app","Applied",2,"main"], ["noapp","Did not apply",2,"exit"],
+  ["reg","Registered",0,"main"],
+  ["watch","Watched live",1,"main"], ["nowatch","Did not watch live",1,"skip"],
+  ["noapp_w","Watched, did not apply",2,"exit"], ["app","Applied",2,"main"], ["noapp_nw","Did not watch or apply",2,"exit"],
   ["qual","Can invest",3,"main"], ["noqual","Can't invest yet",3,"exit"],
   ["book","Booked a call",4,"main"], ["nobook","No call booked",4,"exit"],
-  ["show","Showed",5,"main"], ["noshow","No-show or not marked",5,"exit"],
+  ["show","Showed",5,"main"], ["upcoming","Call not held yet",5,"wait"], ["noshow","No-show or not marked",5,"exit"],
   ["won","Closed",6,"won"], ["nowon","Not closed yet",6,"exit"]
 ];
 const SK_TEST = {
   reg: p => true, watch: p => p.attended, nowatch: p => !p.attended,
-  app: p => p.applied, noapp: p => !p.applied,
+  app: p => p.applied, noapp: p => !p.applied, noapp_w: p => p.attended && !p.applied, noapp_nw: p => !p.attended && !p.applied,
   qual: p => p.applied && p.qualified, noqual: p => p.applied && !p.qualified,
   book: p => p.applied && p.qualified && p.booked, nobook: p => p.applied && p.qualified && !p.booked,
-  show: p => p.applied && p.qualified && p.booked && p.showed, noshow: p => p.applied && p.qualified && p.booked && !p.showed,
+  show: p => p.applied && p.qualified && p.booked && p.showed, upcoming: p => p.applied && p.qualified && p.booked && !p.showed && p.upcoming, noshow: p => p.applied && p.qualified && p.booked && !p.showed && !p.upcoming,
   won: p => p.applied && p.qualified && p.booked && p.showed && p.won, nowon: p => p.applied && p.qualified && p.booked && p.showed && !p.won
 };
+const SK_PREV = { watch:"reg", nowatch:"reg", app:"reg", noapp_w:"watch", noapp_nw:"nowatch", qual:"app", noqual:"app", book:"qual", nobook:"qual", show:"book", upcoming:"book", noshow:"book", won:"show", nowon:"show" };
+const SK_PANELS = [
+  { h: 330, title: v => "Everyone who registered", sub: v => "bar height = share of the " + num(v.reg) + " who registered",
+    links: [["reg","watch","main"],["reg","nowatch","skip"],["watch","noapp_w","exit"],["watch","app","main"],["nowatch","app","skip"],["nowatch","noapp_nw","exit"]], empty: "" },
+  { h: 300, title: v => "Zoomed in: the " + num(v.app) + " who applied", sub: v => "same people, bar height = share of applicants",
+    links: [["app","qual","main"],["app","noqual","exit"],["qual","book","main"],["qual","nobook","exit"],["book","show","main"],["book","upcoming","wait"],["book","noshow","exit"],["show","won","main"],["show","nowon","exit"]], empty: "Nobody has applied yet in this period." }
+];
 function sankeyShell(r){
-  const P = funnelPeople(r);
+  const P = funnelPeople(r), waiting = funnelWaiting(r, P);
   return `<div class="sk-wrap" id="sk"></div>
-  <div class="legend"><span><b style="background:#7A1420"></b>kept going</span><span><b style="background:#7FA7DD"></b>did not watch live, went on anyway</span><span><b style="background:#D6CECB"></b>stopped here</span></div>
-  <div class="muted small" style="margin-top:6px">${num(P.length)} people registered${r.cohort ? " for this webinar" : " in the period"}. Watched live is matched to Zoom by email or name, so it can only undercount. Each later step counts people from the step before it.</div>`;
+  <div class="legend"><span><b style="background:#7A1420"></b>kept going</span><span><b style="background:#7FA7DD"></b>did not watch live, went on anyway</span><span><b style="background:#E3C27A"></b>call not held yet</span><span><b style="background:#D6CECB"></b>stopped here</span><span><b style="background:#2F6B4F"></b>closed</span></div>
+  <div class="muted small" style="margin-top:6px">${num(P.length)} people registered${r.cohort ? " for this webinar" : " in the period"} and had their webinar.${waiting ? " " + num(waiting) + " more registered after the last stream and join the funnel once they have had theirs." : ""} Watched live is matched to Zoom by email or name, so it can only undercount. Each step counts people from the step before it; the second chart is the same people from Applied onward, drawn at a larger scale.</div>`;
 }
 function drawSankey(r){
   const host = document.getElementById("sk"); if (!host) return;
   if (!window.d3 || !d3.sankey) { host.innerHTML = '<div class="err">The chart library did not load. Refresh the page.</div>'; return; }
-  const P = funnelPeople(r), cnt = id => P.filter(SK_TEST[id]).length;
-  const v = {}; SK_NODES.forEach(n => v[n[0]] = cnt(n[0]));
-  const L = []; const add = (a, b, val, kind) => { if (val > 0) L.push({ source:a, target:b, value:val, kind }); };
-  add("reg","watch",v.watch,"main"); add("reg","nowatch",v.nowatch,"skip");
-  add("watch","app",P.filter(p => p.attended && p.applied).length,"main"); add("watch","noapp",P.filter(p => p.attended && !p.applied).length,"exit");
-  add("nowatch","app",P.filter(p => !p.attended && p.applied).length,"skip"); add("nowatch","noapp",P.filter(p => !p.attended && !p.applied).length,"exit");
-  add("app","qual",v.qual,"main"); add("app","noqual",v.noqual,"exit");
-  add("qual","book",v.book,"main"); add("qual","nobook",v.nobook,"exit");
-  add("book","show",v.show,"main"); add("book","noshow",v.noshow,"exit");
-  add("show","won",v.won,"main"); add("show","nowon",v.nowon,"exit");
-  const used = new Set(); L.forEach(l => { used.add(l.source); used.add(l.target); });
-  const nodes = SK_NODES.filter(n => used.has(n[0]) || n[0] === "reg").map((n, i) => ({ id:n[0], name:n[1], col:n[2], kind:n[3], order:i }));
-  if (!L.length) { host.innerHTML = '<div class="muted">Nobody registered in this period.</div>'; return; }
-  const W = Math.max(760, host.clientWidth || 1100), H = 440, padR = 160;
-  const g = d3.sankey().nodeId(d => d.id).nodeAlign(d => d.col).nodeWidth(14).nodePadding(34).nodeSort((a, b) => a.order - b.order).linkSort((a, b) => (a.source.order - b.source.order) || (a.target.order - b.target.order)).extent([[4, 24], [W - padR, H - 8]]);
-  const graph = g({ nodes: nodes.map(d => Object.assign({}, d)), links: L.map(d => Object.assign({}, d)) });
-  const color = { main:"#7A1420", won:"#2F6B4F", skip:"#7FA7DD", exit:"#D6CECB" };
-  const prevOf = { watch:"reg", nowatch:"reg", app:"reg", noapp:"reg", qual:"app", noqual:"app", book:"qual", nobook:"qual", show:"book", noshow:"book", won:"show", nowon:"show" };
-  const svg = d3.select(host).html("").append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("width", "100%").attr("role", "img").attr("aria-label", "Funnel from registered to closed");
-  svg.append("g").selectAll("path").data(graph.links).join("path").attr("class", "sk-link").attr("d", d3.sankeyLinkHorizontal())
-    .attr("stroke", d => color[d.kind]).attr("stroke-opacity", d => d.kind === "exit" ? .45 : .32).attr("stroke-width", d => Math.max(1.5, d.width))
-    .on("click", (e, d) => showList("sk|" + d.source.id + ">" + d.target.id))
-    .append("title").text(d => `${d.source.name} → ${d.target.name}: ${num(d.value)}`);
-  const nd = svg.append("g").selectAll("g").data(graph.nodes).join("g").attr("class", "sk-node").on("click", (e, d) => showList("sk|" + d.id));
-  nd.append("rect").attr("x", d => d.x0).attr("y", d => d.y0).attr("width", d => d.x1 - d.x0).attr("height", d => Math.max(2, d.y1 - d.y0)).attr("rx", 2).attr("fill", d => color[d.kind]);
-  const lx = d => d.x1 + 6;
-  nd.append("text").attr("class", "sk-lbl").attr("x", lx).attr("y", d => Math.max(d.y0, 24) + 4).attr("dy", ".35em").text(d => d.name);
-  nd.append("text").attr("class", "sk-sub").attr("x", lx).attr("y", d => Math.max(d.y0, 24) + 19).attr("dy", ".35em")
-    .text(d => { const n = v[d.id], p = prevOf[d.id]; return num(n) + (p && v[p] ? " · " + Math.round(100 * n / v[p]) + "% of " + SK_NODES.find(x => x[0] === p)[1].toLowerCase() : ""); });
+  const P = funnelPeople(r), both = (a, b) => P.filter(p => SK_TEST[a](p) && SK_TEST[b](p)).length;
+  const v = {}; SK_NODES.forEach(n => v[n[0]] = P.filter(SK_TEST[n[0]]).length);
+  if (!P.length) { host.innerHTML = '<div class="muted">Nobody registered in this period.</div>'; return; }
+  const W = Math.max(760, host.clientWidth || 1100), padR = 210;
+  const color = { main:"#7A1420", won:"#2F6B4F", skip:"#7FA7DD", wait:"#E3C27A", exit:"#D6CECB" };
+  const nameOf = id => SK_NODES.find(x => x[0] === id)[1];
+  const subOf = id => { const n = v[id], p = SK_PREV[id]; return num(n) + (p && v[p] ? " · " + Math.round(100 * n / v[p]) + "% of " + nameOf(p).toLowerCase() : ""); };
+  host.innerHTML = "";
+  SK_PANELS.forEach(pan => {
+    const L = pan.links.map(([a, b, kind]) => ({ source:a, target:b, value:both(a, b), kind })).filter(l => l.value > 0);
+    const cap = document.createElement("div"); cap.className = "sk-cap"; cap.innerHTML = `<b>${esc(pan.title(v))}</b><span>${esc(pan.sub(v))}</span>`; host.appendChild(cap);
+    if (!L.length) { const d = document.createElement("div"); d.className = "muted small"; d.textContent = pan.empty; host.appendChild(d); return; }
+    const used = new Set(); L.forEach(l => { used.add(l.source); used.add(l.target); });
+    const ids = SK_NODES.filter(n => used.has(n[0])), c0 = Math.min(...ids.map(n => n[2]));
+    const nodes = ids.map(n => ({ id:n[0], name:n[1], col:n[2] - c0, kind:n[3], order:SK_NODES.indexOf(n) }));
+    const H = pan.h;
+    const g = d3.sankey().nodeId(d => d.id).nodeAlign(d => d.col).nodeWidth(16).nodePadding(40).nodeSort((a, b) => a.order - b.order)
+      .linkSort((a, b) => (a.source.order - b.source.order) || (a.target.order - b.target.order)).extent([[4, 12], [W - padR, H - 12]]);
+    const graph = g({ nodes: nodes.map(d => Object.assign({}, d)), links: L.map(d => Object.assign({}, d)) });
+    const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("width", "100%").attr("role", "img").attr("aria-label", pan.title(v));
+    svg.append("g").selectAll("path").data(graph.links).join("path").attr("class", "sk-link").attr("d", d3.sankeyLinkHorizontal())
+      .attr("stroke", d => color[d.kind]).attr("stroke-opacity", d => d.kind === "exit" ? .6 : d.kind === "skip" || d.kind === "wait" ? .5 : .38).attr("stroke-width", d => Math.max(2, d.width))
+      .on("click", (e, d) => showList("sk|" + d.source.id + ">" + d.target.id))
+      .append("title").text(d => `${d.source.name} → ${d.target.name}: ${num(d.value)}`);
+    const nd = svg.append("g").selectAll("g").data(graph.nodes).join("g").attr("class", "sk-node").on("click", (e, d) => showList("sk|" + d.id));
+    nd.append("rect").attr("x", d => d.x0).attr("y", d => d.y0).attr("width", d => d.x1 - d.x0).attr("height", d => Math.max(3, d.y1 - d.y0)).attr("rx", 2).attr("fill", d => color[d.kind]);
+    nd.append("title").text(d => `${d.name}: ${subOf(d.id)}`);
+    const lx = d => d.x1 + 8, ly = d => Math.min(Math.max(d.y0, 12), H - 34);   // label hugs the top of its bar, never leaves the canvas
+    nd.append("text").attr("class", "sk-lbl").attr("x", lx).attr("y", d => ly(d) + 5).attr("dy", ".35em").text(d => d.name);
+    nd.append("text").attr("class", "sk-sub").attr("x", lx).attr("y", d => ly(d) + 21).attr("dy", ".35em").text(d => subOf(d.id));
+  });
 }
 function texts(r){
   const T = S.D.texts; if (!T) return `<div class="muted">No text data yet.</div>`;
